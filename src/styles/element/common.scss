@@ -1,0 +1,17 @@
+@forward "element-plus/theme-chalk/src/common/var.scss" with (
+  $colors: (
+    "primary": (
+      "base": #4d57ff,
+    ),
+  ),
+  $font-size: (
+    "extra-large": 26px,
+    "large": 24px,
+    "medium": 20px,
+    "base": 18px,
+    "small": 17px,
+    "extra-small": 16px,
+  )
+);
+@import "../mixin/mixin.scss";
+@import "../var/var.scss";

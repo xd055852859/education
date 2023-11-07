@@ -1,0 +1,26 @@
+.el-drawer__header {
+  height: 50px;
+  padding: 0px 10px 0px 15px !important;
+  margin-bottom: 0px !important;
+  line-height: 50px;
+  .el-drawer__title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #000000;
+  }
+  .drawer-common-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #000000;
+  }
+}
+
+.el-drawer__body {
+  padding: 0px !important;
+}
+.el-divider--horizontal {
+  margin: 15px 0px !important;
+}
+.el-dialog__body {
+  padding: 0px !important;
+}
