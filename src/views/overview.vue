@@ -2,6 +2,7 @@
 import Calendar from "@/components/calendar.vue";
 import Avatar from "@/components/avatar.vue";
 import LessonItem from "@/components/lessonItem.vue";
+import FontIcon from "@/components/fontIcon.vue";
 import { MoreFilled } from "@element-plus/icons-vue";
 import { ResultProps } from "@/interface/Common";
 import userCenter from "./user.vue";
@@ -124,6 +125,7 @@ watchEffect(() => {
   <div class="overview">
     <div class="overview-header">
       <div class="dp--center overview-user">
+        <FontIcon iconName="liebiao" />
         <div @click="userVisible = true" class="overview-avatar">
           <Avatar
             :src="user?.userAvatar"

@@ -16,6 +16,7 @@ const props = defineProps<{
 }>();
 const mediaList = ref<any>([]);
 const captionsList = ref<any>([]);
+const articleList = ref<any>([]);
 const mediaKey = ref<string>("");
 const mediaIndex = ref<number>(-1);
 const lessonInfo = ref<any>(null);
@@ -81,6 +82,16 @@ const getCaption = async (key) => {
     captionsList.value = captionaRes.data;
   }
 };
+const getArticleList = async (key) => {
+  let list: any = [];
+  let obj: any = {};
+  let articleRes = (await api.request.get("section", {
+    mediaKey: key,
+  })) as ResultProps;
+  if (articleRes.msg === "OK") {
+    articleList.value = articleRes.data;
+  }
+};
 const setCaption = (index) => {
   videoSrc.value = mediaList.value[index].url;
   getCaption(mediaList.value[index]._key);
@@ -121,6 +132,7 @@ watchEffect(() => {
     videoSrc.value = mediaList.value[mediaIndex.value].url;
     mediaKey.value = mediaList.value[mediaIndex.value]._key;
     getCaption(mediaList.value[mediaIndex.value]._key);
+    getArticleList(mediaList.value[mediaIndex.value]._key);
   }
 });
 </script>
@@ -205,10 +217,13 @@ watchEffect(() => {
         </template>
         <template v-if="lessonInfo.mediaType === 'pdf'">
           <div
-            v-html="mediaList[mediaIndex]?.content"
-            class="preview-left-text"
-          ></div
-        ></template>
+            v-for="(item, index) in articleList"
+            :key="`original${index}`"
+            class="preview-left-article"
+          >
+            {{ item.original }}
+          </div>
+        </template>
       </div>
       <div class="preview-right">
         <div class="preview-right-title">资源选集</div>
@@ -309,7 +324,7 @@ watchEffect(() => {
         }
       }
 
-      .preview-left-text {
+      .preview-left-article {
         font-size: 25px;
         color: #fff;
         line-height: 38px;

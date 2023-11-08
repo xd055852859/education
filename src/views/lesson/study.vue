@@ -24,15 +24,15 @@ const studyTab = ref<string>("original");
 const articleList = ref<any>([]);
 const cnOriginal = ref<boolean>(false);
 const original = ref<string>("");
-const translation = ref<string>("");
 const oldOriginal = ref<string>("");
-const oldTranslation = ref<string>("");
+
 const originalList = ref<any>([]);
 const translationList = ref<any>([]);
 const originalTextList = ref<any>([]);
 const translationTextList = ref<any>([]);
 const mediaList = ref<any>([]);
 const captionsList = ref<any>([]);
+const captionsTextList = ref<any>([]);
 const mediaSrc = ref<string>("");
 const audioSrc = ref<string>("");
 const mediaContnet = ref<any>([]);
@@ -64,7 +64,6 @@ onUnmounted(() => {
     clearInterval(studyInterval.value);
   }
 });
-const setStudyTime = () => {};
 const getMedia = async () => {
   let mediaRes = (await api.request.get("media", {
     resourceKey: props.lessonKey,
@@ -74,85 +73,52 @@ const getMedia = async () => {
     mediaIndex.value = 0;
   }
 };
-const getCaption = async (key) => {
+const getArticleList = async (key) => {
   let list: any = [];
   let obj: any = {};
+  let articleRes = (await api.request.get("section", {
+    mediaKey: key,
+  })) as ResultProps;
+  if (articleRes.msg === "OK") {
+    articleList.value = articleRes.data.map((item) => {
+      item.original = item.original.match(/\b\w+\b/g);
+      list.push(...item.original);
+      return item;
+    });
+    list.forEach((item) => {
+      obj[item] = {
+        name: item,
+        value: obj[item] ? obj[item].value + 1 : 1,
+      };
+    });
+    textList.value = Object.values(obj);
+  }
+};
+const getCaption = async (key) => {
   let captionaRes = (await api.request.get("caption", {
     mediaKey: key,
   })) as ResultProps;
   if (captionaRes.msg === "OK") {
-    captionsList.value = captionaRes.data;
-    captionaRes.data.forEach((item, index) => {
-      item.original = item.original.replace(/\n/g, "");
-      if (item.translation) {
-        item.translation = item.translation.replace(/\n/g, "");
-      }
-      originalList.value[index] = {
-        _key: item._key,
-        text: item.original.match(/\b\w+\b/g),
-      };
-      list.push(...item.original.match(/\b\w+\b/g));
-      // translationList.value[index] = {
-      //   _key: item._key,
-      //   text: item.translation,
-      // };
-      translationList.value[index] = item.translation;
-      // cnOriginal.value = new RegExp("[\u4E00-\u9FA5]+").test(item.original);
-      // if (cnOriginal.value) {
-      //   openText(item.original, (list) => {
-      //     originalList.value[index] = { _key: item._key, text: list[0] };
-      //   });
-      //   if (/[a-zA-Z]+/.test(item.translation)) {
-      //     translationList.value[index] = {
-      //       _key: item._key,
-      //       text: item.translation.match(/\b\w+\b/g),
-      //     };
-      //   } else {
-      //     openText(item.translation, (list) => {
-      //       translationList.value[index] = { _key: item._key, text: list[0] };
-      //     });
-      //   }
-      // } else {
-      //   openText(item.translation, (list) => {
-      //     console.log(list);
-      //     translationList.value[index] = { _key: item._key, text: list[0] };
-      //   });
-      //   if (/[a-zA-Z]+/.test(item.original)) {
-      //     originalList.value[index] = {
-      //       _key: item._key,
-      //       text: item.original.match(/\b\w+\b/g),
-      //     };
-      //   } else {
-      //     openText(item.original, (list) => {
-      //       originalList.value[index] = { _key: item._key, text: list[0] };
-      //     });
-      //   }
-      // }
+    captionsList.value = captionaRes.data.map((item, index) => {
+      item.original = item.original.replace(/\n/g, "").match(/\b\w+\b/g);
+      return item;
     });
-  }
-  list.forEach((item) => {
-    obj[item] = {
-      name: item,
-      value: obj[item] ? obj[item].value + 1 : 1,
-    };
-  });
-  console.log(obj);
-  textList.value = Object.values(obj);
-  console.log(textList.value);
-};
-const openText = async (text, callback) => {
-  let textRes = (await api.request.get(
-    "",
-    {
-      text: text,
-    },
-    false,
-    "http://dictdata.qingtime.cn/getWords"
-  )) as ResultProps;
-  if (textRes.msg === "OK") {
-    callback(textRes.data);
+    console.log(captionsList.value);
   }
 };
+// const openText = async (text, callback) => {
+//   let textRes = (await api.request.get(
+//     "",
+//     {
+//       text: text,
+//     },
+//     false,
+//     "http://dictdata.qingtime.cn/getWords"
+//   )) as ResultProps;
+//   if (textRes.msg === "OK") {
+//     callback(textRes.data);
+//   }
+// };
 //video
 const onPlay = (ev) => {
   audioRef.value.pause();
@@ -168,86 +134,51 @@ const onTimeupdate = async (ev) => {
     captionsList.value.forEach((item, index) => {
       if (item.startTime < currentTime && item.endTime > currentTime) {
         captionsState.value = true;
-        original.value = item.original;
-        translation.value = item.translation;
-        chooseIndex.value = index;
+        captionsTextList.value = item.original;
+        keyIndex.value = index;
         sentenceKey.value = item._key;
       }
     });
 
     if (!captionsState.value) {
-      original.value = "";
-      translation.value = "";
-      oldOriginal.value = "";
-      oldTranslation.value = "";
-      chooseIndex.value = -1;
-    } else {
-      if (oldOriginal.value !== original.value) {
-        originalTextList.value = original.value.match(/\b\w+\b/g);
-      }
-      if (oldTranslation.value !== translation.value) {
-        translationTextList.value = translation.value;
-      }
-
-      // if (oldOriginal.value !== original.value) {
-      //   if (cnOriginal.value || !/[a-zA-Z]+/.test(original.value)) {
-      //     openText(original.value, (list) => {
-      //       originalTextList.value = list[0];
-      //     });
-      //   } else {
-      //     originalTextList.value = original.value.match(/\b\w+\b/g);
-      //   }
-      // }
-      // if (oldTranslation.value !== translation.value) {
-      //   if (cnOriginal.value || /[a-zA-Z]+/.test(translation.value)) {
-      //     translationTextList.value = translation.value.match(/\b\w+\b/g);
-      //   } else {
-      //     openText(translation.value, (list) => {
-      //       translationTextList.value = list[0];
-      //     });
-      //   }
-      // }
+      captionsTextList.value = [];
+      keyIndex.value = -1;
     }
-    oldOriginal.value = original.value;
-    oldTranslation.value = translation.value;
     lastTime.value = parseInt(ev.target.currentTime);
   }
 };
 const onCanplay = (ev) => {
   console.log(ev, "可以播放");
 };
-const readText = async (text) => {
-  // console.log(`https://api.oick.cn/txt/apiz.php?text=${text}&spd=5`)
-  audioSrc.value = `https://api.vvhan.com/api/song.php?txt=${text}&per=5`; //通过audio对象加入音频
-  if (audioRef.value) {
-    audioRef.value.play();
-  }
+// const readText = async (text) => {
+//   // console.log(`https://api.oick.cn/txt/apiz.php?text=${text}&spd=5`)
+//   audioSrc.value = `https://api.vvhan.com/api/song.php?txt=${text}&per=5`; //通过audio对象加入音频
+//   if (audioRef.value) {
+//     audioRef.value.play();
+//   }
+//   if (videoRef.value) {
+//     videoRef.value.pause();
+//   }
+// };
+const chooseWord = async (word, index, type: string, key: string) => {
   if (videoRef.value) {
     videoRef.value.pause();
   }
-};
-const chooseSentence = (key, text, index) => {
-  if (key) {
-    sentenceKey.value = key;
-  } else {
-    sentenceIndex.value = index;
-  }
-  keyIndex.value = -1;
-  readText(text.join(""));
-};
-const chooseWord = async (word, index, text?: string[]) => {
   keyword.value = word;
   keyIndex.value = index;
+
   let obj: any = {
     agentKey: agentKey.value,
     keyword: word,
-    type: word.length === 1 ? 1 : 2,
+    // type: word.length === 1 ? 1 : 2,
+    type: 1,
   };
-  if (text) {
-    obj.mediaKey = mediaList.value[mediaIndex.value]._key;
-    obj.sentence = text.join("");
+  sentenceKey.value = key;
+  if (type === "section") {
+    obj.sectionKey = key;
   } else {
-    obj.captionKey = sentenceKey.value;
+    console.log(type,key)
+    obj.captionKey = key;
   }
   let wordRes = (await api.request.post("study/keyword", {
     ...obj,
@@ -271,46 +202,17 @@ watch([mediaIndex, lessonInfo], ([newIndex, newInfo]) => {
   // audioRef.value.pause();
   // videoRef.value.pause();
   if (newInfo && mediaList.value.length > 0) {
-    if (newInfo.mediaType === "pdf") {
-      studyTab.value = "article";
-      mediaContnet.value = mediaList.value[newIndex].content.split("\n");
-
-      mediaContnet.value.forEach((item, index) => {
-        console.log(item);
-        if (item) {
-          cnOriginal.value = new RegExp("[\u4E00-\u9FA5]+").test(item);
-          articleList.value[index] = {
-            text: item.match(/\b\w+\b/g),
-          };
-          // console.log(cnOriginal.value);
-          // if (cnOriginal.value) {
-          //   openText(item, (list) => {
-          //     articleList.value[index] = { text: list[0] };
-          //   });
-          // } else {
-          //   if (/[a-zA-Z]+/.test(item)) {
-          //     articleList.value[index] = {
-          //       text: item.match(/\b\w+\b/g),
-          //     };
-          //   } else {
-          //     openText(item, (list) => {
-          //       articleList.value[index] = { text: list[0] };
-          //     });
-          //   }
-          // }
-        }
-      });
-    } else {
-      studyTab.value = "original";
-      if (audioRef.value) {
-        audioRef.value.pause();
-      }
-      if (videoRef.value) {
-        videoRef.value.pause();
-      }
-      mediaSrc.value = mediaList.value[newIndex].url;
+    if (audioRef.value) {
+      audioRef.value.pause();
+    }
+    if (videoRef.value) {
+      videoRef.value.pause();
+    }
+    mediaSrc.value = mediaList.value[newIndex].url;
+    if (newInfo.mediaType !== "pdf") {
       getCaption(mediaList.value[newIndex]._key);
     }
+    getArticleList(mediaList.value[newIndex]._key);
     if (studyInterval.value) {
       clearInterval(studyInterval.value);
     }
@@ -322,6 +224,16 @@ watch([mediaIndex, lessonInfo], ([newIndex, newInfo]) => {
       });
     }, 60000);
   }
+});
+watch(studyTab, (newTab) => {
+  if (audioRef.value) {
+    audioRef.value.pause();
+  }
+  if (videoRef.value) {
+    videoRef.value.pause();
+  }
+  sentenceKey.value = "";
+  keyIndex.value = -1;
 });
 </script>
 <template>
@@ -359,142 +271,47 @@ watch([mediaIndex, lessonInfo], ([newIndex, newInfo]) => {
     <div class="study-container">
       <div class="study-left">
         <el-tabs v-model="studyTab">
-          <el-tab-pane
-            name="article"
-            label="文章"
-            v-if="lessonInfo.mediaType === 'pdf'"
-          >
+          <el-tab-pane name="original" label="原文">
             <div class="study-box" v-if="articleList.length > 0">
               <div
                 v-for="(item, index) in articleList"
-                :key="`article${index}`"
-                class="text-item"
-                :style="
-                  item && sentenceKey === item._key ? { color: '#4D57FF' } : {}
-                "
-                @click="
-                  item && sentenceKey === item._key
-                    ? ''
-                    : chooseSentence('', item.text, index)
-                "
-              >
-                <template v-if="item?.text">
-                  <span
-                    v-for="(textItem, textIndex) in item.text"
-                    :key="`articleText${textIndex}`"
-                    @click="chooseWord(textItem, textIndex, item.text)"
-                    :style="
-                      sentenceIndex === index && textIndex === keyIndex
-                        ? {
-                            backgroundColor: '#4D57FF',
-                            padding: '2px 0px',
-                            boxSizing: 'border-box',
-                          }
-                        : {}
-                    "
-                    >{{ textItem }}{{ cnOriginal ? "" : " " }}</span
-                  >
-                  <!-- <span
-                    v-for="(wordItem, wordIndex) in textItem"
-                    :key="`originalWord${item._key}`"
-                  >
-                    {{ wordItem }}
-                  </span> -->
-                </template>
-              </div>
-            </div>
-          </el-tab-pane>
-          <el-tab-pane
-            name="original"
-            label="原文"
-            v-if="lessonInfo.mediaType !== 'pdf'"
-          >
-            <div class="study-box" v-if="originalList.length > 0">
-              <div
-                v-for="(item, index) in originalList"
                 :key="`original${index}`"
                 class="text-item"
                 :style="
                   item && sentenceKey === item._key ? { color: '#4D57FF' } : {}
                 "
-                @click="chooseSentence(item._key, item.text, index)"
               >
-                <template v-if="item?.text">
-                  <span
-                    v-for="(textItem, textIndex) in item.text"
-                    :key="`originalText${textIndex}`"
-                    @click="
-                      sentenceKey === item._key
-                        ? chooseWord(textItem, textIndex)
-                        : null
-                    "
-                    :style="
-                      keyword === textItem
-                        ? {
-                            color: '#333333',
-                            background: '#ffe3b5',
-                            padding: '2px 0px',
-                            boxSizing: 'border-box',
-                          }
-                        : {}
-                    "
-                    >{{ textItem }}{{ cnOriginal ? "" : " " }}</span
-                  >
-                  <!-- <span
-                    v-for="(wordItem, wordIndex) in textItem"
-                    :key="`originalWord${item._key}`"
-                  >
-                    {{ wordItem }}
-                  </span> -->
-                </template>
+                <span
+                  v-for="(textItem, textIndex) in item.original"
+                  :key="`originalText${textIndex}`"
+                  @click="chooseWord(textItem, textIndex, 'section', item._key)"
+                  :style="
+                    keyword === textItem
+                      ? {
+                          color: '#333333',
+                          background: '#ffe3b5',
+                          padding: '2px 4px',
+                          boxSizing: 'border-box',
+                        }
+                      : { padding: '2px 4px', boxSizing: 'border-box' }
+                  "
+                  >{{ textItem }}</span
+                >
               </div>
             </div>
           </el-tab-pane>
           <el-tab-pane name="cloud" label="词频"> </el-tab-pane>
-          <el-tab-pane
-            name="translation"
-            label="译文"
-            v-if="lessonInfo.mediaType !== 'pdf'"
-          >
-            <div class="study-box" v-if="translationList.length > 0">
+          <el-tab-pane name="translation" label="译文">
+            <div class="study-box" v-if="articleList.length > 0">
               <div
-                v-for="(item, index) in translationList"
+                v-for="(item, index) in articleList"
                 :key="`translation${index}`"
                 class="text-item icon-point"
                 :style="
                   item && sentenceKey === item._key ? { color: '#4D57FF' } : {}
                 "
-                @click="chooseSentence(item._key, item.text, index)"
               >
-                <!--  @click="
-                      sentenceKey === item._key
-                        ? chooseWord(textItem, textIndex)
-                        : null
-                    "
-                    :style="
-                      sentenceKey === item._key && textIndex === keyIndex
-                        ? {
-                            color: '#fff',
-                            backgroundColor: '#4D57FF',
-                            padding: '10px',
-                            boxSizing: 'border-box',
-                          }
-                        : {}
-                    " 
-                <template v-if="item?.text">
-                  <span
-                    v-for="(textItem, textIndex) in item.text"
-                    :key="`translationText${textIndex}`"
-                    >{{ textItem }}{{ cnOriginal ? " " : "" }}</span
-                  >
-                   <span
-                    v-for="(wordItem, wordIndex) in textItem"
-                    :key="`translationWord${item._key}`"
-                  >
-                    {{ wordItem }}
-                  </span> 
-                </template>-->
-                {{ item }}
+                {{ item.translation }}
               </div>
             </div>
           </el-tab-pane>
@@ -564,9 +381,9 @@ watch([mediaIndex, lessonInfo], ([newIndex, newInfo]) => {
               <div class="study-caption">
                 <div class="study-original">
                   <span
-                    v-for="(item, index) in originalTextList"
+                    v-for="(item, index) in captionsTextList"
                     :key="`originalCaption${index}`"
-                    @click="chooseWord(item, index, item.text)"
+                    @click="chooseWord(item, index, 'caption', item._key)"
                     :style="
                       keyword === item && index === keyIndex
                         ? {
@@ -575,18 +392,10 @@ watch([mediaIndex, lessonInfo], ([newIndex, newInfo]) => {
                             padding: '2px 4px',
                             boxSizing: 'border-box',
                           }
-                        : {}
+                        : { padding: '2px 4px', boxSizing: 'border-box' }
                     "
                   >
-                    {{ item }}{{ cnOriginal ? "" : " " }}
-                  </span>
-                </div>
-                <div class="study-translation">
-                  <span
-                    v-for="(item, index) in translationTextList"
-                    :key="`translationCaption${index}`"
-                  >
-                    {{ item }}{{ cnOriginal ? " " : "" }}
+                    {{ item }}
                   </span>
                 </div>
               </div>
@@ -600,26 +409,28 @@ watch([mediaIndex, lessonInfo], ([newIndex, newInfo]) => {
             <div class="study-box">
               <div class="study-caption study-audio-caption">
                 <div
-                  v-for="(item, index) in originalList"
+                  v-for="(item, index) in captionsList"
                   :key="`caption${index}`"
                   class="text-item"
-                  :style="{
-                    color: chooseIndex === index ? '#4D57FF' : '#333',
-                  }"
                 >
-                  <div v-if="item?.text" class="study-original">
+                  <div class="study-original">
                     <span
-                      v-for="(textItem, textIndex) in item.text"
+                      v-for="(textItem, textIndex) in item.original"
                       :key="`originalCaption${textIndex}`"
-                      >{{ textItem }}{{ cnOriginal ? "" : " " }}</span
-                    >
-                  </div>
-                  <div v-if="item?.text" class="study-translation">
-                    <span
-                      v-for="(textItem, textIndex) in translationList[index]
-                        ?.text"
-                      :key="`translationCaption${textIndex}`"
-                      >{{ textItem }}{{ cnOriginal ? " " : "" }}</span
+                      @click="
+                        chooseWord(textItem, textIndex, 'caption', item._key)
+                      "
+                      :style="
+                        keyword === textItem && textIndex === keyIndex
+                          ? {
+                              color: '#333333',
+                              background: '#ffe3b5',
+                              padding: '2px 4px',
+                              boxSizing: 'border-box',
+                            }
+                          : { padding: '2px 4px', boxSizing: 'border-box' }
+                      "
+                      >{{ textItem }}</span
                     >
                   </div>
                 </div>
@@ -645,7 +456,7 @@ watch([mediaIndex, lessonInfo], ([newIndex, newInfo]) => {
             </div>
           </el-tab-pane>
         </el-tabs>
-        <div class="study-cloud" v-if="studyTab==='cloud'" style="top:54px;">
+        <div class="study-cloud" v-if="studyTab === 'cloud'" style="top: 54px">
           <WordChart
             :chartData="textList"
             :wordId="'study-word'"
@@ -710,7 +521,7 @@ watch([mediaIndex, lessonInfo], ([newIndex, newInfo]) => {
           color: #333333;
           line-height: 55px;
           margin-bottom: 10px;
-          text-indent: 2em;
+          // text-indent: 2em;
           // padding: 10px;
           // box-sizing: border-box;
           &:hover {
@@ -739,7 +550,7 @@ watch([mediaIndex, lessonInfo], ([newIndex, newInfo]) => {
           height: 165px;
           background-color: #161620;
           color: #fff;
-          @include p-number(20px, 45px);
+          @include p-number(20px, 0px);
           @include scroll();
           .study-original {
             width: 100%;
@@ -812,4 +623,4 @@ watch([mediaIndex, lessonInfo], ([newIndex, newInfo]) => {
 /* .d-control-progress{
   height:40px !important;
 }*/
-</style> 
+</style>

@@ -10,7 +10,17 @@ const emits = defineEmits<{
 }>();
 let chart: any = null;
 let option: any = null;
-
+const color = [
+  "#3198F5",
+  "#FDB743",
+  "#F16666",
+  "#6F31F5",
+  "#FD4943",
+  "#4ABA31",
+  "#CE2AE0",
+  "#486EE6",
+  "#3AD5D6",
+];
 onMounted(() => {
   let chartDom: any = document.getElementById(props.wordId);
   chart = echarts.init(chartDom);
@@ -83,15 +93,7 @@ onMounted(() => {
           // Color can be a callback function or a color string
           color: function () {
             // Random color
-            return (
-              "rgb(" +
-              [
-                Math.round(Math.random() * 255),
-                Math.round(Math.random() * 255),
-                Math.round(Math.random() * 255),
-              ].join(",") +
-              ")"
-            );
+            return color[Math.round(Math.random() * color.length - 1)];
           },
         },
         emphasis: {

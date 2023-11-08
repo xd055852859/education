@@ -1,6 +1,8 @@
 import router from "@/router";
+import appStore from "@/store";
 import axios from "axios";
 import { ElMessage } from "element-plus";
+import { authStore } from "@/store/auth";
 const AUTH_URL = import.meta.env.VITE_AUTH_URL;
 const API_URL = import.meta.env.VITE_API_URL;
 let token = localStorage.getItem("auth_token") || "";
@@ -11,6 +13,8 @@ axios.interceptors.response.use(
       ElMessage.error("请登录");
       localStorage.clear();
       router.replace("/");
+      token = "";
+      authStore().setToken("");
     } else if (response.data.status === 201) {
       ElMessage.error(response.data.msg);
     }
