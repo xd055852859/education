@@ -3,6 +3,7 @@ import Header from "@/components/header.vue";
 import FontIcon from "@/components/fontIcon.vue";
 import Keyword from "@/components/keyword.vue";
 import IframeView from "@/components/iframeView.vue";
+import AudioPlayer from "@/components/audioPlayer.vue";
 import "vue3-video-play/dist/style.css";
 import { videoPlay } from "vue3-video-play";
 import { ResultProps } from "@/interface/Common";
@@ -35,6 +36,7 @@ const captionsList = ref<any>([]);
 const captionsTextList = ref<any>([]);
 const mediaSrc = ref<string>("");
 const audioSrc = ref<string>("");
+const audioIndex = ref<number>(-1);
 const mediaContnet = ref<any>([]);
 const captionsState = ref<boolean>(false);
 const lastTime = ref<number>(0);
@@ -51,6 +53,7 @@ const chooseIndex = ref<number>(-1);
 const noteVisible = ref<boolean>(false);
 const noteUrl = ref<string>("");
 const textList = ref<any>([]);
+const studyAudioRef = ref<any>(null);
 onMounted(() => {
   if (videoRef.value) {
     videoRef.value.pause();
@@ -150,16 +153,73 @@ const onTimeupdate = async (ev) => {
 const onCanplay = (ev) => {
   console.log(ev, "可以播放");
 };
-// const readText = async (text) => {
-//   // console.log(`https://api.oick.cn/txt/apiz.php?text=${text}&spd=5`)
-//   audioSrc.value = `https://api.vvhan.com/api/song.php?txt=${text}&per=5`; //通过audio对象加入音频
-//   if (audioRef.value) {
-//     audioRef.value.play();
-//   }
-//   if (videoRef.value) {
-//     videoRef.value.pause();
-//   }
-// };
+const audioTimeupdate = (time) => {
+  if (lastTime.value !== parseInt(time)) {
+    let currentTime = time * 1000;
+    captionsState.value = false;
+    captionsList.value.forEach((item, index) => {
+      if (item.startTime < currentTime && item.endTime > currentTime) {
+        captionsState.value = true;
+        audioIndex.value = index;
+        sentenceKey.value = item._key;
+      }
+    });
+
+    // if (!captionsState.value) {
+    //   console.log("????")
+    //   audioIndex.value = -1;
+    //   sentenceKey.value = "";
+    // }
+    if (studyAudioRef.value) {
+      let divDomList: any = document.getElementsByClassName(
+        "study-audio-caption"
+      );
+      let textDomList: any = divDomList[0].getElementsByClassName("text-item");
+
+      console.log(textDomList[audioIndex.value].offsetTop);
+      if (
+        textDomList[audioIndex.value].offsetTop >
+        divDomList[0].offsetHeight / 2
+      ) {
+        divDomList[0].scrollTo({
+          top:
+            textDomList[audioIndex.value].offsetTop -
+            divDomList[0].offsetHeight / 2,
+          behavior: "smooth",
+        });
+      }
+    }
+    lastTime.value = parseInt(time);
+  }
+};
+const changeAudioIndex = (type) => {
+  if (type === "last") {
+    audioIndex.value = audioIndex.value === 0 ? 0 : audioIndex.value - 1;
+  } else {
+    console.log(captionsList.value.length);
+    console.log(audioIndex.value);
+    audioIndex.value =
+      captionsList.value.length - 1 === audioIndex.value
+        ? audioIndex.value
+        : audioIndex.value + 1;
+  }
+  console.log(audioIndex.value);
+  sentenceKey.value = captionsList.value[audioIndex.value]._key;
+  clickAudio(captionsList.value[audioIndex.value].startTime);
+};
+
+const clickAudio = (time, type?: string) => {
+  let currentTime = time / 1000;
+  console.log(currentTime);
+  studyAudioRef.value.handleTimeChange(currentTime, type);
+};
+const reloadAudio = (time, index) => {
+  if (time * 1000 >= captionsList.value[index].endTime) {
+    audioIndex.value = index;
+    sentenceKey.value = captionsList.value[index]._key;
+    clickAudio(captionsList.value[index].startTime);
+  }
+};
 const chooseWord = async (word, index, type: string, key: string) => {
   if (videoRef.value) {
     videoRef.value.pause();
@@ -177,7 +237,7 @@ const chooseWord = async (word, index, type: string, key: string) => {
   if (type === "section") {
     obj.sectionKey = key;
   } else {
-    console.log(type,key)
+    console.log(type, key);
     obj.captionKey = key;
   }
   let wordRes = (await api.request.post("study/keyword", {
@@ -277,10 +337,9 @@ watch(studyTab, (newTab) => {
                 v-for="(item, index) in articleList"
                 :key="`original${index}`"
                 class="text-item"
-                :style="
-                  item && sentenceKey === item._key ? { color: '#4D57FF' } : {}
-                "
+                :style="sentenceKey === item._key ? { color: '#4D57FF' } : {}"
               >
+                <div style="width: 2em"></div>
                 <span
                   v-for="(textItem, textIndex) in item.original"
                   :key="`originalText${textIndex}`"
@@ -302,7 +361,11 @@ watch(studyTab, (newTab) => {
           </el-tab-pane>
           <el-tab-pane name="cloud" label="词频"> </el-tab-pane>
           <el-tab-pane name="translation" label="译文">
-            <div class="study-box" v-if="articleList.length > 0">
+            <div
+              class="study-box"
+              v-if="articleList.length > 0"
+              style="text-indent: 2em"
+            >
               <div
                 v-for="(item, index) in articleList"
                 :key="`translation${index}`"
@@ -336,6 +399,7 @@ watch(studyTab, (newTab) => {
                 background=" #000000"
                 class="study-video"
                 :autoPlay="false"
+                :control="false"
               />
 
               <!-- <div
@@ -412,8 +476,21 @@ watch(studyTab, (newTab) => {
                   v-for="(item, index) in captionsList"
                   :key="`caption${index}`"
                   class="text-item"
+                  style="padding-left: 10px"
                 >
-                  <div class="study-original">
+                  <FontIcon
+                    iconName="a-bofang1"
+                    customClassName="study-audio-icon"
+                    :iconStyle="{ fontSize: '12px', color: '#4D57FF' }"
+                    v-if="index === audioIndex"
+                  />
+                  <div
+                    class="study-original"
+                    :style="
+                      sentenceKey === item._key ? { color: '#4D57FF' } : {}
+                    "
+                    @click="clickAudio(item.startTime, 'out')"
+                  >
                     <span
                       v-for="(textItem, textIndex) in item.original"
                       :key="`originalCaption${textIndex}`"
@@ -435,8 +512,18 @@ watch(studyTab, (newTab) => {
                   </div>
                 </div>
               </div>
-              <div class="study-audio">
-                <videoPlay
+              <div class="study-audio" v-if="lessonInfo">
+                <AudioPlayer
+                  :src="mediaSrc"
+                  :title="lessonInfo.name"
+                  :cover="lessonInfo.cover"
+                  :audioIndex="audioIndex"
+                  @audioTimeupdate="audioTimeupdate"
+                  @changeAudioIndex="changeAudioIndex"
+                  @reloadAudio="reloadAudio"
+                  ref="studyAudioRef"
+                />
+                <!-- <videoPlay
                   id="captionsVideo"
                   ref="videoRef"
                   :title="lessonInfo.name"
@@ -451,7 +538,7 @@ watch(studyTab, (newTab) => {
                   crossOrigin="Anonymous"
                   background=" #000000"
                   :autoPlay="false"
-                />
+                /> -->
               </div>
             </div>
           </el-tab-pane>
@@ -475,7 +562,7 @@ watch(studyTab, (newTab) => {
       <IframeView :url="noteUrl" />
     </div>
 
-    <div
+    <!-- <div
       class="study-note-button"
       @click="clickNode"
       :style="
@@ -485,7 +572,7 @@ watch(studyTab, (newTab) => {
       "
     >
       <FontIcon iconName="biji" />
-    </div>
+    </div> -->
   </div>
 </template>
 <style scoped lang="scss">
@@ -514,16 +601,22 @@ watch(studyTab, (newTab) => {
         width: 100%;
         height: calc(100vh - 190px);
         font-family: "Kaiti SC", "STKaiti", "Arial", sans-serif;
+        padding: 10px;
+        // text-indent: 2em;
+        box-sizing: border-box;
         @include scroll();
+
         .text-item {
           width: 100%;
           font-size: 26px;
           color: #333333;
           line-height: 55px;
           margin-bottom: 10px;
-          // text-indent: 2em;
-          // padding: 10px;
-          // box-sizing: border-box;
+          position: relative;
+          z-index: 1;
+          // word-wrap: break-word;
+          // word-break: normal;
+          @include flex(flex-start, center, wrap);
           &:hover {
             color: $commonColor;
           }
@@ -540,17 +633,20 @@ watch(studyTab, (newTab) => {
         .study-video {
           width: 100%;
           height: calc(100% - 165px);
+          padding: 0px;
         }
         .study-audio {
           width: 100%;
-          height: 110px;
+          height: 100px;
+          padding: 0px;
         }
         .study-caption {
           width: 100%;
           height: 165px;
           background-color: #161620;
           color: #fff;
-          @include p-number(20px, 0px);
+          text-indent: 0em;
+          // @include p-number(20px, 0px);
           @include scroll();
           .study-original {
             width: 100%;
@@ -581,9 +677,23 @@ watch(studyTab, (newTab) => {
           }
         }
         .study-audio-caption {
-          height: calc(100% - 110px);
+          height: calc(100% - 100px);
           background: #fff;
           color: #333;
+          .study-audio-icon {
+            width: 55px;
+            height: 55px;
+            position: absolute;
+            z-index: 2;
+            left: 0px;
+            top: -8px;
+            // @include flex(center, center, null);
+          }
+          .text-item {
+            &:hover {
+              color: #333;
+            }
+          }
         }
       }
       .study-cloud {

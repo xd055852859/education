@@ -7,6 +7,7 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    AudioPlayer: typeof import('./src/components/audioPlayer.vue')['default']
     Avatar: typeof import('./src/components/avatar.vue')['default']
     Calendar: typeof import('./src/components/calendar.vue')['default']
     ConcernItem: typeof import('./src/components/concernItem.vue')['default']
@@ -23,6 +24,7 @@ declare module 'vue' {
     ElFormItem: typeof import('element-plus/es')['ElFormItem']
     ElIcon: typeof import('element-plus/es')['ElIcon']
     ElInput: typeof import('element-plus/es')['ElInput']
+    ElSlider: typeof import('element-plus/es')['ElSlider']
     ElSwitch: typeof import('element-plus/es')['ElSwitch']
     ElTabPane: typeof import('element-plus/es')['ElTabPane']
     ElTabs: typeof import('element-plus/es')['ElTabs']

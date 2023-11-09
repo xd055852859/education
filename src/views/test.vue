@@ -5,6 +5,7 @@ import "echarts-wordcloud";
 import { videoPlay } from "vue3-video-play";
 import { base64ToFile } from "@/services/util";
 import Timeline3d from "@/components/timeline3d.vue";
+
 let chart: any = null;
 let option: any = null;
 onMounted(() => {
@@ -189,7 +190,7 @@ const getImg = () => {
       crossOrigin="Anonymous"
     /> -->
     <!-- <video src="https://cdn.jsdelivr.net/gh/xdlumia/files/video-play/IronMan.mp4" controls></video> -->
-
+    
     <el-button type="primary" @click="getImg" style="margin-top: 20px"
       >截取</el-button
     >

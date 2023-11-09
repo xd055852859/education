@@ -125,7 +125,12 @@ watchEffect(() => {
   <div class="overview">
     <div class="overview-header">
       <div class="dp--center overview-user">
-        <FontIcon iconName="liebiao" />
+        <div @mouseenter="userVisible = true">
+          <FontIcon
+            iconName="a-shensuocaidan1x"
+            :iconStyle="{ fontSize: '22px', marginRight: '10px' }"
+          />
+        </div>
         <div @click="userVisible = true" class="overview-avatar">
           <Avatar
             :src="user?.userAvatar"
@@ -189,7 +194,7 @@ watchEffect(() => {
               <div class="overview-top-subtitle">关注点</div>
             </div>
           </div>
-          <div
+          <!-- <div
             class="overview-top-container"
             @click="$router.push('/home/note')"
           >
@@ -198,7 +203,7 @@ watchEffect(() => {
               <div class="overview-top-title">{{ noteNum }}<span>篇</span></div>
               <div class="overview-top-subtitle">学习日记</div>
             </div>
-          </div>
+          </div> -->
         </div>
         <div
           class="overview-bottom"
@@ -318,7 +323,7 @@ watchEffect(() => {
     box-sizing: border-box;
     @include flex(space-between, center, null);
     .overview-user {
-      height: 30px;
+      height: 100%;
       font-size: 22px;
       color: #000000;
       line-height: 22px;
@@ -364,7 +369,7 @@ watchEffect(() => {
         box-shadow: 0px 0px 16px 0px rgba(0, 0, 0, 0.09);
         @include flex(space-between, center, null);
         .overview-top-container {
-          width: 419px;
+          width: 50%;
           height: 48px;
           border-right: 1px solid #d8d8d8;
           cursor: pointer;
