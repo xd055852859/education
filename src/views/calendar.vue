@@ -8,7 +8,8 @@ import { storeToRefs } from "pinia";
 import appStore from "@/store";
 import _ from "lodash";
 import { ResultProps } from "@/interface/Common";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { Delete } from "@element-plus/icons-vue";
 const { agentKey } = storeToRefs(appStore.agentStore);
 const dayjs: any = inject("dayjs");
 // const expandState = ref<boolean>(false);
@@ -173,6 +174,24 @@ const archiveKeyword = async (index, keywordKey, keywordIndex, isArchived) => {
     keywordList.value[index].keywords[keywordIndex].isArchived = isArchived;
   }
 };
+const deleteKeyword = async (index, keywordKey, keywordIndex) => {
+  ElMessageBox.confirm("是否删除该关键字", "删除关键字", {
+    confirmButtonText: "确认",
+    cancelButtonText: "取消",
+  }).then(async () => {
+    let dataRes = (await api.request.delete("study/keyword", {
+      agentKey: agentKey.value,
+      keywordKey: keywordKey,
+    })) as ResultProps;
+    if (dataRes.msg === "OK") {
+      ElMessage.success("删除关键字成功");
+      keywordList.value[index].keywords.splice(keywordIndex, 1);
+      if (keywordList.value[index].keywords.length === 0) {
+        keywordList.value.splice(index, 1);
+      }
+    }
+  });
+};
 // const expandKeyword=(index)=>{
 //   keywordList.value[index].expandState = !keywordList.value[index].expandState;
 // }
@@ -250,36 +269,47 @@ watchEffect(() => {
                 >
                   <div class="keyword-box-title dp-space-center">
                     {{ keywordItem.keyword }}
-                    <div
-                      v-if="keywordItem.isArchived"
-                      class="concernItem-box-icon icon-point"
-                      @click="
-                        archiveKeyword(
-                          index,
-                          keywordItem._key,
-                          keywordIndex,
-                          false
-                        )
-                      "
-                    >
-                      <FontIcon iconName="a-xin-kongxin2" />
-                    </div>
-                    <div
-                      @click="
-                        archiveKeyword(
-                          index,
-                          keywordItem._key,
-                          keywordIndex,
-                          true
-                        )
-                      "
-                      class="concernItem-box-icon icon-point"
-                      v-else
-                    >
-                      <FontIcon
-                        iconName="a-xin-tianchong2"
-                        :iconStyle="{ color: '#4D57FF' }"
-                      />
+                    <div class="dp-center-center">
+                      <div
+                        v-if="keywordItem.isArchived"
+                        class="concernItem-box-icon icon-point"
+                        @click="
+                          archiveKeyword(
+                            index,
+                            keywordItem._key,
+                            keywordIndex,
+                            false
+                          )
+                        "
+                      >
+                        <FontIcon iconName="a-xin-kongxin2" />
+                      </div>
+                      <div
+                        @click="
+                          archiveKeyword(
+                            index,
+                            keywordItem._key,
+                            keywordIndex,
+                            true
+                          )
+                        "
+                        class="concernItem-box-icon icon-point"
+                        v-else
+                      >
+                        <FontIcon
+                          iconName="a-xin-tianchong2"
+                          :iconStyle="{ color: '#4D57FF' }"
+                        />
+                      </div>
+                      <div
+                        class="concernItem-box-icon icon-point"
+                        style="margin-left: 10px"
+                        @click="
+                          deleteKeyword(index, keywordItem._key, keywordIndex)
+                        "
+                      >
+                        <el-icon :size="18"><Delete /></el-icon>
+                      </div>
                     </div>
                   </div>
                   <div
@@ -422,6 +452,14 @@ watchEffect(() => {
             font-weight: 900;
             line-height: 35px;
             margin-bottom: 6px;
+            .concernItem-box-icon {
+              display: none;
+            }
+            &:hover {
+              .concernItem-box-icon {
+                @include flex(center, center, null);
+              }
+            }
           }
           .keyword-box-subtitle {
             width: 100%;

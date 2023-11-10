@@ -102,12 +102,16 @@ const handleTimeChange = (time, type?: string) => {
 const handleAudioVolume = (val) => {
   audioRef.value.volume = val / 100;
 };
-const changeAudio = (type) => {};
+const pauseMedia = () => {
+  audioRef.value.pause();
+  audioIsPlay.value = true;
+};
 watchEffect(() => {
   calculateDuration();
 });
 defineExpose({
   handleTimeChange,
+  pauseMedia
 });
 </script>
 <template>
@@ -118,7 +122,7 @@ defineExpose({
       ref="audioRef"
       style="display: none"
     >
-      <source :src="src" type="audio/mpeg" />
+      <source :src="src" type="audio/*" />
       您的浏览器不支持音频播放
     </audio>
     <FontIcon
@@ -156,7 +160,7 @@ defineExpose({
       <div class="audio-right">
         <div class="audio-title">
           <div>{{ title }}</div>
-          <div class="audio_time">
+          <div class="audio-time">
             <span style="margin-left: 10px">{{ audioStart }}</span>
             /
             <span style="margin-left: 10px">{{ durationTime }}</span>
@@ -176,18 +180,19 @@ defineExpose({
       :iconStyle="{
         fontSize: '22px',
         color: reloadState ? '#4D57FF' : '#888',
+        animation: reloadState ? 'fadenum 3s infinite' : ''
       }"
       @click.stop="
-        reloadState = true;
-        reloadIndex = audioIndex;
+        reloadState = !reloadState;
+        reloadIndex = reloadState ? audioIndex : -1;
       "
     />
     <div class="volume">
-      <div class="volume_progress" v-show="audioHuds">
+      <div class="volume-progress" v-show="audioHuds">
         <el-slider
           vertical
           height="100px"
-          class="volume_bar"
+          class="volume-bar"
           v-model="audioVolume"
           :show-tooltip="false"
           @change="handleAudioVolume"
@@ -215,7 +220,6 @@ defineExpose({
 .audio-box {
   width: 100%;
   height: 100px;
-  background: #f6f6f6;
   padding: 0px 25px 0px 38px;
   @include flex(flex-start, center, null);
   .audio-button {
@@ -259,7 +263,7 @@ defineExpose({
         color: #333333;
         margin-bottom: 10px;
         @include flex(space-between, center, null);
-        .audio_time {
+        .audio-time {
           font-size: 14px;
         }
       }
@@ -275,18 +279,18 @@ defineExpose({
 .volume {
   position: relative;
   margin-left: 15px;
-  .volume_progress {
+  .volume-progress {
     width: 32px;
     height: 140px;
     position: absolute;
     top: -142px;
     right: -4px;
   }
-  .volume_bar {
+  .volume-bar {
     background: #f1f1f1;
     border-radius: 4px;
   }
-  .volume_icon {
+  .volume-icon {
     width: 24px;
     height: 24px;
     cursor: pointer;
@@ -295,7 +299,7 @@ defineExpose({
 </style>
 <style lang="scss">
 .audio-slider,
-.volume_bar {
+.volume-bar {
   .el-slider__button {
     width: 16px;
     height: 16px;
@@ -310,9 +314,14 @@ defineExpose({
     width: 4px;
   }
 }
-.volume_bar {
+.volume-bar {
   .el-slider__runway {
     margin: 0 14px !important;
+  }
+}
+@keyframes fadenum {
+  100% {
+    transform: rotate(360deg);
   }
 }
 </style>

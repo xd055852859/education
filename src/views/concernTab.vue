@@ -6,7 +6,9 @@ import Keyword from "@/components/keyword.vue";
 import { ResultProps } from "@/interface/Common";
 import api from "@/services/api";
 import appStore from "@/store";
-import { ElMessage } from "element-plus";
+import { Delete } from "@element-plus/icons-vue";
+
+import { ElMessage, ElMessageBox } from "element-plus";
 import { storeToRefs } from "pinia";
 const props = defineProps<{
   keyword: string;
@@ -14,7 +16,7 @@ const props = defineProps<{
 }>();
 const emits = defineEmits<{
   (e: "setKeyword", word: string, wordKey: string): void;
-  (e: "addNum", num: number): void;
+  (e: "addNum", num: number, type?: string): void;
 }>();
 const { agentKey } = storeToRefs(appStore.agentStore);
 const page = ref<number>(1);
@@ -62,6 +64,22 @@ const archiveKeyword = async (key, index, isArchived) => {
     keywordList.value.splice(index, 1);
   }
 };
+const deleteKeyword = async (key, index) => {
+  ElMessageBox.confirm("是否删除该关键字", "删除关键字", {
+    confirmButtonText: "确认",
+    cancelButtonText: "取消",
+  }).then(async () => {
+    let dataRes = (await api.request.delete("study/keyword", {
+      agentKey: agentKey.value,
+      keywordKey: key,
+    })) as ResultProps;
+    if (dataRes.msg === "OK") {
+      ElMessage.success("删除关键字成功");
+      emits("addNum", -1, props.keywordTab);
+      keywordList.value.splice(index, 1);
+    }
+  });
+};
 const chooseWord = (word, wordKey) => {
   console.log(word);
   emits("setKeyword", word, wordKey);
@@ -103,22 +121,32 @@ watchEffect(() => {
     >
       <div class="concernItem-box-title">
         {{ item.keyword }}
-        <div
-          v-if="keywordTab === 'uncare'"
-          class="concernItem-box-icon icon-point"
-          @click="archiveKeyword(item._key, index, false)"
-        >
-          <FontIcon iconName="a-xin-kongxin2" />
-        </div>
-        <div
-          @click="archiveKeyword(item._key, index, true)"
-          class="concernItem-box-icon icon-point"
-          v-else
-        >
-          <FontIcon
-            iconName="a-xin-tianchong2"
-            :iconStyle="{ color: '#4D57FF' }"
-          />
+        <div class="dp-center-center">
+          <div
+            v-if="keywordTab === 'uncare'"
+            class="concernItem-box-icon icon-point"
+            @click="archiveKeyword(item._key, index, false)"
+          >
+            <FontIcon iconName="a-xin-kongxin2" />
+          </div>
+          <div
+            @click="archiveKeyword(item._key, index, true)"
+            class="concernItem-box-icon icon-point"
+            v-else
+          >
+            <FontIcon
+              iconName="a-xin-tianchong2"
+              :iconStyle="{ color: '#4D57FF' }"
+            />
+          </div>
+
+          <div
+            class="concernItem-box-icon icon-point"
+            style="margin-left:10px;"
+            @click="deleteKeyword(item._key, index)"
+          >
+            <el-icon :size="18"><Delete /></el-icon>
+          </div>
         </div>
       </div>
       <div

@@ -38,6 +38,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Timeline3d: typeof import('./src/components/timeline3d.vue')['default']
+    VideoPlayer: typeof import('./src/components/videoPlayer.vue')['default']
     WordChart: typeof import('./src/components/chart/wordChart.vue')['default']
   }
 }

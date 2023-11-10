@@ -25,9 +25,15 @@ const getData = async () => {
     keywordNum.value = dataRes.data.keywordNum;
   }
 };
-const addNum = (num) => {
-  archivedNum.value = archivedNum.value - num;
-  keywordNum.value = keywordNum.value + num;
+const addNum = (num, type?: string) => {
+  if (type === "care") {
+    archivedNum.value = archivedNum.value + num;
+  } else if (type === "uncare") {
+    keywordNum.value = keywordNum.value + num;
+  } else {
+    archivedNum.value = archivedNum.value - num;
+    keywordNum.value = keywordNum.value + num;
+  }
 };
 watchEffect(() => {
   getData();
@@ -62,7 +68,11 @@ watchEffect(() => {
           </el-tab-pane>
         </el-tabs>
       </div>
-      <Keyword :keyword="keyword" :keywordKey="keywordKey" @setKeyword="keyword = ''"/>
+      <Keyword
+        :keyword="keyword"
+        :keywordKey="keywordKey"
+        @setKeyword="keyword = ''"
+      />
     </div>
   </div>
 </template>

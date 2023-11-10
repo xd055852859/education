@@ -14,6 +14,7 @@ import { ElMessage } from "element-plus";
 import Timeline3d from "@/components/timeline3d.vue";
 import _ from "lodash";
 import WordChart from "@/components/chart/wordChart.vue";
+import VideoPlayer from "@/components/videoPlayer.vue";
 const { token } = storeToRefs(appStore.authStore);
 const { agentKey } = storeToRefs(appStore.agentStore);
 const { lessonKey, lessonInfo } = storeToRefs(appStore.lessonStore);
@@ -23,42 +24,28 @@ const props = defineProps<{
 }>();
 const studyTab = ref<string>("original");
 const articleList = ref<any>([]);
-const cnOriginal = ref<boolean>(false);
-const original = ref<string>("");
-const oldOriginal = ref<string>("");
-
-const originalList = ref<any>([]);
-const translationList = ref<any>([]);
-const originalTextList = ref<any>([]);
-const translationTextList = ref<any>([]);
 const mediaList = ref<any>([]);
 const captionsList = ref<any>([]);
-const captionsTextList = ref<any>([]);
+const captionObj = ref<any>(null);
 const mediaSrc = ref<string>("");
 const audioSrc = ref<string>("");
-const audioIndex = ref<number>(-1);
-const mediaContnet = ref<any>([]);
+const mediaListIndex = ref<number>(-1);
+const videoIndex = ref<number>(-1);
 const captionsState = ref<boolean>(false);
 const lastTime = ref<number>(0);
 const mediaIndex = ref<number>(-1);
 const sentenceKey = ref<string>("");
-const sentenceIndex = ref<number>(-1);
 const keyword = ref<string>("");
 const keywordKey = ref<string>("");
 const keyIndex = ref<number>(-1);
 const audioRef = ref<any>(null);
 const videoRef = ref<any>(null);
 const studyInterval = ref<any>(null);
-const chooseIndex = ref<number>(-1);
 const noteVisible = ref<boolean>(false);
 const noteUrl = ref<string>("");
 const textList = ref<any>([]);
-const studyAudioRef = ref<any>(null);
+const studyMediaRef = ref<any>(null);
 onMounted(() => {
-  if (videoRef.value) {
-    videoRef.value.pause();
-  }
-  // videoRef.value.pause();
   setLessonKey(props.lessonKey);
   getMedia();
 });
@@ -73,7 +60,7 @@ const getMedia = async () => {
   })) as ResultProps;
   if (mediaRes.msg === "OK") {
     mediaList.value = mediaRes.data;
-    mediaIndex.value = 0;
+    mediaListIndex.value = 0;
   }
 };
 const getArticleList = async (key) => {
@@ -84,7 +71,9 @@ const getArticleList = async (key) => {
   })) as ResultProps;
   if (articleRes.msg === "OK") {
     articleList.value = articleRes.data.map((item) => {
-      item.original = item.original.match(/\b\w+\b/g);
+      item.original = item.original.match(
+        /\b\w+\b|[\x21-\x2f\x3a-\x40\x5b-\x60\x7B-\x7F]/g
+      );
       list.push(...item.original);
       return item;
     });
@@ -103,55 +92,33 @@ const getCaption = async (key) => {
   })) as ResultProps;
   if (captionaRes.msg === "OK") {
     captionsList.value = captionaRes.data.map((item, index) => {
-      item.original = item.original.replace(/\n/g, "").match(/\b\w+\b/g);
+      item.original = item.original
+        .replace(/\n/g, "")
+        .match(/\b\w+\b|[\x21-\x2f\x3a-\x40\x5b-\x60\x7B-\x7F]/g);
       return item;
     });
     console.log(captionsList.value);
   }
 };
-// const openText = async (text, callback) => {
-//   let textRes = (await api.request.get(
-//     "",
-//     {
-//       text: text,
-//     },
-//     false,
-//     "http://dictdata.qingtime.cn/getWords"
-//   )) as ResultProps;
-//   if (textRes.msg === "OK") {
-//     callback(textRes.data);
-//   }
-// };
-//video
-const onPlay = (ev) => {
-  audioRef.value.pause();
-};
-const onPause = (ev) => {
-  console.log(ev, "暂停");
-};
-
-const onTimeupdate = async (ev) => {
-  if (lastTime.value !== parseInt(ev.target.currentTime)) {
-    let currentTime = ev.target.currentTime * 1000;
+const videoTimeupdate = (time) => {
+  if (lastTime.value !== parseInt(time)) {
+    let currentTime = time * 1000;
     captionsState.value = false;
     captionsList.value.forEach((item, index) => {
       if (item.startTime < currentTime && item.endTime > currentTime) {
         captionsState.value = true;
-        captionsTextList.value = item.original;
-        keyIndex.value = index;
+        captionObj.value = item;
+        mediaIndex.value = index;
         sentenceKey.value = item._key;
       }
     });
-
+    console.log(captionObj.value);
     if (!captionsState.value) {
-      captionsTextList.value = [];
-      keyIndex.value = -1;
+      captionObj.value = null;
+      // keyIndex.value = -1;
     }
-    lastTime.value = parseInt(ev.target.currentTime);
+    lastTime.value = parseInt(time);
   }
-};
-const onCanplay = (ev) => {
-  console.log(ev, "可以播放");
 };
 const audioTimeupdate = (time) => {
   if (lastTime.value !== parseInt(time)) {
@@ -160,30 +127,23 @@ const audioTimeupdate = (time) => {
     captionsList.value.forEach((item, index) => {
       if (item.startTime < currentTime && item.endTime > currentTime) {
         captionsState.value = true;
-        audioIndex.value = index;
+        mediaIndex.value = index;
         sentenceKey.value = item._key;
       }
     });
-
-    // if (!captionsState.value) {
-    //   console.log("????")
-    //   audioIndex.value = -1;
-    //   sentenceKey.value = "";
-    // }
-    if (studyAudioRef.value) {
+    if (studyMediaRef.value) {
       let divDomList: any = document.getElementsByClassName(
         "study-audio-caption"
       );
       let textDomList: any = divDomList[0].getElementsByClassName("text-item");
 
-      console.log(textDomList[audioIndex.value].offsetTop);
       if (
-        textDomList[audioIndex.value].offsetTop >
+        textDomList[mediaIndex.value].offsetTop >
         divDomList[0].offsetHeight / 2
       ) {
         divDomList[0].scrollTo({
           top:
-            textDomList[audioIndex.value].offsetTop -
+            textDomList[mediaIndex.value].offsetTop -
             divDomList[0].offsetHeight / 2,
           behavior: "smooth",
         });
@@ -192,41 +152,41 @@ const audioTimeupdate = (time) => {
     lastTime.value = parseInt(time);
   }
 };
-const changeAudioIndex = (type) => {
+
+const changeMediaIndex = (type) => {
   if (type === "last") {
-    audioIndex.value = audioIndex.value === 0 ? 0 : audioIndex.value - 1;
+    mediaIndex.value = mediaIndex.value === 0 ? 0 : mediaIndex.value - 1;
   } else {
     console.log(captionsList.value.length);
-    console.log(audioIndex.value);
-    audioIndex.value =
-      captionsList.value.length - 1 === audioIndex.value
-        ? audioIndex.value
-        : audioIndex.value + 1;
+    console.log(mediaIndex.value);
+    mediaIndex.value =
+      captionsList.value.length - 1 === mediaIndex.value
+        ? mediaIndex.value
+        : mediaIndex.value + 1;
   }
-  console.log(audioIndex.value);
-  sentenceKey.value = captionsList.value[audioIndex.value]._key;
-  clickAudio(captionsList.value[audioIndex.value].startTime);
+  console.log(mediaIndex.value);
+  sentenceKey.value = captionsList.value[mediaIndex.value]._key;
+  clickMedia(captionsList.value[mediaIndex.value].startTime);
 };
 
-const clickAudio = (time, type?: string) => {
+const clickMedia = (time, type?: string, key?: string) => {
   let currentTime = time / 1000;
-  console.log(currentTime);
-  studyAudioRef.value.handleTimeChange(currentTime, type);
+  if (type && key) {
+    sentenceKey.value = key;
+  }
+  studyMediaRef.value.handleTimeChange(currentTime, type);
 };
-const reloadAudio = (time, index) => {
+const reloadMedia = (time, index) => {
   if (time * 1000 >= captionsList.value[index].endTime) {
-    audioIndex.value = index;
+    mediaIndex.value = index;
     sentenceKey.value = captionsList.value[index]._key;
-    clickAudio(captionsList.value[index].startTime);
+    clickMedia(captionsList.value[index].startTime);
   }
 };
 const chooseWord = async (word, index, type: string, key: string) => {
-  if (videoRef.value) {
-    videoRef.value.pause();
-  }
   keyword.value = word;
   keyIndex.value = index;
-
+  studyMediaRef.value.pauseMedia();
   let obj: any = {
     agentKey: agentKey.value,
     keyword: word,
@@ -258,7 +218,7 @@ const clickNode = () => {
     noteUrl.value = `https://mind.qingtime.cn/?token=${token.value}&getDataApi={"url":"${getApi}","params":${getParams},"docDataName":"content"}&patchDataApi={"url":"${patchApi}","params":${getParams},"docDataName":"note"}&getUptokenApi={"url":"${uptokenApi}","params":${uptokenParams}}&isEdit=2&hideHead=1`;
   }
 };
-watch([mediaIndex, lessonInfo], ([newIndex, newInfo]) => {
+watch([mediaListIndex, lessonInfo], ([newIndex, newInfo]) => {
   // audioRef.value.pause();
   // videoRef.value.pause();
   if (newInfo && mediaList.value.length > 0) {
@@ -285,13 +245,7 @@ watch([mediaIndex, lessonInfo], ([newIndex, newInfo]) => {
     }, 60000);
   }
 });
-watch(studyTab, (newTab) => {
-  if (audioRef.value) {
-    audioRef.value.pause();
-  }
-  if (videoRef.value) {
-    videoRef.value.pause();
-  }
+watch(studyTab, () => {
   sentenceKey.value = "";
   keyIndex.value = -1;
 });
@@ -307,7 +261,7 @@ watch(studyTab, (newTab) => {
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item
-                @click="mediaIndex = index"
+                @click="mediaListIndex = index"
                 v-for="(item, index) in mediaList"
                 :key="`media${item._key}`"
                 >{{ item.name }}
@@ -343,9 +297,14 @@ watch(studyTab, (newTab) => {
                 <span
                   v-for="(textItem, textIndex) in item.original"
                   :key="`originalText${textIndex}`"
-                  @click="chooseWord(textItem, textIndex, 'section', item._key)"
+                  :class="{ 'text-point': !/\b\w+\b/g.test(textItem) }"
+                  @click="
+                    /\b\w+\b/g.test(textItem)
+                      ? chooseWord(textItem, textIndex, 'section', item._key)
+                      : ''
+                  "
                   :style="
-                    keyword === textItem
+                    keyword === textItem && /\b\w+\b/g.test(textItem)
                       ? {
                           color: '#333333',
                           background: '#ffe3b5',
@@ -384,7 +343,7 @@ watch(studyTab, (newTab) => {
             v-if="lessonInfo.mediaType === 'video'"
           >
             <div class="study-box">
-              <videoPlay
+              <!-- <videoPlay
                 id="captionsVideo"
                 ref="videoRef"
                 :title="lessonInfo.name"
@@ -400,56 +359,35 @@ watch(studyTab, (newTab) => {
                 class="study-video"
                 :autoPlay="false"
                 :control="false"
-              />
+              /> -->
+              <div class="study-video">
+                <VideoPlayer
+                  :src="mediaSrc"
+                  :title="lessonInfo.name"
+                  :cover="lessonInfo.cover"
+                  :videoIndex="mediaIndex"
+                  @videoTimeupdate="videoTimeupdate"
+                  @changeVideoIndex="changeMediaIndex"
+                  @reloadVideo="reloadMedia"
+                  ref="studyMediaRef"
+                />
+              </div>
 
-              <!-- <div
-                  v-for="(item, index) in originalList"
-                  :key="`originalCaption${index}`"
-                  class="text-item"
-                  :style="
-                    item && sentenceKey === item._key
-                      ? { color: '#4D57FF' }
-                      : {}
-                  "
-                  @click="sentenceKey = item._key"
-                >
-                  <template v-if="item?.text">
-                    <span
-                      v-for="(textItem, textIndex) in item.text"
-                      :key="`originalCaptionText${textIndex}`"
-                      @click="
-                        sentenceKey === item._key
-                          ? chooseWord(textItem, textIndex)
-                          : null
-                      "
-                      :style="
-                        sentenceKey === item._key && textIndex === keyIndex
-                          ? {
-                              color: '#333333',
-                              background: '#ffe3b5',
-                              padding: '2px 4px',
-                              boxSizing: 'border-box',
-                            }
-                          : {}
-                      "
-                      >{{ textItem }}{{ cnOriginal ? "" : " " }}</span
-                    >
-               <span
-                    v-for="(wordItem, wordIndex) in textItem"
-                    :key="`originalWord${item._key}`"
-                  >
-                    {{ wordItem }}
-                  </span> 
-                  </template>
-                </div> -->
               <div class="study-caption">
-                <div class="study-original">
+                <div class="study-original" v-if="captionObj">
                   <span
-                    v-for="(item, index) in captionsTextList"
+                    v-for="(item, index) in captionObj.original"
                     :key="`originalCaption${index}`"
-                    @click="chooseWord(item, index, 'caption', item._key)"
+                    :class="{ 'text-point': !/\b\w+\b/g.test(item) }"
+                    @click="
+                      /\b\w+\b/g.test(item)
+                        ? chooseWord(item, index, 'caption', captionObj._key)
+                        : ''
+                    "
                     :style="
-                      keyword === item && index === keyIndex
+                      keyword === item &&
+                      index === keyIndex &&
+                      /\b\w+\b/g.test(item)
                         ? {
                             color: '#333333',
                             background: '#ffe3b5',
@@ -482,23 +420,33 @@ watch(studyTab, (newTab) => {
                     iconName="a-bofang1"
                     customClassName="study-audio-icon"
                     :iconStyle="{ fontSize: '12px', color: '#4D57FF' }"
-                    v-if="index === audioIndex"
+                    v-if="index === mediaIndex"
                   />
                   <div
                     class="study-original"
                     :style="
                       sentenceKey === item._key ? { color: '#4D57FF' } : {}
                     "
-                    @click="clickAudio(item.startTime, 'out')"
+                    @click="clickMedia(item.startTime, 'out', item._key)"
                   >
                     <span
                       v-for="(textItem, textIndex) in item.original"
                       :key="`originalCaption${textIndex}`"
+                      :class="{ 'text-point': !/\b\w+\b/g.test(textItem) }"
                       @click="
-                        chooseWord(textItem, textIndex, 'caption', item._key)
+                        /\b\w+\b/g.test(textItem) && sentenceKey === item._key
+                          ? chooseWord(
+                              textItem,
+                              textIndex,
+                              'caption',
+                              item._key
+                            )
+                          : ''
                       "
                       :style="
-                        keyword === textItem && textIndex === keyIndex
+                        keyword === textItem &&
+                        textIndex === keyIndex &&
+                        /\b\w+\b/g.test(textItem)
                           ? {
                               color: '#333333',
                               background: '#ffe3b5',
@@ -517,28 +465,12 @@ watch(studyTab, (newTab) => {
                   :src="mediaSrc"
                   :title="lessonInfo.name"
                   :cover="lessonInfo.cover"
-                  :audioIndex="audioIndex"
+                  :audioIndex="mediaIndex"
                   @audioTimeupdate="audioTimeupdate"
-                  @changeAudioIndex="changeAudioIndex"
-                  @reloadAudio="reloadAudio"
+                  @changeAudioIndex="changeMediaIndex"
+                  @reloadAudio="reloadMedia"
                   ref="studyAudioRef"
                 />
-                <!-- <videoPlay
-                  id="captionsVideo"
-                  ref="videoRef"
-                  :title="lessonInfo.name"
-                  :poster="lessonInfo.icon"
-                  width="100%"
-                  height="100%"
-                  :src="mediaSrc"
-                  @play="onPlay"
-                  @pause="onPause"
-                  @timeupdate="onTimeupdate"
-                  @canplay="onCanplay"
-                  crossOrigin="Anonymous"
-                  background=" #000000"
-                  :autoPlay="false"
-                /> -->
               </div>
             </div>
           </el-tab-pane>
@@ -617,11 +549,11 @@ watch(studyTab, (newTab) => {
           // word-wrap: break-word;
           // word-break: normal;
           @include flex(flex-start, center, wrap);
-          &:hover {
-            color: $commonColor;
-          }
+          // &:hover {
+          //   color: $commonColor;
+          // }
           span {
-            &:hover {
+            &:not(.text-point):hover {
               cursor: pointer;
               color: #fff;
               background-color: $commonColor;
@@ -648,12 +580,10 @@ watch(studyTab, (newTab) => {
           text-indent: 0em;
           // @include p-number(20px, 0px);
           @include scroll();
+          @include flex(center, center, null);
           .study-original {
-            width: 100%;
-            font-size: 24px;
+            font-size: 32px;
             line-height: 28px;
-            text-align: left;
-            margin-bottom: 6px;
             padding: 10px;
             box-sizing: border-box;
             word-break: break-all;
@@ -666,14 +596,6 @@ watch(studyTab, (newTab) => {
                 background-color: $commonColor;
               }
             }
-          }
-          .study-translation {
-            width: 100%;
-            font-size: 18px;
-            line-height: 22px;
-            text-align: left;
-            word-break: break-all;
-            // text-indent: 3.1em;
           }
         }
         .study-audio-caption {
