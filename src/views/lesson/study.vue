@@ -71,10 +71,11 @@ const getArticleList = async (key) => {
   })) as ResultProps;
   if (articleRes.msg === "OK") {
     articleList.value = articleRes.data.map((item) => {
+      let text = item.original.match(/\b\w+\b/g);
       item.original = item.original.match(
         /\b\w+\b|[\x21-\x2f\x3a-\x40\x5b-\x60\x7B-\x7F]/g
       );
-      list.push(...item.original);
+      list.push(...text);
       return item;
     });
     list.forEach((item) => {
@@ -186,7 +187,10 @@ const reloadMedia = (time, index) => {
 const chooseWord = async (word, index, type: string, key: string) => {
   keyword.value = word;
   keyIndex.value = index;
-  studyMediaRef.value.pauseMedia();
+  if (studyMediaRef.value) {
+    studyMediaRef.value.pauseMedia();
+  }
+
   let obj: any = {
     agentKey: agentKey.value,
     keyword: word,
@@ -469,7 +473,7 @@ watch(studyTab, () => {
                   @audioTimeupdate="audioTimeupdate"
                   @changeAudioIndex="changeMediaIndex"
                   @reloadAudio="reloadMedia"
-                  ref="studyAudioRef"
+                  ref="studyMediaRef"
                 />
               </div>
             </div>
@@ -580,7 +584,7 @@ watch(studyTab, () => {
           text-indent: 0em;
           // @include p-number(20px, 0px);
           @include scroll();
-          @include flex(center, center, null);
+          @include flex(center, center, wrap);
           .study-original {
             font-size: 32px;
             line-height: 28px;

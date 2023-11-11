@@ -37,6 +37,7 @@ const getData = async () => {
       if (item.note) {
         item.note = item.note.replace(/\n/g, "<br/>");
       }
+      item.expandState = false;
       item.sentence = item.sentence.map((sentenceItem) => {
         let reg = new RegExp(`${item.keyword}`, "g");
         sentenceItem = Array.isArray(sentenceItem)
@@ -123,6 +124,16 @@ watchEffect(() => {
         {{ item.keyword }}
         <div class="dp-center-center">
           <div
+            class="concernItem-box-icon icon-point"
+            @click="item.expandState = !item.expandState"
+            style="margin-right: 10px"
+          >
+            <FontIcon
+              :iconName="item.expandState ? 'shouqiquanping' : 'quanping'"
+              :iconStyle="{ color: '#333' }"
+            />
+          </div>
+          <div
             v-if="keywordTab === 'uncare'"
             class="concernItem-box-icon icon-point"
             @click="archiveKeyword(item._key, index, false)"
@@ -142,43 +153,45 @@ watchEffect(() => {
 
           <div
             class="concernItem-box-icon icon-point"
-            style="margin-left:10px;"
+            style="margin-left: 10px"
             @click="deleteKeyword(item._key, index)"
           >
             <el-icon :size="18"><Delete /></el-icon>
           </div>
         </div>
       </div>
-      <div
-        class="concernItem-box-subtitle"
-        v-for="(sentenceItem, sentenceIndex) in item.sentence"
-        :key="`sentence${sentenceIndex}`"
-      >
-        <span
-          v-for="(wordItem, wordIndex) in sentenceItem"
-          :key="`word${wordIndex}`"
-          @click="
-            wordItem === item.keyword ? chooseWord(wordItem, item._key) : ''
-          "
-          :style="
-            wordItem === item.keyword
-              ? {
-                  background: keyword === wordItem ? '#ffe3b5' : '#c2c4f6',
-                  padding: '2px 0px',
-                  boxSizing: 'border-box',
-                  cursor: 'pointer',
-                }
-              : {}
-          "
+      <template v-if="item.expandState">
+        <div
+          class="concernItem-box-subtitle"
+          v-for="(sentenceItem, sentenceIndex) in item.sentence"
+          :key="`sentence${sentenceIndex}`"
         >
-          {{ wordItem }}
-        </span>
-      </div>
-      <div
-        class="concernItem-box-content"
-        v-if="item.note"
-        v-html="item.note"
-      ></div>
+          <span
+            v-for="(wordItem, wordIndex) in sentenceItem"
+            :key="`word${wordIndex}`"
+            @click="
+              wordItem === item.keyword ? chooseWord(wordItem, item._key) : ''
+            "
+            :style="
+              wordItem === item.keyword
+                ? {
+                    background: keyword === wordItem ? '#ffe3b5' : '#c2c4f6',
+                    padding: '2px 0px',
+                    boxSizing: 'border-box',
+                    cursor: 'pointer',
+                  }
+                : {}
+            "
+          >
+            {{ wordItem }}
+          </span>
+        </div>
+        <div
+          class="concernItem-box-content"
+          v-if="item.note"
+          v-html="item.note"
+        ></div>
+      </template>
     </div>
   </div>
 </template>

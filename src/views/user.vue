@@ -10,6 +10,7 @@ import {
 import { Close, Plus, Delete, Edit } from "@element-plus/icons-vue";
 import _ from "lodash";
 import { uploadFile } from "@/services/util";
+import Share from "@/components/share.vue";
 import Avatar from "@/components/avatar.vue";
 import api from "@/services/api";
 import { ResultProps } from "@/interface/Common";
@@ -27,8 +28,14 @@ interface RuleForm {
 const { setUserInfo } = appStore.authStore;
 const userVisible = ref<boolean>(false);
 const agentVisible = ref<boolean>(false);
+const suggestionVisible = ref<boolean>(false);
+const shareVisible = ref<boolean>(false);
+const shareUrl = ref<string>("");
+const score = ref<number>(0);
+const content = ref<string>("");
 const userType = ref<string>("user");
 const targetAgentKey = ref<string>("");
+const colors = ref<any>({ 4: "#99A9BF", 8: "#b3e19d", 10: "#FF9900" });
 const ruleFormRef = ref<FormInstance>();
 const ruleForm = reactive<RuleForm>({
   userAvatar: "",
@@ -171,6 +178,16 @@ const deleteAgent = async (key, index) => {
     }
   });
 };
+const saveSuggestion = async () => {
+  const deleteRes = (await api.request.post("suggestion", {
+    score: score.value,
+    content: content.value,
+  })) as ResultProps;
+  if (deleteRes.msg === "OK") {
+    ElMessage.success("保存评价成功");
+    suggestionVisible.value = false;
+  }
+};
 const toUrl = () => {
   window.open(
     "https://notecute.com/#/post?key=1499044542&view=table&hideHead=1&publicShare=1",
@@ -200,7 +217,10 @@ const openTuLink = () => {
   };
   Tucao.request(productId, data);
 };
-
+const shareHtml = () => {
+  shareVisible.value = true;
+  shareUrl.value = `https://cjyy.qingtime.cn`;
+};
 // watch(
 //   user,
 //   (newUser) => {
@@ -241,18 +261,18 @@ const openTuLink = () => {
       <div class="user-nav-item" @click="openTuLink">
         <img src="/user/logo3.svg" alt="" />使用反馈
       </div>
-      <div class="user-nav-item">
+      <div class="user-nav-item" @click="suggestionVisible = true">
         <img src="/user/logo4.svg" alt="" />使用评价
       </div>
       <div class="user-nav-item" @click="toUrl()">
         <img src="/user/logo5.svg" alt="" />用户协议
       </div>
+      <div class="user-nav-item" @click="shareHtml()">
+        <img src="/user/logo7.svg" alt="" />分享
+      </div>
       <div class="user-nav-item" @click="logout">
         <img src="/user/logo6.svg" alt="" />退出登录
       </div>
-      <!-- <div class="user-nav-item">
-        <img src="/user/logo7.svg" alt="" />注销账号
-      </div> -->
     </div>
     <el-dialog
       v-model="userVisible"
@@ -381,6 +401,27 @@ const openTuLink = () => {
         </div>
       </div>
     </el-dialog>
+    <el-dialog v-model="suggestionVisible" width="450px" title="使用评价">
+      <div class="suggestion-box">
+        <el-rate v-model="score" :colors="colors" :max="10" size="large" />
+        <div class="suggestion-title">建议</div>
+        <el-input
+          v-model="content"
+          rows="5"
+          type="textarea"
+          placeholder="请输入建议"
+          size="large"
+        />
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="saveSuggestion"> 提交 </el-button>
+        </div>
+      </template>
+    </el-dialog>
+    <el-dialog v-model="shareVisible" title="分享" :width="'450px'">
+      <Share :url="shareUrl" />
+    </el-dialog>
   </div>
 </template>
 <style scoped lang="scss">
@@ -451,6 +492,13 @@ const openTuLink = () => {
     &:hover {
       background: #ebebeb;
     }
+  }
+}
+.suggestion-box {
+  width: 100%;
+  @include p-number(10px, 25px);
+  .suggestion-title {
+    margin: 10px 0px 25px 0px;
   }
 }
 </style>

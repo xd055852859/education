@@ -111,7 +111,7 @@ watchEffect(() => {
 });
 defineExpose({
   handleTimeChange,
-  pauseMedia
+  pauseMedia,
 });
 </script>
 <template>
@@ -125,12 +125,14 @@ defineExpose({
       <source :src="src" type="audio/*" />
       您的浏览器不支持音频播放
     </audio>
-    <FontIcon
-      customClassName="audio-button"
-      iconName="shangyige"
-      @iconClick="emits('changeAudioIndex', 'last')"
-      :iconStyle="{ fontSize: '14px', color: '#4D57FF' }"
-    />
+    <el-tooltip content="上一句">
+      <FontIcon
+        customClassName="audio-button"
+        iconName="shangyige"
+        @iconClick="emits('changeAudioIndex', 'last')"
+        :iconStyle="{ fontSize: '14px', color: '#4D57FF' }"
+      />
+    </el-tooltip>
     <img
       class="audio-img"
       src="/common/play.svg"
@@ -145,14 +147,15 @@ defineExpose({
       @click="playAudio"
       v-else
     />
-
-    <FontIcon
-      customClassName="audio-button"
-      @click="playAudio"
-      iconName="xiayige"
-      @iconClick="emits('changeAudioIndex', 'next')"
-      :iconStyle="{ fontSize: '14px', color: '#4D57FF' }"
-    />
+    <el-tooltip content="下一句">
+      <FontIcon
+        customClassName="audio-button"
+        @click="playAudio"
+        iconName="xiayige"
+        @iconClick="emits('changeAudioIndex', 'next')"
+        :iconStyle="{ fontSize: '14px', color: '#4D57FF' }"
+      />
+    </el-tooltip>
     <div class="audio-container">
       <div class="audio-left">
         <img :src="cover" alt="" />
@@ -174,19 +177,21 @@ defineExpose({
         />
       </div>
     </div>
-    <FontIcon
-      customClassName="audio-button"
-      iconName="zhongbo2"
-      :iconStyle="{
-        fontSize: '22px',
-        color: reloadState ? '#4D57FF' : '#888',
-        animation: reloadState ? 'fadenum 3s infinite' : ''
-      }"
-      @click.stop="
-        reloadState = !reloadState;
-        reloadIndex = reloadState ? audioIndex : -1;
-      "
-    />
+    <el-tooltip content="循环">
+      <FontIcon
+        customClassName="audio-button"
+        iconName="zhongbo2"
+        :iconStyle="{
+          fontSize: '22px',
+          color: reloadState ? '#4D57FF' : '#888',
+          animation: reloadState ? 'fadenum 3s infinite' : '',
+        }"
+        @click.stop="
+          reloadState = !reloadState;
+          reloadIndex = reloadState ? audioIndex : -1;
+        "
+      />
+    </el-tooltip>
     <div class="volume">
       <div class="volume-progress" v-show="audioHuds">
         <el-slider
@@ -220,6 +225,7 @@ defineExpose({
 .audio-box {
   width: 100%;
   height: 100px;
+  background: #f6f6f6;
   padding: 0px 25px 0px 38px;
   @include flex(flex-start, center, null);
   .audio-button {

@@ -111,7 +111,7 @@ watchEffect(() => {
 });
 defineExpose({
   handleTimeChange,
-  pauseMedia
+  pauseMedia,
 });
 </script>
 <template>
@@ -128,31 +128,17 @@ defineExpose({
     <div class="video-box">
       <FontIcon
         customClassName="video-button"
-        iconName="shangyige"
-        @iconClick="emits('changeVideoIndex', 'last')"
-        :iconStyle="{ fontSize: '14px', color: '#4D57FF' }"
-      />
-      <img
-        class="video-img"
-        src="/common/play.svg"
-        alt=""
-        @click="playVideo"
+        iconName="a-bofang2"
+        @iconClick="playVideo"
+        :iconStyle="{ fontSize: '18px', color: '#fff' }"
         v-if="videoIsPlay"
       />
-      <img
-        class="video-img"
-        src="/common/pause.svg"
-        alt=""
-        @click="playVideo"
-        v-else
-      />
-
       <FontIcon
         customClassName="video-button"
-        @click="playVideo"
-        iconName="xiayige"
-        @iconClick="emits('changeVideoIndex', 'next')"
-        :iconStyle="{ fontSize: '14px', color: '#4D57FF' }"
+        iconName="a-zanting2"
+        @iconClick="playVideo"
+        :iconStyle="{ fontSize: '18px', color: '#fff' }"
+        v-else
       />
 
       <div class="video-container">
@@ -168,18 +154,6 @@ defineExpose({
           <span style="margin-left: 10px">{{ durationTime }}</span>
         </div>
       </div>
-      <FontIcon
-        customClassName="video-button"
-        iconName="zhongbo2"
-        :iconStyle="{
-          fontSize: '22px',
-          color: reloadState ? '#4D57FF' : '#888',
-        }"
-        @click.stop="
-          reloadState = !reloadState;
-          reloadIndex = reloadState ? videoIndex : -1;
-        "
-      />
       <div class="volume">
         <div class="volume-progress" v-show="videoHuds">
           <el-slider
@@ -203,10 +177,42 @@ defineExpose({
           v-if="videoVolume > 0"
           customClassName="video-button"
           iconName="shengyin"
-          :iconStyle="{ fontSize: '14px', color: '#4D57FF' }"
+          :iconStyle="{ fontSize: '14px', color: '#fff' }"
           @click.stop="videoHuds = !videoHuds"
         />
       </div>
+      <el-tooltip content="上一句">
+        <FontIcon
+          customClassName="video-button"
+          iconName="shangyiju"
+          @iconClick="emits('changeVideoIndex', 'last')"
+          :iconStyle="{ fontSize: '18px', color: '#fff' }"
+        />
+      </el-tooltip>
+      <el-tooltip content="循环">
+        <FontIcon
+          customClassName="video-button"
+          iconName="zhongbo2"
+          :iconStyle="{
+            fontSize: '22px',
+            color: reloadState ? '#fff' : '#444',
+            margin: '0px 20px',
+          }"
+          @click.stop="
+            reloadState = !reloadState;
+            reloadIndex = reloadState ? videoIndex : -1;
+          "
+        />
+      </el-tooltip>
+      <el-tooltip content="下一句">
+        <FontIcon
+          customClassName="video-button"
+          @click="playVideo"
+          iconName="xiayiju"
+          @iconClick="emits('changeVideoIndex', 'next')"
+          :iconStyle="{ fontSize: '18px', color: '#fff' }"
+        />
+      </el-tooltip>
     </div>
   </div>
 </template>
@@ -236,6 +242,7 @@ defineExpose({
     .video-button {
       width: 35px;
       height: 100%;
+      margin:0px 2px;
       @include flex(center, center, null);
     }
     .video-img {
@@ -244,9 +251,9 @@ defineExpose({
       margin: 0px 12px;
     }
     .video-container {
-      width: calc(100% - 360px);
+      width: calc(100% - 300px);
       height: 100%;
-      margin: 0px 45px 0px 30px;
+      margin: 0px 10px 0px 30px;
       @include flex(space-between, center, null);
       .video-slider {
         width: calc(100% - 120px);
@@ -262,7 +269,7 @@ defineExpose({
 
   .volume {
     position: relative;
-    margin-left: 15px;
+    margin-right: 15px;
     .volume-progress {
       width: 32px;
       height: 140px;

@@ -24,6 +24,7 @@
     "pinia-plugin-persistedstate": "^3.2.0",
     "postcss-pxtorem": "^6.0.0",
     "qiniu-js": "^3.4.1",
+    "qrcode.vue": "^3.4.1",
     "sass": "^1.68.0",
     "sass-loader": "^13.3.2",
     "three": "^0.158.0",

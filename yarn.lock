@@ -929,6 +929,11 @@ qiniu-js@^3.4.1:
     querystring "^0.2.1"
     spark-md5 "^3.0.0"
 
+qrcode.vue@^3.4.1:
+  version "3.4.1"
+  resolved "https://registry.npmmirror.com/qrcode.vue/-/qrcode.vue-3.4.1.tgz#dd8141da9c4ea07ee56b111cd13eadf123af822a"
+  integrity sha512-wq/zHsifH4FJ1GXQi8/wNxD1KfQkckIpjK1KPTc/qwYU5/Bkd4me0w4xZSg6EXk6xLBkVDE0zxVagewv5EMAVA==
+
 querystring@^0.2.1:
   version "0.2.1"
   resolved "https://registry.npmmirror.com/querystring/-/querystring-0.2.1.tgz#40d77615bb09d16902a85c3e38aa8b5ed761c2dd"
