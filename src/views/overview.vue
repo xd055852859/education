@@ -191,7 +191,7 @@ watchEffect(() => {
               <div class="overview-top-title">
                 {{ keywordCount }}<span>个</span>
               </div>
-              <div class="overview-top-subtitle">关注点</div>
+              <div class="overview-top-subtitle">生词</div>
             </div>
           </div>
           <!-- <div

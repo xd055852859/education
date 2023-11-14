@@ -34,6 +34,7 @@ declare module 'vue' {
     Header: typeof import('./src/components/header.vue')['default']
     IframeView: typeof import('./src/components/iframeView.vue')['default']
     Keyword: typeof import('./src/components/keyword.vue')['default']
+    KeywordItem: typeof import('./src/components/keywordItem.vue')['default']
     LessonItem: typeof import('./src/components/lessonItem.vue')['default']
     LineChart: typeof import('./src/components/chart/lineChart.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

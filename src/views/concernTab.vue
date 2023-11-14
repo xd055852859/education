@@ -129,7 +129,7 @@ watchEffect(() => {
             style="margin-right: 10px"
           >
             <FontIcon
-              :iconName="item.expandState ? 'shouqiquanping' : 'quanping'"
+              :iconName="item.expandState ? 'shouqi' : 'zhankai'"
               :iconStyle="{ color: '#333' }"
             />
           </div>

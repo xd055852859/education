@@ -5,11 +5,15 @@ import api from "@/services/api";
 import IframeView from "@/components/iframeView.vue";
 import appStore from "@/store";
 import { ElMessage } from "element-plus";
+import _ from "lodash";
 import { storeToRefs } from "pinia";
-
+import KeywordItem from "./keywordItem.vue";
+const dayjs: any = inject("dayjs");
+const { lessonKey, lessonInfo } = storeToRefs(appStore.lessonStore);
 const props = defineProps<{
   keyword: string;
   keywordKey: string;
+  type?: string;
 }>();
 const emits = defineEmits<{
   (e: "setKeyword", keyword: string): void;
@@ -17,6 +21,13 @@ const emits = defineEmits<{
 const { agentKey } = storeToRefs(appStore.agentStore);
 const { user } = storeToRefs(appStore.authStore);
 const { setUserInfo } = appStore.authStore;
+const note = ref<string>("");
+const noteVisible = ref<boolean>(false);
+const keywordTabs = ref<any>([]);
+
+const keywordTab = ref<string>("word");
+const keywordList = ref<any>([]);
+const chooseTab = ref<string[]>([]);
 const chooseKeywordTabs = computed(() => {
   let list: any = [];
   chooseTab.value = [];
@@ -30,20 +41,56 @@ const chooseKeywordTabs = computed(() => {
         checkTab.value.push(false);
       }
     });
-    keywordTab.value = list[0]._key;
+    console.log(keywordTabs.value);
+    if (props.type === "outer") {
+      keywordTab.value = keywordTabs.value[0]._key;
+    }
   }
   return list;
 });
-const note = ref<string>("");
-const noteVisible = ref<boolean>(false);
-const keywordTabs = ref<any>([]);
 
-const keywordTab = ref<string>("");
-const chooseTab = ref<string[]>([]);
 const checkTab = ref<boolean[]>([]);
 onMounted(() => {
   getTabData();
 });
+const getList = async () => {
+  let dataRes = (await api.request.get("study/keyword/resource", {
+    agentKey: agentKey.value,
+    resourceKey: lessonKey.value,
+  })) as ResultProps;
+  if (dataRes.msg === "OK") {
+    dataRes.data.forEach((keywordsItem, keywordsIndex) => {
+      if (keywordsItem.note) {
+        keywordsItem.note = keywordsItem.note.replace(/\n/g, "<br/>");
+      }
+      if (keywordsItem.sentences) {
+        keywordsItem.sentences = keywordsItem.sentences.map((sentenceItem) => {
+          let reg = new RegExp(`${keywordsItem.keyword}`, "g");
+          sentenceItem = Array.isArray(sentenceItem)
+            ? sentenceItem.join("")
+            : sentenceItem;
+          sentenceItem = sentenceItem
+            .replace(reg, `#${keywordsItem.keyword}#`)
+            .split("#");
+          return sentenceItem;
+        });
+      }
+      let index = _.findIndex(keywordList.value, {
+        mediaKey: keywordsItem.mediaKey,
+      });
+      if (index !== -1) {
+        keywordList.value[index] = {
+          ...keywordList.value[index],
+          ...keywordsItem,
+        };
+      } else {
+        keywordsItem.expandState = false;
+        keywordList.value[keywordsIndex] = { ...keywordsItem };
+      }
+    });
+    console.log(keywordList.value);
+  }
+};
 const getData = async (wordKey) => {
   const keyWordRes = (await api.request.get("study/keyword/detail", {
     keywordKey: wordKey,
@@ -107,13 +154,18 @@ const openTuLink = () => {
   };
   Tucao.request(productId, data);
 };
+const changeList = (list) => {
+  keywordList.value = _.cloneDeep(list);
+};
 watch(
   () => props.keywordKey,
   (newWordKey) => {
     if (newWordKey) {
       getData(newWordKey);
+      getList();
     }
-  }
+  },
+  { immediate: true }
 );
 </script>
 <template>
@@ -158,6 +210,16 @@ watch(
     </div>
     <div class="data-right-content">
       <el-tabs v-model="keywordTab">
+        <el-tab-pane label="生词表" name="word" v-if="type === 'inner'">
+          <div class="data-right-iframe">
+            <template v-if="keywordList.length > 0">
+              <KeywordItem @changeList="changeList" :list="keywordList" />
+            </template>
+            <div class="calendar-empty" v-else>
+              <el-empty description="暂无关键字" />
+            </div>
+          </div>
+        </el-tab-pane>
         <el-tab-pane
           v-for="item in chooseKeywordTabs"
           :key="item._key"
@@ -169,15 +231,25 @@ watch(
         </el-tab-pane>
       </el-tabs>
     </div>
-    <div class="data-right-note" v-if="noteVisible">
-      <el-input
-        v-model="note"
-        :rows="8"
-        type="textarea"
-        placeholder="请输入备注"
-        @change="saveNote"
-      />
-      <!-- <el-button
+
+    <div
+      class="data-right-button"
+      :style="
+        noteVisible
+          ? { boxShadow: '0px 2px 9px 0px rgba(178, 178, 178, 0.5)' }
+          : {}
+      "
+    >
+    <div></div>
+      <div class="data-right-note" v-if="noteVisible">
+        <el-input
+          v-model="note"
+          :rows="6"
+          type="textarea"
+          placeholder="请输入备注"
+          @change="saveNote"
+        />
+        <!-- <el-button
         type="primary"
         round
         class="note-button"
@@ -185,29 +257,29 @@ watch(
         @click="saveNote"
         >保存</el-button
       > -->
-    </div>
-    <div class="data-right-button">
-      <el-button
-        type="primary"
-        round
-        class="left-button"
-        @click="noteVisible = !noteVisible"
-        >备注</el-button
-      >
-      <el-button class="right-button" round @click="openTuLink"
-        >反馈吐槽</el-button
-      >
+      </div>
+      <div>
+        <el-button
+          type="primary"
+          round
+          class="left-button"
+          @click="
+            noteVisible ? saveNote() : null;
+            noteVisible = !noteVisible;
+          "
+          >{{ noteVisible ? "保存备注" : "写备注" }}</el-button
+        >
+        <el-button class="right-button" link @click="openTuLink"
+          >反馈吐槽</el-button
+        >
+      </div>
     </div>
   </div>
 </template>
 <style scoped lang="scss">
 .data-right {
-  width: 565px;
-  height: calc(100% - 10px);
-  margin-top: 10px;
-  margin-left: 36px;
-  border-radius: 14px;
-  box-shadow: 0px 2px 9px 0px rgba(178, 178, 178, 0.5);
+  width: 523px;
+  height: 100vh;
   padding: 25px 0px 10px 0px;
   box-sizing: border-box;
   position: relative;
@@ -228,45 +300,47 @@ watch(
     width: 100%;
     height: calc(100% - 120px);
     margin: 10px 0px;
-    padding: 0px 44px 0px 53px;
+    padding: 0px 15px;
     box-sizing: border-box;
+
     .data-right-iframe {
       width: 100%;
       height: calc(100vh - 380px);
+      padding: 10px;
+      box-sizing: border-box;
+      @include scroll();
     }
   }
-  .data-right-note {
-    width: 100%;
-    position: absolute;
-    z-index: 2;
-    left: 0px;
-    bottom: 80px;
-    padding: 10px 44px 10px 53px;
-    box-sizing: border-box;
-    .note-button {
-      width: 120px;
-      position: absolute;
-      z-index: 3;
-      right: 60px;
-      bottom: 20px;
-    }
-  }
+
   .data-right-button {
     width: 100%;
-    height: 40px;
-    padding: 0px 44px 0px 53px;
+    padding: 30px 50px;
     box-sizing: border-box;
+    position: absolute;
+    z-index: 2;
+    bottom: 0px;
+    left: 0px;
+    .data-right-note {
+      width: 100%;
+      margin-bottom: 18px;
+    }
     .left-button {
       width: 246px;
       height: 38px;
     }
     .right-button {
-      width: 168px;
+      width: 150px;
       height: 38px;
-      border: 1px solid $commonColor;
-      color: $commonColor;
     }
   }
 }
 </style>
-<style></style>
+<style lang="scss">
+.data-right-note {
+  .el-textarea__inner {
+    background: #f9f9f9;
+    border: 1px solid #e3e3e3;
+    border-radius: 12px;
+  }
+}
+</style>

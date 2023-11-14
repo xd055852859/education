@@ -9,7 +9,8 @@ import appStore from "@/store";
 import _ from "lodash";
 import { ResultProps } from "@/interface/Common";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Delete } from "@element-plus/icons-vue";
+
+import KeywordItem from "@/components/keywordItem.vue";
 const { agentKey } = storeToRefs(appStore.agentStore);
 const dayjs: any = inject("dayjs");
 // const expandState = ref<boolean>(false);
@@ -161,37 +162,13 @@ const chooseWord = (word, wordKey) => {
   keywordKey.value = wordKey;
   changeSize.value = 1;
 };
+const changeList = (list) => {
+  keywordList.value = _.cloneDeep(list);
+};
 const chooseDate = (date, index) => {
   chartDate.value = dayjs(date).startOf("day").valueOf();
 };
-const archiveKeyword = async (index, keywordKey, keywordIndex, isArchived) => {
-  let dataRes = (await api.request.patch("study/keyword/archive", {
-    keywordKey: keywordKey,
-    isArchived: isArchived,
-  })) as ResultProps;
-  if (dataRes.msg === "OK") {
-    ElMessage.success(`${isArchived ? "归档" : "关注"}成功`);
-    keywordList.value[index].keywords[keywordIndex].isArchived = isArchived;
-  }
-};
-const deleteKeyword = async (index, keywordKey, keywordIndex) => {
-  ElMessageBox.confirm("是否删除该关键字", "删除关键字", {
-    confirmButtonText: "确认",
-    cancelButtonText: "取消",
-  }).then(async () => {
-    let dataRes = (await api.request.delete("study/keyword", {
-      agentKey: agentKey.value,
-      keywordKey: keywordKey,
-    })) as ResultProps;
-    if (dataRes.msg === "OK") {
-      ElMessage.success("删除关键字成功");
-      keywordList.value[index].keywords.splice(keywordIndex, 1);
-      if (keywordList.value[index].keywords.length === 0) {
-        keywordList.value.splice(index, 1);
-      }
-    }
-  });
-};
+
 // const expandKeyword=(index)=>{
 //   keywordList.value[index].expandState = !keywordList.value[index].expandState;
 // }
@@ -241,142 +218,14 @@ watchEffect(() => {
               }}
               分钟，新增了{{ chartData[0][chartIndex].count }}张知识库片
             </div>
-            <div
-              class="calendar-keyword dp--center"
-              v-for="(item, index) in keywordList"
-              :key="`lesson${item._key}`"
-              style="flex-wrap: wrap"
-            >
-              <div class="keyword-title">
-                {{ item.resouceName }}
-                <div
-                  class="keyword-box-icon icon-point"
-                  @click="item.expandState = !item.expandState"
-                >
-                  <FontIcon
-                    :iconName="item.expandState ? 'shouqiquanping' : 'quanping'"
-                    :iconStyle="{ color: '#333' }"
-                  />
-                </div>
-              </div>
-              <div class="keyword-title">{{ item.mediaName }}</div>
-              <template v-if="item.expandState">
-                <div
-                  v-for="(keywordItem, keywordIndex) in item.keywords"
-                  :key="`keyword${keywordItem._key}`"
-                  class="keyword-box"
-                  style="width: 100%"
-                >
-                  <div class="keyword-box-title dp-space-center">
-                    {{ keywordItem.keyword }}
-                    <div class="dp-center-center">
-                      <div
-                        v-if="keywordItem.isArchived"
-                        class="concernItem-box-icon icon-point"
-                        @click="
-                          archiveKeyword(
-                            index,
-                            keywordItem._key,
-                            keywordIndex,
-                            false
-                          )
-                        "
-                      >
-                        <FontIcon iconName="a-xin-kongxin2" />
-                      </div>
-                      <div
-                        @click="
-                          archiveKeyword(
-                            index,
-                            keywordItem._key,
-                            keywordIndex,
-                            true
-                          )
-                        "
-                        class="concernItem-box-icon icon-point"
-                        v-else
-                      >
-                        <FontIcon
-                          iconName="a-xin-tianchong2"
-                          :iconStyle="{ color: '#4D57FF' }"
-                        />
-                      </div>
-                      <div
-                        class="concernItem-box-icon icon-point"
-                        style="margin-left: 10px"
-                        @click="
-                          deleteKeyword(index, keywordItem._key, keywordIndex)
-                        "
-                      >
-                        <el-icon :size="18"><Delete /></el-icon>
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    class="keyword-box-subtitle"
-                    v-for="(
-                      sentenceItem, sentenceIndex
-                    ) in keywordItem.sentences"
-                    :key="`sentence${sentenceIndex}`"
-                  >
-                    <span
-                      v-for="(wordItem, wordIndex) in sentenceItem"
-                      :key="`word${wordIndex}`"
-                      @click="
-                        wordItem === keywordItem.keyword
-                          ? chooseWord(wordItem, keywordItem._key)
-                          : ''
-                      "
-                      :style="
-                        wordItem === keywordItem.keyword
-                          ? {
-                              background:
-                                keyword === wordItem ? '#ffe3b5' : '#c2c4f6',
-                              padding: '2px 0px',
-                              boxSizing: 'border-box',
-                              cursor: 'pointer',
-                            }
-                          : {}
-                      "
-                    >
-                      {{ wordItem }}
-                    </span>
-                  </div>
-                  <div
-                    class="keyword-box-content"
-                    v-if="keywordItem.note"
-                    v-html="keywordItem.note"
-                  ></div>
-                </div>
-              </template>
-              <template v-else>
-                <div
-                  v-for="(keywordItem, keywordIndex) in item.keywords"
-                  :key="`keyword${keywordItem._key}`"
-                  class="keyword-title-box icon-point"
-                  @click="chooseWord(keywordItem.keyword, keywordItem._key)"
-                  :style="
-                    keyword === keywordItem.keyword
-                      ? {
-                          color: '#4D57FF',
-                          boxSizing: 'border-box',
-                          cursor: 'pointer',
-                        }
-                      : {}
-                  "
-                >
-                  <span>{{ keywordItem.keyword }}</span>
-                  <el-divider
-                    direction="vertical"
-                    v-if="keywordIndex < item.keywords.length - 1"
-                  />
-                </div>
-              </template>
-            </div>
+            <KeywordItem
+              @changeList="changeList"
+              :list="keywordList"
+              :keyword="keyword"
+              @chooseWord="chooseWord"
+              :type="'outer'"
+            />
           </template>
-          <div class="calendar-empty" v-else>
-            <el-empty description="当前日期无关键字" />
-          </div>
         </div>
       </div>
 
@@ -384,6 +233,7 @@ watchEffect(() => {
         :keyword="keyword"
         :keywordKey="keywordKey"
         @setKeyword="keyword = ''"
+        type="outer"
       />
     </div>
   </div>
@@ -421,83 +271,6 @@ watchEffect(() => {
         width: 100%;
         height: 40px;
         font-size: 18px;
-      }
-      .calendar-keyword {
-        width: 100%;
-        border-radius: 14px;
-        box-shadow: 0px 2px 9px 0px rgba(178, 178, 178, 0.5);
-        padding: 15px 33px;
-        box-sizing: border-box;
-        margin-bottom: 20px;
-        .keyword-title {
-          width: 100%;
-          height: 28px;
-          font-size: 18px;
-          font-weight: 500;
-          color: $commonColor;
-          line-height: 26px;
-          margin-bottom: 10px;
-          @include flex(space-between, center, null);
-        }
-        .keyword-box {
-          background: #f2f4fb;
-          border-radius: 12px;
-          margin-bottom: 30px;
-          @include p-number(14px, 28px);
-          .keyword-box-title {
-            width: 100%;
-            height: 40px;
-            font-size: 28px;
-            font-family: DIN Black, DIN Black-Black;
-            font-weight: 900;
-            line-height: 35px;
-            margin-bottom: 6px;
-            .concernItem-box-icon {
-              display: none;
-            }
-            &:hover {
-              .concernItem-box-icon {
-                @include flex(center, center, null);
-              }
-            }
-          }
-          .keyword-box-subtitle {
-            width: 100%;
-            font-size: 22px;
-            color: #333333;
-            line-height: 26px;
-            margin-bottom: 10px;
-          }
-          .keyword-box-content {
-            background: #ffffff;
-            font-size: 20px;
-            padding: 0px 10px;
-            box-sizing: border-box;
-          }
-          .keyword-box-icon {
-            display: none;
-          }
-        }
-        .keyword-title-box {
-          height: 56px;
-          font-size: 18px;
-          line-height: 28px;
-          margin-bottom: 30px;
-          @include flex(flex-start, center, null);
-        }
-
-        &:hover {
-          .keyword-box {
-            .keyword-box-icon {
-              @include flex(center, center, null);
-            }
-          }
-        }
-      }
-      .calendar-empty {
-        width: 100%;
-        height: calc(100vh - 490px);
-        @include flex(center, center, null);
       }
     }
   }

@@ -8,9 +8,10 @@ import api from "@/services/api";
 
 const dayjs: any = inject("dayjs");
 const { token } = storeToRefs(appStore.authStore);
+const { musicSrc } = storeToRefs(appStore.commonStore);
 const { setToken, getUserInfo } = appStore.authStore;
 const { setDeviceWidth } = appStore.commonStore;
-
+const musicRef = ref<any>(null);
 onMounted(() => {
   let url = window.location.href;
   //自动切换为https
@@ -46,10 +47,24 @@ watch(
   },
   { immediate: true }
 );
+watch(musicSrc, (newSrc) => {
+  musicRef.value.pause();
+  musicRef.value.src = newSrc;
+  nextTick(() => {
+    musicRef.value.play();
+  });
+});
 </script>
 
 <template>
   <router-view></router-view>
+  <audio
+    ref="musicRef"
+    src=""
+    :style="{ position: 'fixed', zIndex: -5, opacity: 0 }"
+  >
+    您的浏览器不支持 audio 标签。
+  </audio>
 </template>
 
 <style lang="scss">

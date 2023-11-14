@@ -14,6 +14,7 @@ export const commonStore = defineStore("commonStore", () => {
   const overType = ref<string>("");
   const closeNum = ref<number>(-1);
   const fullState = ref<boolean>(false);
+  const musicSrc = ref<string>("");
   const setDeviceType = (newDeviceType: string) => {
     deviceType.value = newDeviceType;
   };
@@ -50,6 +51,9 @@ export const commonStore = defineStore("commonStore", () => {
   const setFullState = (newFullState) => {
     fullState.value = newFullState;
   };
+  const setMusicSrc = (newSrc) => {
+    musicSrc.value = newSrc;
+  };
   return {
     deviceType,
     setDeviceType,
@@ -69,5 +73,7 @@ export const commonStore = defineStore("commonStore", () => {
     setClose,
     fullState,
     setFullState,
+    musicSrc,
+    setMusicSrc,
   };
 });

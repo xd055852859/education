@@ -5,6 +5,7 @@ const props = defineProps<{
   title: string;
   src: string;
   videoIndex: number;
+  videoType: string;
 }>();
 const emits = defineEmits<{
   (e: "videoTimeupdate", time: number): void;
@@ -12,7 +13,7 @@ const emits = defineEmits<{
   (e: "reloadVideo", time: number, index: number): void;
 }>();
 
-const videoIsPlay = ref<boolean>(true); //音频是否在播放
+const isPlay = ref<boolean>(false); //音频是否在播放
 const videoStart = ref<string>("0:00");
 const durationTime = ref<string>("0:00"); //音频的总时长，显示的时间格式
 const duration = ref<number>(0); //音频的总时长
@@ -31,7 +32,7 @@ function calculateDuration() {
     videoRef.value.addEventListener(
       "ended",
       function () {
-        videoIsPlay.value = true;
+        isPlay.value = false;
         currentProgress.value = 0;
       },
       false
@@ -58,10 +59,10 @@ const transTime = (duration) => {
 const playVideo = () => {
   if (videoRef.value.paused) {
     videoRef.value.play();
-    videoIsPlay.value = false;
+    isPlay.value = true;
   } else {
     videoRef.value.pause();
-    videoIsPlay.value = true;
+    isPlay.value = false;
   }
 };
 
@@ -95,23 +96,49 @@ const handleTimeChange = (time, type?: string) => {
   videoRef.value.currentTime = time;
   nextTick(() => {
     videoRef.value.play();
-    videoIsPlay.value = false;
+    isPlay.value = true;
   });
 };
 //调整音量
 const handleVideoVolume = (val) => {
   videoRef.value.volume = val / 100;
 };
-const pauseMedia = () => {
-  videoRef.value.pause();
-  videoIsPlay.value = true;
+const changeVolume = () => {
+
+  videoHuds.value = !videoHuds.value;
+};
+const playMedia = (playState) => {
+  if (playState) {
+    videoRef.value.play();
+    isPlay.value = true;
+  } else {
+    videoRef.value.pause();
+    isPlay.value = false;
+  }
+};
+const reloadMedia = () => {
+  reloadState.value = !reloadState.value;
+  reloadIndex.value = reloadState.value? props.videoIndex : -1;
 };
 watchEffect(() => {
   calculateDuration();
 });
 defineExpose({
+  isPlay,
+  videoVolume,
+  videoHuds,
+  videoStart,
+  durationTime,
+  currentProgress,
+  reloadState,
+  reloadIndex,
+  playVideo,
+  handleProgressChange,
+  handleVideoVolume,
   handleTimeChange,
-  pauseMedia,
+  playMedia,
+  reloadMedia,
+  changeVolume
 });
 </script>
 <template>
@@ -121,21 +148,22 @@ defineExpose({
       :controls="false"
       ref="videoRef"
       class="video-resource"
+      @click="playVideo"
     >
       <source :src="src" type="video/*" />
       您的浏览器不支持视频播放
     </video>
-    <div class="video-box">
-      <FontIcon
-        customClassName="video-button"
-        iconName="a-bofang2"
-        @iconClick="playVideo"
-        :iconStyle="{ fontSize: '18px', color: '#fff' }"
-        v-if="videoIsPlay"
-      />
+    <div class="video-box" v-if="videoType === 'normal'">
       <FontIcon
         customClassName="video-button"
         iconName="a-zanting2"
+        @iconClick="playVideo"
+        :iconStyle="{ fontSize: '18px', color: '#fff' }"
+        v-if="isPlay"
+      />
+      <FontIcon
+        customClassName="video-button"
+        iconName="a-bofang2"
         @iconClick="playVideo"
         :iconStyle="{ fontSize: '18px', color: '#fff' }"
         v-else
@@ -197,11 +225,9 @@ defineExpose({
             fontSize: '22px',
             color: reloadState ? '#fff' : '#444',
             margin: '0px 20px',
+            animation: reloadState ? 'fadenum 3s infinite' : '',
           }"
-          @click.stop="
-            reloadState = !reloadState;
-            reloadIndex = reloadState ? videoIndex : -1;
-          "
+          @click.stop="reloadMedia()"
         />
       </el-tooltip>
       <el-tooltip content="下一句">
@@ -214,6 +240,8 @@ defineExpose({
         />
       </el-tooltip>
     </div>
+
+    <slot name="custom" v-else></slot>
   </div>
 </template>
 <style lang="scss">
@@ -222,10 +250,10 @@ defineExpose({
   height: 100%;
   position: relative;
   z-index: 1;
-  background-color: rgb(23, 23, 33);
+  // background-color: rgb(23, 23, 33);
   .video-resource {
     width: 100%;
-    height: calc(100% - 50px);
+    height: calc(100% - 205px);
     background-color: rgb(23, 23, 33);
   }
   .video-box {
@@ -242,7 +270,7 @@ defineExpose({
     .video-button {
       width: 35px;
       height: 100%;
-      margin:0px 2px;
+      margin: 0px 2px;
       @include flex(center, center, null);
     }
     .video-img {
@@ -309,6 +337,11 @@ defineExpose({
 .volume-bar {
   .el-slider__runway {
     margin: 0 14px !important;
+  }
+}
+@keyframes fadenum {
+  100% {
+    transform: rotate(360deg);
   }
 }
 </style>

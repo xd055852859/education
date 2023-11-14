@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import _ from "lodash";
 import { formatMonth } from "@/services/util";
+import { storeToRefs } from "pinia";
+import appStore from "@/store";
 const dayjs: any = inject("dayjs");
 const props = defineProps<{
   calendarTimeList: any;
@@ -8,6 +10,7 @@ const props = defineProps<{
 const emits = defineEmits<{
   (e: "getCalendarNum", startTime: number, endTime: number): void;
 }>();
+const { agentKey } = storeToRefs(appStore.agentStore);
 const calendarDate = ref<any>(null);
 const calendarYear = ref<any>([]);
 const calendarMonth = ref<any>([]);
@@ -144,15 +147,11 @@ const getTargetDate = (targetDate: any, calendarDayNum: number) => {
   );
   calendarList.value = strDate;
 };
-watch(
-  calendarDate,
-  (newDate) => {
-    if (newDate) {
-      getCalendar(newDate);
-    }
-  },
-  { immediate: true }
-);
+watchEffect(() => {
+  if (calendarDate.value && agentKey.value) {
+    getCalendar(calendarDate.value);
+  }
+});
 </script>
 <template>
   <div class="calendar">
