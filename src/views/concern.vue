@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FontIcon from "@/components/fontIcon.vue";
 import concernTab from "./concernTab.vue";
 import Header from "@/components/header.vue";
 import Keyword from "@/components/keyword.vue";
@@ -6,12 +7,19 @@ import { ResultProps } from "@/interface/Common";
 import api from "@/services/api";
 import appStore from "@/store";
 import { storeToRefs } from "pinia";
+const props = defineProps<{
+  tab: string;
+}>();
 const { agentKey } = storeToRefs(appStore.agentStore);
 const keywordTab = ref<string>("care");
 const keyword = ref<string>("");
 const keywordKey = ref<string>("");
 const archivedNum = ref<number>(0);
 const keywordNum = ref<number>(0);
+const expandState = ref<boolean>(false);
+onMounted(() => {
+  keywordTab.value = props.tab;
+});
 const setKeyword = (word, wordKey) => {
   keyword.value = word;
   keywordKey.value = wordKey;
@@ -56,6 +64,7 @@ watchEffect(() => {
               @addNum="addNum"
               :keyword="keyword"
               :keywordTab="keywordTab"
+              :expandState="expandState"
             />
           </el-tab-pane>
           <el-tab-pane name="uncare" :label="`归档(${archivedNum})`">
@@ -64,9 +73,20 @@ watchEffect(() => {
               @addNum="addNum"
               :keyword="keyword"
               :keywordTab="keywordTab"
+              :expandState="expandState"
             />
           </el-tab-pane>
         </el-tabs>
+        <div
+          class="keyword-expand icon-point dp-center-center"
+          @click="expandState = !expandState"
+        >
+          简介模式
+          <FontIcon
+            :iconName="expandState ? 'shouqi' : 'zhankai'"
+            :iconStyle="{ color: '#666', fontSize: '14px', marginLeft: '5px' }"
+          />
+        </div>
       </div>
       <Keyword
         :keyword="keyword"
@@ -94,6 +114,18 @@ watchEffect(() => {
       min-width: 1120px;
       flex: 1;
       height: 100%;
+      position: relative;
+      z-index: 1;
+      .keyword-expand {
+        height: 22px;
+        font-size: 16px;
+        color: #666666;
+        line-height: 22px;
+        position: absolute;
+        z-index: 2;
+        top: 15px;
+        right: 10px;
+      }
     }
   }
 }

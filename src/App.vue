@@ -8,7 +8,7 @@ import api from "@/services/api";
 
 const dayjs: any = inject("dayjs");
 const { token } = storeToRefs(appStore.authStore);
-const { musicSrc } = storeToRefs(appStore.commonStore);
+const { musicSrc,musicNum } = storeToRefs(appStore.commonStore);
 const { setToken, getUserInfo } = appStore.authStore;
 const { setDeviceWidth } = appStore.commonStore;
 const musicRef = ref<any>(null);
@@ -47,7 +47,7 @@ watch(
   },
   { immediate: true }
 );
-watch(musicSrc, (newSrc) => {
+watch([musicSrc,musicNum], ([newSrc,newNum]) => {
   musicRef.value.pause();
   musicRef.value.src = newSrc;
   nextTick(() => {

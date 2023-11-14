@@ -13,6 +13,7 @@ import { storeToRefs } from "pinia";
 const props = defineProps<{
   keyword: string;
   keywordTab: string;
+  expandState: boolean;
 }>();
 const emits = defineEmits<{
   (e: "setKeyword", word: string, wordKey: string): void;
@@ -122,17 +123,7 @@ watchEffect(() => {
     >
       <div class="concernItem-box-title">
         {{ item.keyword }}
-        <div class="dp-center-center">
-          <div
-            class="concernItem-box-icon icon-point"
-            @click="item.expandState = !item.expandState"
-            style="margin-right: 10px"
-          >
-            <FontIcon
-              :iconName="item.expandState ? 'shouqi' : 'zhankai'"
-              :iconStyle="{ color: '#333' }"
-            />
-          </div>
+        <div class="dp-center-center" v-if="expandState">
           <div
             v-if="keywordTab === 'uncare'"
             class="concernItem-box-icon icon-point"
@@ -156,11 +147,11 @@ watchEffect(() => {
             style="margin-left: 10px"
             @click="deleteKeyword(item._key, index)"
           >
-            <el-icon :size="18"><Delete /></el-icon>
+            <el-icon :size="16" color="#b3b3b3"><Delete /></el-icon>
           </div>
         </div>
       </div>
-      <template v-if="item.expandState">
+      <template v-if="expandState">
         <div
           class="concernItem-box-subtitle"
           v-for="(sentenceItem, sentenceIndex) in item.sentence"
@@ -175,9 +166,7 @@ watchEffect(() => {
             :style="
               wordItem === item.keyword
                 ? {
-                    background: keyword === wordItem ? '#ffe3b5' : '#c2c4f6',
-                    padding: '2px 0px',
-                    boxSizing: 'border-box',
+                    background: '#e8e9ff',
                     cursor: 'pointer',
                   }
                 : {}
@@ -199,12 +188,15 @@ watchEffect(() => {
 .keyword-box {
   width: 100%;
   height: calc(100vh - 190px);
+  padding: 10px 15px 10px 27px;
+  box-sizing: border-box;
   @include scroll();
 
   .concernItem-box {
-    background: #f2f4fb;
+    background: #fff;
     border-radius: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 22px;
+    box-shadow: 0px 2px 5px 0px rgba(178, 178, 178, 0.5);
     @include p-number(14px, 28px);
     .concernItem-box-title {
       width: 100%;
@@ -214,14 +206,10 @@ watchEffect(() => {
       font-weight: 900;
       line-height: 32px;
       margin-bottom: 6px;
+      color: #4d57ff;
       @include flex(space-between, center, null);
       .concernItem-box-icon {
-        display: none;
-      }
-      &:hover {
-        .concernItem-box-icon {
-          @include flex(center, center, null);
-        }
+        @include flex(center, center, null);
       }
     }
     .concernItem-box-subtitle {
@@ -229,14 +217,16 @@ watchEffect(() => {
       font-size: 18px;
       color: #333333;
       line-height: 32px;
-      margin-bottom: 5px;
     }
     .concernItem-box-content {
-      background: #ffffff;
       font-size: 16px;
       line-height: 28px;
       white-space: pre-wrap;
+      color: #4d57ff;
       @include p-number(10px, 10px);
+    }
+    &:hover {
+      box-shadow: 0px 2px 10px 0px rgba(78, 78, 78, 0.5);
     }
   }
 }

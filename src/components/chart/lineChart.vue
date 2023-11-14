@@ -21,10 +21,10 @@ const nameData = ref<any>(null);
 onMounted(() => {
   xAxisData.value = [
     ...props.chartData[0].map((item) => {
-      return dayjs(item.ctime).format("YYYY-MM-DD");
+      return dayjs(item.ctime).format("MM-DD");
     }),
     ...props.chartData[1].map((item) => {
-      return dayjs(item.ctime).format("YYYY-MM-DD");
+      return dayjs(item.ctime).format("MM-DD");
     }),
   ];
 
@@ -32,11 +32,28 @@ onMounted(() => {
     console.log(item);
     let newItem: any = {
       name: item[0].name,
-      type: item[0].type,
+      type: "line",
       min: item[0].min,
       max: item[0].max,
       yAxisIndex: index,
+      showSymbol: false,
+      itemStyle: {
+        color: `rgb(${item[0].areaColor[0]},${item[0].areaColor[1]},${item[0].areaColor[2]})`
+      },
+      areaStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          {
+            offset: 0,
+            color: `rgba(${item[0].areaColor[0]},${item[0].areaColor[1]},${item[0].areaColor[2]},0.6)`,
+          },
+          {
+            offset: 1,
+            color: `rgba(${item[0].areaColor[0]},${item[0].areaColor[1]},${item[0].areaColor[2]},0)`,
+          },
+        ]),
+      },
       data: [],
+      smooth: true,
     };
     item.forEach((countItem) => {
       newItem.data.push(countItem.count);
@@ -86,20 +103,34 @@ watch(
   (newVal) => {
     xAxisData.value = [
       ...props.chartData[0].map((item) => {
-        return dayjs(item.ctime).format("YYYY-MM-DD");
+        return dayjs(item.ctime).format("MM-DD");
       }),
       ...props.chartData[1].map((item) => {
-        return dayjs(item.ctime).format("YYYY-MM-DD");
+        return dayjs(item.ctime).format("MM-DD");
       }),
     ];
     seriesData.value = newVal.map((item, index) => {
       let newItem: any = {
         name: item[0].name,
-        type: item[0].type,
+        type: "line",
         min: item[0].min,
         max: item[0].max,
         yAxisIndex: index,
+        showSymbol: false,
         data: [],
+        smooth: true,
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            {
+              offset: 0,
+              color: `rgba(${item[0].areaColor[0]},${item[0].areaColor[1]},${item[0].areaColor[2]},0.3)`,
+            },
+            {
+              offset: 1,
+              color: `rgba(${item[0].areaColor[0]},${item[0].areaColor[1]},${item[0].areaColor[2]},0.8)`,
+            },
+          ]),
+        },
       };
       item.forEach((countItem) => {
         newItem.data.push(countItem.count);

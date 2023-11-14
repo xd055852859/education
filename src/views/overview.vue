@@ -64,7 +64,7 @@ const getNum = async () => {
   if (numRes.msg === "OK") {
     studyTime.value = numRes.data.studyTime;
     keywordCount.value = numRes.data.keywordCount;
-    noteNum.value = numRes.data.noteNum;
+    noteNum.value = numRes.data.keywordCount2;
   }
 };
 const chooseLesson = (item) => {
@@ -131,70 +131,93 @@ watchEffect(() => {
             :iconStyle="{ fontSize: '22px', marginRight: '10px' }"
           />
         </div>
-        <div @click="userVisible = true" class="overview-avatar">
-          <Avatar
-            :src="user?.userAvatar"
-            :alt="user?.userName"
-            :style="{
-              width: '0.25rem',
-              height: '0.25rem',
-              marginRight: '0.05rem',
-            }"
-          />
-        </div>
-        <template v-if="agentInfo?.name"
-          >欢迎你,
-          <span style="font-weight: 500">{{ agentInfo.name }} </span></template
-        >
-        <template v-else>欢迎来到场景英语</template>
+        <img src="/overview/logo.svg" alt="" />
       </div>
       <el-button
         type="primary"
         class="overview-button"
         round
         @click="$router.push('center')"
-        ><img src="/overview/overviewHeader.svg" alt="" />课程中心</el-button
+        ><img src="/overview/overviewHeader.svg" alt="" />课程库</el-button
       >
     </div>
-    <div class="overview-container">
-      <div class="calendar-box">
-        <Calendar
-          @getCalendarNum="getCalendarNum"
-          :calendarTimeList="calendarTimeList"
-        />
-      </div>
-      <div class="overview-box">
+    <div class="overview-box">
+      <div class="overview-container">
         <div class="overview-top">
-          <div
-            class="overview-top-container"
-            @click="$router.push('/home/calendar')"
-          >
-            <img src="/overview/logo1.svg" alt="" />
-            <div class="overview-top-content">
-              <div class="overview-top-title">
-                {{
-                  dayjs
-                    .duration(studyTime * 60000)
-                    .asHours()
-                    .toFixed(1)
-                }}<span>小时</span>
-              </div>
-              <div class="overview-top-subtitle">学习日历</div>
-            </div>
+          <div class="calendar-box">
+            <Calendar
+              @getCalendarNum="getCalendarNum"
+              :calendarTimeList="calendarTimeList"
+            />
           </div>
-          <div
-            class="overview-top-container"
-            @click="$router.push('/home/concern')"
-          >
-            <img src="/overview/logo2.svg" alt="" />
-            <div class="overview-top-content">
-              <div class="overview-top-title">
-                {{ keywordCount }}<span>个</span>
+          <div class="data-box">
+            <div class="data-top">
+              <div @click="userVisible = true" class="data-top-avatar">
+                <Avatar
+                  :src="user?.userAvatar"
+                  :alt="user?.userName"
+                  :style="{
+                    width: '0.3rem',
+                    height: '0.3rem',
+                    marginRight: '0.07rem',
+                  }"
+                />
               </div>
-              <div class="overview-top-subtitle">生词</div>
+              <div class="dp-space-center">
+                你好, {{ agentInfo?.name }}
+                <FontIcon
+                  iconName="zhankai"
+                  :iconStyle="{
+                    color: '#666',
+                    fontSize: '14px',
+                    marginLeft: '10px',
+                  }"
+                />
+              </div>
             </div>
-          </div>
-          <!-- <div
+            <div class="data-bottom">
+              <div
+                class="data-container"
+                @click="$router.push('/home/concern/care')"
+              >
+                <div class="data-title" style="color: #5478fb">
+                  {{ noteNum }}<span>个</span>
+                </div>
+                <div class="data-subtitle">
+                  <img src="/overview/logo1.svg" alt="" />生词库
+                </div>
+              </div>
+              <div
+                class="data-container"
+                @click="$router.push('/home/concern/uncare')"
+              >
+                <div class="data-title" style="color: #ff5660">
+                  {{ keywordCount }}<span>个</span>
+                </div>
+                <div class="data-subtitle">
+                  <img src="/overview/logo2.svg" alt="" />熟词库
+                </div>
+              </div>
+
+              <div
+                class="data-container"
+                @click="$router.push('/home/calendar')"
+              >
+                <div class="data-title" style="color: #eb930c">
+                  {{
+                    dayjs
+                      .duration(studyTime * 60000)
+                      .asHours()
+                      .toFixed(1)
+                  }}<span>小时</span>
+                </div>
+                <div class="data-subtitle">
+                  <img src="/overview/logo3.svg" alt="" />学习日历
+                </div>
+              </div>
+            </div>
+
+            <!-- <div
             class="overview-top-container"
             @click="$router.push('/home/note')"
           >
@@ -204,94 +227,113 @@ watchEffect(() => {
               <div class="overview-top-subtitle">学习日记</div>
             </div>
           </div> -->
+          </div>
         </div>
-        <div
-          class="overview-bottom"
-          :style="{
-            alignContent: subscribeList.length > 0 ? 'flex-start' : 'center',
-          }"
-        >
-          <template v-if="subscribeList.length > 0">
-            <template
-              class="dp-space-center"
-              v-for="(item, index) in subscribeList"
-              :key="`lesson${item._key}`"
-            >
-              <LessonItem :item="item" @clickLesson="chooseLesson(item)">
-                <template #button>
-                  <div
-                    class="lessonItem-button dp-center-center"
-                    @click="$event.stopPropagation()"
-                  >
-                    <el-dropdown trigger="click" :hide-on-click="false">
-                      <div class="icon-point dp--center">
-                        <el-icon><MoreFilled /></el-icon>
-                      </div>
-                      <template #dropdown>
-                        <el-dropdown-menu>
-                          <el-dropdown-item
-                            @click="topLesson(item, index, !item.top)"
-                            >{{
-                              item.top ? "取消置顶" : "置顶"
-                            }}</el-dropdown-item
-                          >
-                          <el-dropdown-item
-                            @click="foldLesson(item, index, true)"
-                            >折叠</el-dropdown-item
-                          >
-                        </el-dropdown-menu>
-                      </template>
-                    </el-dropdown>
-                  </div>
-                </template>
-              </LessonItem>
-            </template>
-          </template>
+        <div class="overview-center">
+          订阅课件( {{ subscribeList.length }} )
+        </div>
+        <div class="overview-bottom">
           <div
-            class="dp-center-center"
-            v-else
-            style="width: 100%; height: 100%"
+            class="overview-bottom-box"
+            :style="{
+              alignContent: subscribeList.length > 0 ? 'flex-start' : 'center',
+            }"
           >
-            <el-empty description="无资源" />
-          </div>
-          <div
-            @click="foldVisible = !foldVisible"
-            style="width: 100%"
-            class="overview-fold-title"
-            v-if="foldList.length > 0"
-          >
-            折叠 ({{ foldList.length }})
-          </div>
-          <template v-if="foldVisible">
-            <template
-              class="dp-space-center"
-              v-for="(item, index) in foldList"
-              :key="`fold${item._key}`"
-            >
-              <LessonItem :item="item" @clickLesson="chooseLesson(item)">
-                <template #button>
-                  <div
-                    class="lessonItem-button dp-center-center"
-                    @click="$event.stopPropagation()"
-                  >
-                    <el-dropdown trigger="click" :hide-on-click="false">
-                      <div class="icon-point dp--center">
-                        <el-icon><MoreFilled /></el-icon>
-                      </div>
-                      <template #dropdown>
-                        <el-dropdown-menu>
-                          <el-dropdown-item
-                            @click="foldLesson(item, index, false)"
-                            >取消折叠</el-dropdown-item
-                          >
-                        </el-dropdown-menu>
-                      </template>
-                    </el-dropdown>
-                  </div>
-                </template>
-              </LessonItem>
+            <template v-if="subscribeList.length > 0">
+              <template
+                class="dp-space-center"
+                v-for="(item, index) in subscribeList"
+                :key="`lesson${item._key}`"
+              >
+                <LessonItem
+                  :item="item"
+                  @clickLesson="chooseLesson(item)"
+                  :last="index === subscribeList.length - 1"
+                >
+                  <template #button>
+                    <div
+                      class="lessonItem-button dp-center-center"
+                      @click="$event.stopPropagation()"
+                    >
+                      <el-dropdown trigger="click" :hide-on-click="false">
+                        <div class="icon-point dp--center">
+                          <el-icon><MoreFilled /></el-icon>
+                        </div>
+                        <template #dropdown>
+                          <el-dropdown-menu>
+                            <el-dropdown-item
+                              @click="topLesson(item, index, !item.top)"
+                              >{{
+                                item.top ? "取消置顶" : "置顶"
+                              }}</el-dropdown-item
+                            >
+                            <el-dropdown-item
+                              @click="foldLesson(item, index, true)"
+                              >折叠</el-dropdown-item
+                            >
+                          </el-dropdown-menu>
+                        </template>
+                      </el-dropdown>
+                    </div>
+                  </template>
+                </LessonItem>
+              </template>
             </template>
-          </template>
+            <div
+              class="dp-center-center"
+              v-else
+              style="width: 100%; height: 100%"
+            >
+              <el-empty description="无资源" />
+            </div>
+            <div
+              @click="foldVisible = !foldVisible"
+              style="width: 100%"
+              class="overview-fold-title"
+              v-if="foldList.length > 0"
+            >
+              折叠 ({{ foldList.length }})
+              <img
+                :src="
+                  foldVisible
+                    ? '/common/doubleup.svg'
+                    : '/common/doubledown.svg'
+                "
+                alt=""
+              />
+              <div class="overview-fold-line"></div>
+            </div>
+            <template v-if="foldVisible">
+              <template
+                class="dp-space-center"
+                v-for="(item, index) in foldList"
+                :key="`fold${item._key}`"
+              >
+                <LessonItem :item="item" @clickLesson="chooseLesson(item)">
+                  <template #button>
+                    <div
+                      class="lessonItem-button dp-center-center"
+                      @click="$event.stopPropagation()"
+                    >
+                      <el-dropdown trigger="click" :hide-on-click="false">
+                        <div class="icon-point dp--center">
+                          <el-icon><MoreFilled /></el-icon>
+                        </div>
+                        <template #dropdown>
+                          <el-dropdown-menu>
+                            <el-dropdown-item
+                              @click="foldLesson(item, index, false)"
+                              >取消折叠</el-dropdown-item
+                            >
+                          </el-dropdown-menu>
+                        </template>
+                      </el-dropdown>
+                    </div>
+                  </template>
+                </LessonItem>
+              </template>
+            </template>
+          </div>
         </div>
       </div>
     </div>
@@ -310,15 +352,15 @@ watchEffect(() => {
 .overview {
   width: 100vw;
   height: 100vh;
-  background-image: url("/common/bg.png");
+  background-image: url("/common/commonBg.png");
   background-size: 100% 100%;
   background-repeat: no-repeat;
   padding-top: 40px;
   box-sizing: border-box;
   .overview-header {
     width: 100%;
-    height: 52px;
-    margin-bottom: 40px;
+    height: 30px;
+    margin-bottom: 30px;
     padding: 0px 57px 0px 28px;
     box-sizing: border-box;
     @include flex(space-between, center, null);
@@ -327,8 +369,9 @@ watchEffect(() => {
       font-size: 22px;
       color: #000000;
       line-height: 22px;
-      > div {
-        margin-right: 7px;
+      img {
+        width: 146px;
+        height: 30px;
       }
     }
     .overview-button {
@@ -344,86 +387,125 @@ watchEffect(() => {
       }
     }
   }
-  .overview-container {
+  .overview-box {
     width: 100%;
-    height: calc(100% - 125px);
-    padding: 25px 120px;
+    height: calc(100vh - 100px);
     box-sizing: border-box;
-    @include flex(space-between, flex-start, null);
-    .calendar-box {
-      width: 460px;
-      background: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0px 0px 16px 0px rgba(0, 0, 0, 0.09);
-      @include p-number(28px, 36px);
-    }
-    .overview-box {
-      width: 1188px;
+    @include flex(center, flex-start, null);
+    .overview-container {
+      width: 1200px;
       height: 100%;
       .overview-top {
         width: 100%;
-        height: 95px;
-        margin-bottom: 32px;
-        background: #ffffff;
-        border-radius: 14px;
-        box-shadow: 0px 0px 16px 0px rgba(0, 0, 0, 0.09);
+        height: 300px;
         @include flex(space-between, center, null);
-        .overview-top-container {
-          width: 50%;
-          height: 48px;
-          border-right: 1px solid #d8d8d8;
-          cursor: pointer;
-          @include flex(center, center, null);
-          img {
-            width: 48px;
-            height: 48px;
-            margin-right: 5.5px;
+        .calendar-box {
+          width: 275px;
+          background: #ffffff;
+          border-radius: 7px;
+          box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.09);
+          @include p-number(17px, 21px);
+        }
+        .data-box {
+          width: calc(100% - 375px);
+          @include flex(center, space-between, wrap);
+          .data-top {
+            width: 100%;
+            height: 67px;
+            font-size: 24px;
+            color: #000000;
+            line-height: 33px;
+            margin-bottom: 50px;
+            @include flex(flex-start, center, null);
+            .data-top-avatar {
+            }
           }
-          .overview-top-content {
-            height: 48px;
-            margin-left: 5.5px;
-            .overview-top-title {
-              height: 26px;
-              font-size: 24px;
-              font-family: DIN Alternate, DIN Alternate-Bold;
-              font-weight: 700;
-              color: #000000;
-              margin-bottom: 7px;
-              span {
-                font-size: 16px;
-                color: #999999;
-                margin-left: 8px;
+          .data-bottom {
+            width: 100%;
+            height: 105px;
+            @include flex(space-between, center, null);
+            .data-container {
+              width: 33%;
+              height: 100%;
+              cursor: pointer;
+              @include flex(flex-start, center, wrap);
+              .data-title {
+                width: 100%;
+                height: 67px;
+                font-size: 58px;
+                font-family: DIN Alternate, DIN Alternate-Bold;
+                font-weight: bold;
+                color: #000000;
+                margin-bottom: 4px;
+                padding-left: 11px;
+                box-sizing: border-box;
+                span {
+                  font-size: 22px;
+                  font-weight: normal;
+                  color: #999999;
+                  margin-left: 8px;
+                }
+              }
+              .data-subtitle {
+                width: 100%;
+                height: 35px;
+                font-size: 25px;
+                color: #333333;
+                line-height: 36px;
+                @include flex(flex-start, center, null);
+                img {
+                  width: 35px;
+                  height: 35px;
+                  margin-right: 5.5px;
+                }
               }
             }
-            .overview-top-subtitle {
-              height: 20px;
-              font-size: 14px;
-            }
-          }
-          &:nth-child(3) {
-            border-right: 0px;
           }
         }
       }
+      .overview-center {
+        width: 100%;
+        height: 33px;
+        font-size: 24px;
+        font-family: PingFang SC, PingFang SC-Regular;
+        color: #000000;
+        line-height: 33px;
+        margin: 25px 0px 17px 0px;
+      }
       .overview-bottom {
         width: 100%;
-        height: calc(100% - 127px);
-        background: #ffffff;
+        height: calc(100% - 450px);
+        background: rgba(255, 255, 255, 0.88);
         border-radius: 14px;
         box-shadow: 0px 0px 16px 0px rgba(0, 0, 0, 0.09);
-        position: relative;
-        z-index: 1;
-        @include p-number(9px, 47px);
-        @include scroll();
-        @include flex(center, center, wrap);
-        .overview-fold-title {
+        @include p-number(24px, 15px);
+
+        .overview-bottom-box {
           width: 100%;
-          height: 20px;
-          font-size: 18px;
-          color: #333333;
-          line-height: 20px;
-          margin-top: 20px;
-          cursor: pointer;
+          height: 100%;
+          @include p-number(0px, 32px);
+          @include scroll();
+          @include flex(center, center, wrap);
+          .overview-fold-title {
+            width: 100%;
+            height: 20px;
+            font-size: 14px;
+            color: #333333;
+            line-height: 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            @include flex(flex-start, center, null);
+            img {
+              width: 10px;
+              height: 9px;
+              margin: 0px 10px;
+            }
+            .overview-fold-line {
+              flex: 1;
+              height: 1px;
+              border-bottom: 1px dashed #cfcfcf;
+            }
+          }
         }
       }
     }

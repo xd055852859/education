@@ -8,6 +8,7 @@ import { ElMessage } from "element-plus";
 import _ from "lodash";
 import { storeToRefs } from "pinia";
 import KeywordItem from "./keywordItem.vue";
+import FontIcon from "./fontIcon.vue";
 const dayjs: any = inject("dayjs");
 const { lessonKey, lessonInfo } = storeToRefs(appStore.lessonStore);
 const props = defineProps<{
@@ -204,7 +205,7 @@ watch(
           style="margin-left: 10px"
           @click="emits('setKeyword', '')"
         >
-          <el-icon><Close /></el-icon>
+          <el-icon color="#999" size="18"><Close /></el-icon>
         </div>
       </div>
     </div>
@@ -240,7 +241,13 @@ watch(
           : {}
       "
     >
-    <div></div>
+      <div
+        class="dp-center-center icon-point"
+        @click="noteVisible = false"
+        v-if="noteVisible"
+      >
+        <FontIcon iconName="zhankai" :iconStyle="{ color: '#333' }" />
+      </div>
       <div class="data-right-note" v-if="noteVisible">
         <el-input
           v-model="note"
@@ -264,7 +271,7 @@ watch(
           round
           class="left-button"
           @click="
-            noteVisible ? saveNote() : null;
+            noteVisible && note ? saveNote() : null;
             noteVisible = !noteVisible;
           "
           >{{ noteVisible ? "保存备注" : "写备注" }}</el-button
@@ -291,9 +298,9 @@ watch(
     font-size: 32px;
     font-family: DIN Black, DIN Black-Black;
     font-weight: 900;
-    color: #333333;
+    color: $commonColor;
     line-height: 40px;
-    padding: 0px 20px 0px 53px;
+    padding: 0px 20px 0px 10px;
     box-sizing: border-box;
   }
   .data-right-content {
@@ -305,16 +312,17 @@ watch(
 
     .data-right-iframe {
       width: 100%;
-      height: calc(100vh - 380px);
-      padding: 10px;
+      height: calc(100vh - 220px);
+      padding: 0px 10px;
       box-sizing: border-box;
-      @include scroll();
+      // @include scroll();
     }
   }
 
   .data-right-button {
     width: 100%;
-    padding: 30px 50px;
+    padding: 0px 50px 30px 50px;
+    background-color: #fff;
     box-sizing: border-box;
     position: absolute;
     z-index: 2;
@@ -336,11 +344,18 @@ watch(
 }
 </style>
 <style lang="scss">
-.data-right-note {
-  .el-textarea__inner {
-    background: #f9f9f9;
-    border: 1px solid #e3e3e3;
-    border-radius: 12px;
+.data-right {
+  .el-tabs {
+    .el-tabs__header {
+      margin-bottom: 5px;
+    }
+  }
+  .data-right-note {
+    .el-textarea__inner {
+      background: #f9f9f9;
+      border: 1px solid #e3e3e3;
+      border-radius: 12px;
+    }
   }
 }
 </style>

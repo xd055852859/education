@@ -1,13 +1,18 @@
 <script setup lang="ts">
 const props = defineProps<{
   item: any;
+  last?: boolean;
 }>();
 const emits = defineEmits<{
   (e: "clickLesson"): void;
 }>();
 </script>
 <template>
-  <div class="lessonItem" @click="emits('clickLesson')">
+  <div
+    class="lessonItem"
+    @click="emits('clickLesson')"
+    :style="last ? { borderBottom: '0px' } : {}"
+  >
     <div class="lessonItem-img">
       <img :src="item.cover" alt="" />
       <img

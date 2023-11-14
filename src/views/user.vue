@@ -268,7 +268,7 @@ const shareHtml = () => {
         <img src="/user/logo5.svg" alt="" />用户协议
       </div>
       <div class="user-nav-item" @click="shareHtml()">
-        <img src="/user/logo7.svg" alt="" />分享
+        <img src="/user/logo8.svg" alt="" />分享
       </div>
       <div class="user-nav-item" @click="logout">
         <img src="/user/logo6.svg" alt="" />退出登录

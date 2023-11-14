@@ -26,10 +26,11 @@ const routes: Array<RouteRecordRaw> = [
         children: [],
       },
       {
-        path: "concern",
+        path: "concern/:tab",
         name: "concern",
         component: () => import("@/views/concern.vue"),
         children: [],
+        props: true,
       },
       {
         path: "calendar",

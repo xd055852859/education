@@ -232,6 +232,7 @@ watchEffect(() => {
             v-for="(item, index) in mediaList"
             :key="`media${item._key}`"
             :content="item.name"
+            placement="right"
           >
             <div
               class="preview-media-item single-to-long"

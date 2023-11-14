@@ -37,7 +37,7 @@ const showLogin = ref<boolean>(false);
 .login {
   width: 100vw;
   height: 100vh;
-  background-image: url("/login/logoBg.png");
+  background-image: url("/common/commonBg.png");
   background-size: 100% 100%;
   background-repeat: no-repeat;
   @include flex(center, center, null);

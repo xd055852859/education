@@ -407,7 +407,7 @@ watch(studyTab, () => {
                       "
                     >
                       <template v-if="captionObj">
-                        <div class="study-video-subtitle">
+                        <!-- <div class="study-video-subtitle">
                           <div
                             class="study-subtitle-text"
                             :style="{
@@ -418,15 +418,9 @@ watch(studyTab, () => {
                               })`,
                             }"
                           >
-                            {{
-                              studyMediaRef.reloadState
-                                ? `第 ${mediaIndex + 1} 句循环中...`
-                                : `第 ${mediaIndex + 1} / ${
-                                    captionsList.length
-                                  } 句`
-                            }}
+                           
                           </div>
-                        </div>
+                        </div> -->
                         <div class="study-original">
                           <span
                             v-for="(item, index) in captionObj.original"
@@ -469,7 +463,7 @@ watch(studyTab, () => {
                               fontSize: '10px',
                               marginRight: '3px',
                             }"
-                          />上一句
+                          />上句
                         </div>
                         <div
                           class="buttonGroup-top-center"
@@ -488,7 +482,7 @@ watch(studyTab, () => {
                           style="justify-content: flex-end"
                           @click="changeMediaIndex('next')"
                         >
-                          下一句
+                          下句
                           <FontIcon
                             iconName="xiayiju1"
                             :iconStyle="{
@@ -497,6 +491,22 @@ watch(studyTab, () => {
                             }"
                           />
                         </div>
+                      </div>
+                      <div
+                        class="buttonGroup-center"
+                        :style="{
+                          color: studyMediaRef.reloadState ? '#4d57ff' : '#666',
+                        }"
+                      >
+                        <template v-if="studyMediaRef.reloadState && captionObj"
+                          ><span style="font-weight: 600;margin-right:2px">磨耳朵: </span>
+                          {{ `第 ${mediaIndex + 1}  句 ` }}</template
+                        >
+                        <template v-else-if="captionObj">{{
+                          `欣赏至第 ${mediaIndex + 1} 句 (共 ${
+                            captionsList.length
+                          } 句)`
+                        }}</template>
                       </div>
                       <div class="buttonGroup-bottom">
                         <FontIcon
@@ -804,26 +814,32 @@ watch(studyTab, () => {
             .study-video-buttonGroup {
               width: 295px;
               height: 100%;
+              font-family: PingFang SC, PingFang SC-Regular;
               .buttonGroup-top {
                 width: 100%;
-                height: 130px;
-                background: rgba(0, 0, 0, 0.09);
-                border-radius: 9px;
-                margin-bottom: 10px;
+                height: 95px;
+
+                background: #e8e8e8;
+                border-top-left-radius: 9px;
+                border-top-right-radius: 9px;
+
                 @include p-number(0px, 10px);
                 @include flex(space-between, center, null);
                 .buttonGroup-top-text {
-                  width: 65px;
+                  width: 60px;
+                  height:30px;
                   font-size: 12px;
-                  font-family: PingFang SC, PingFang SC-Regular;
-                  text-align: left;
-                  line-height: 20px;
                   cursor: pointer;
-                  @include flex(flex-start, center, null);
+                  @include flex(center, center, null);
+                  &:hover {
+                    background: #dbdbdb;
+                    border-radius: 8px;
+                    color: $commonColor;
+                  }
                 }
                 .buttonGroup-top-center {
-                  width: 110px;
-                  height: 110px;
+                  width: 75px;
+                  height: 75px;
                   overflow: hidden;
                   cursor: pointer;
                   img {
@@ -832,6 +848,16 @@ watch(studyTab, () => {
                     object-fit: cover;
                   }
                 }
+              }
+              .buttonGroup-center {
+                width: 100%;
+                height: 37px;
+                background: #e2e2e2;
+                border-radius: 0px 0px 9px 9px;
+                margin-bottom: 10px;
+                font-size: 16px;
+                text-align: center;
+                line-height: 37px;
               }
               .buttonGroup-bottom {
                 width: 100%;
@@ -851,7 +877,7 @@ watch(studyTab, () => {
                   height: 100%;
                   @include flex(space-between, center, null);
                   .buttonGroup-bottom-slider {
-                    width: calc(100% - 80px);
+                    width: calc(100% - 90px);
                     height: 2px;
                     background: #4d57ff;
                   }

@@ -72,6 +72,7 @@ const getChartData = async () => {
       item.type = "bar";
       item.min = 0;
       item.max = 100;
+      item.areaColor = ["141", "169", "541"];
       return item;
     });
     list[1] = dataRes.data.studyTime.map((item) => {
@@ -84,6 +85,7 @@ const getChartData = async () => {
         .duration(item.count * 60000)
         .asHours()
         .toFixed(1);
+      item.areaColor = ["255", "218", "142"];
       return item;
     });
     xData.value = _.sortBy(
@@ -185,11 +187,17 @@ watchEffect(() => {
 </script>
 <template>
   <div class="calendar">
-    <Header :title="'学习日历'" :backPath="'/home'" />
     <div class="calendar-container">
       <div class="calendar-left">
-        <div>
-          <div class="calendar-chart">
+        <Header :title="'学习日历'" :backPath="'/home'" />
+        <div class="calendar-left-box">
+          <div
+            class="calendar-chart"
+            v-if="
+              (chartData[0] && chartData[0].length > 2) ||
+              (chartData[1] && chartData[1].length > 2)
+            "
+          >
             <line-chart
               line-id="board-chart"
               :chart-data="chartData"
@@ -197,12 +205,11 @@ watchEffect(() => {
               @chooseDate="chooseDate"
               :yData="yData"
               :xData="xData"
-              v-if="chartData.length > 0"
             />
           </div>
 
           <!-- v-if="index < item.length - 1" -->
-          <template v-if="keywordList.length > 0">
+          <template v-if="keywordList.length">
             <div class="calendar-title" v-if="chartDate !== 0">
               {{ dayjs(chartDate).format("YYYY.M.DD") }} 星期{{
                 "日一二三四五六".split("")[dayjs(chartDate).day()]
@@ -242,35 +249,41 @@ watchEffect(() => {
 .calendar {
   width: 100vw;
   height: 100vh;
-  align-content: flex-start;
-  @include p-number(34px, 0px);
-  @include flex(center, center, wrap);
+  // align-content: flex-start;
+  // @include p-number(34px, 0px);
+  // @include flex(center, center, wrap);
   .calendar-container {
     width: 100vw;
-    height: calc(100vh - 120px);
-    margin-top: 25px;
-    padding: 10px 119px 20px 78px;
-    box-sizing: border-box;
+    height: 100vh;
     @include flex(space-between, center, null);
-
     .calendar-left {
-      min-width: 1120px;
       flex: 1;
       height: 100%;
-      @include p-number(10px, 10px);
-      @include scroll();
-      .calendar-chart {
-        width: 100%;
-        height: 284px;
-        background: #ffffff;
-        border-radius: 16px;
-        box-shadow: 0px 2px 9px 0px rgba(178, 178, 178, 0.5);
-        margin-bottom: 30px;
-      }
-      .calendar-title {
-        width: 100%;
-        height: 40px;
-        font-size: 18px;
+
+      @include flex(space-between, center, wrap);
+      .calendar-left-box {
+        min-width: 1120px;
+        flex: 1;
+        height: calc(100vh - 120px);
+        padding: 10px 120px;
+        margin-top: 25px;
+        box-sizing: border-box;
+        @include scroll();
+        .calendar-chart {
+          width: 100%;
+          height: 300px;
+          background: #ffffff;
+          border-radius: 16px;
+          box-shadow: 0px 2px 9px 0px rgba(178, 178, 178, 0.5);
+          margin-bottom: 30px;
+          padding-top: 15px;
+          box-sizing: border-box;
+        }
+        .calendar-title {
+          width: 100%;
+          height: 40px;
+          font-size: 18px;
+        }
       }
     }
   }

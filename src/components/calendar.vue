@@ -161,7 +161,7 @@ watchEffect(() => {
         src="/overview/leftCalendar.svg"
         alt=""
       />
-      <div>{{ formatMonth(calendarMonth, "zh") }} {{ calendarYear }}</div>
+      <div>{{ calendarYear }} {{ formatMonth(calendarMonth, "zh") }}</div>
       <img
         @click="chooseMonth('right')"
         src="/overview/rightCalendar.svg"
@@ -187,15 +187,7 @@ watchEffect(() => {
       >
         <div
           class="calendar-day-item"
-          :style="
-            calendarItem.targetDay
-              ? {
-                  border: '2px solid #4d57ff',
-                  borderRadius: '12px',
-                  color: '#4D57FF',
-                }
-              : {}
-          "
+          :class="{ 'calendar-day-choose': calendarItem.targetDay }"
         >
           <div
             class="calendar-day-title"
@@ -223,63 +215,66 @@ watchEffect(() => {
   width: 100%;
   .calendar-header {
     width: 100%;
-    height: 56px;
-    font-size: 24px;
-    font-weight: 600;
+    height: 34px;
+    font-size: 12px;
     color: #333333;
-    margin-bottom: 27px;
+    line-height: 17px;
+    letter-spacing: 0.27px;
+    font-weight: bold;
+    margin-bottom: 10px;
     @include flex(space-between, center, null);
     img {
-      width: 56px;
-      height: 56px;
+      width: 34px;
+      height: 34px;
       cursor: pointer;
     }
   }
   .calendar-week {
     width: 100%;
-    margin-bottom: 18px;
-    padding: 0px 18px;
-    box-sizing: border-box;
+    margin-bottom: 5px;
     @include flex(flex-start, center, null);
     .calendar-week-list {
       width: 14.2%;
       .calendar-week-item {
-        width: 44px;
-        height: 28px;
-        font-size: 24px;
-        font-weight: 500;
+        width: 26px;
+        height: 17px;
+        font-size: 12px;
         color: #9da3a9;
+        line-height: 17px;
         text-align: center;
-        line-height: 28px;
+        letter-spacing: 0.27px;
       }
     }
   }
   .calendar-day {
     width: 100%;
-    padding: 0px 18px;
-    box-sizing: border-box;
     @include flex(flex-start, center, wrap);
     .calendar-day-list {
       width: 14.2%;
-      height: 55px;
+      height: 35px;
       .calendar-day-item {
-        width: 44px;
-        height: 55px;
+        width: 26px;
+        height: 30px;
         align-content: center;
         box-sizing: border-box;
         @include flex(center, center, wrap);
         .calendar-day-title {
           width: 100%;
-          font-size: 24px;
-          font-weight: 500;
-          color: #333;
+          font-size: 12px;
           text-align: center;
+          color: #333333;
+          line-height: 16px;
         }
         .calendar-day-point {
-          width: 10px;
-          height: 10px;
+          width: 5px;
+          height: 5px;
           border-radius: 50%;
         }
+      }
+      .calendar-day-choose {
+        border: 1.2px solid $commonColor;
+        border-radius: 7px;
+        color: $commonColor;
       }
     }
   }
