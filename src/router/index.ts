@@ -33,10 +33,11 @@ const routes: Array<RouteRecordRaw> = [
         props: true,
       },
       {
-        path: "calendar",
+        path: "calendar/:targetDate",
         name: "calendar",
         component: () => import("@/views/calendar.vue"),
-        children: [], 
+        children: [],
+        props: true,
       },
       {
         path: "note",

@@ -32,7 +32,6 @@ const captionObj = ref<any>(null);
 const mediaSrc = ref<string>("");
 const audioSrc = ref<string>("");
 const mediaListIndex = ref<number>(-1);
-const videoIndex = ref<number>(-1);
 const captionsState = ref<boolean>(false);
 const lastTime = ref<number>(0);
 const mediaIndex = ref<number>(-1);
@@ -77,16 +76,18 @@ const getArticleList = async (key) => {
       item.original = item.original.match(
         /\b\w+\b|[\x21-\x2f\x3a-\x40\x5b-\x60\x7B-\x7F]/g
       );
+      text = text.filter((item) => item.length > 2);
       list.push(...text);
       return item;
     });
     list.forEach((item) => {
-      obj[item] = {
-        name: item,
-        value: obj[item] ? obj[item].value + 1 : 1,
+      obj[item.toLowerCase()] = {
+        name: item.toLowerCase(),
+        value: obj[item.toLowerCase()] ? obj[item.toLowerCase()].value + 1 : 1,
       };
     });
-    textList.value = Object.values(obj);
+
+    textList.value = [...new Set(Object.values(obj))];
   }
 };
 const getCaption = async (key) => {
@@ -186,32 +187,44 @@ const reloadMedia = (time, index) => {
     clickMedia(captionsList.value[index].startTime);
   }
 };
-const chooseWord = async (word, index, type: string, key: string) => {
+const chooseWord = async (word, index, type: string, key?: string) => {
   keyword.value = word;
   keyIndex.value = index;
   setMusicSrc("/music/click.mp3");
   // if (studyMediaRef.value) {
   //   studyMediaRef.value.pauseMedia();
   // }
-
-  let obj: any = {
-    agentKey: agentKey.value,
-    keyword: word,
-    // type: word.length === 1 ? 1 : 2,
-    type: 1,
-  };
-  sentenceKey.value = key;
-  if (type === "section") {
-    obj.sectionKey = key;
-  } else {
-    console.log(type, key);
-    obj.captionKey = key;
+  if (type !== "cloud" && key) {
+    let obj: any = {
+      agentKey: agentKey.value,
+      keyword: word,
+      // type: word.length === 1 ? 1 : 2,
+      type: 1,
+    };
+    sentenceKey.value = key;
+    if (type === "section") {
+      obj.sectionKey = key;
+    } else {
+      obj.captionKey = key;
+    }
+    let wordRes = (await api.request.post("study/keyword", {
+      ...obj,
+    })) as ResultProps;
+    if (wordRes.msg === "OK") {
+      keywordKey.value = wordRes.data._key;
+    }
   }
-  let wordRes = (await api.request.post("study/keyword", {
-    ...obj,
-  })) as ResultProps;
-  if (wordRes.msg === "OK") {
-    keywordKey.value = wordRes.data._key;
+};
+const clearMedia = () => {
+  captionObj.value = null;
+  captionsState.value = false;
+  lastTime.value = 0;
+  mediaIndex.value = -1;
+  keyword.value = "";
+  keywordKey.value = "";
+  keyIndex.value = -1;
+  if (studyMediaRef.value) {
+    studyMediaRef.value.handleTimeChange(0, "out");
   }
 };
 const clickNode = () => {
@@ -240,6 +253,7 @@ watch([mediaListIndex, lessonInfo], ([newIndex, newInfo]) => {
       getCaption(mediaList.value[newIndex]._key);
     }
     getArticleList(mediaList.value[newIndex]._key);
+    clearMedia();
     if (studyInterval.value) {
       clearInterval(studyInterval.value);
     }
@@ -274,7 +288,7 @@ watch(studyTab, () => {
       <div class="study-left">
         <Header :title="lessonInfo.name" :backPath="'/home'">
           <template #icon>
-            <el-dropdown>
+            <el-dropdown max-height="80vh">
               <div class="icon-point" style="margin-right: 8px">
                 <FontIcon iconName="liebiao" />
               </div>
@@ -334,9 +348,12 @@ watch(studyTab, () => {
         <div
           class="study-cloud"
           v-if="studyTab === 'cloud' && textList.length > 0"
-          style="top: 54px"
         >
-          <WordChart :chartData="textList" :wordId="'study-word'" />
+          <WordChart
+            :chartData="textList"
+            :wordId="'study-word'"
+            @chooseWord="chooseWord"
+          />
         </div>
         <div class="study-box" v-else>
           <template v-if="studyTab === 'original' && articleList.length > 0">
@@ -499,7 +516,9 @@ watch(studyTab, () => {
                         }"
                       >
                         <template v-if="studyMediaRef.reloadState && captionObj"
-                          ><span style="font-weight: 600;margin-right:2px">磨耳朵: </span>
+                          ><span style="font-weight: 600; margin-right: 2px"
+                            >磨耳朵:
+                          </span>
                           {{ `第 ${mediaIndex + 1}  句 ` }}</template
                         >
                         <template v-else-if="captionObj">{{
@@ -613,7 +632,7 @@ watch(studyTab, () => {
                 <div
                   class="study-original"
                   :style="sentenceKey === item._key ? { color: '#4D57FF' } : {}"
-                  @click="clickMedia(item.startTime, 'out', item._key)"
+                  @click="clickMedia(item.startTime, 'outer', item._key)"
                 >
                   <span
                     v-for="(textItem, textIndex) in item.original"
@@ -827,7 +846,7 @@ watch(studyTab, () => {
                 @include flex(space-between, center, null);
                 .buttonGroup-top-text {
                   width: 60px;
-                  height:30px;
+                  height: 30px;
                   font-size: 12px;
                   cursor: pointer;
                   @include flex(center, center, null);
@@ -950,10 +969,7 @@ watch(studyTab, () => {
       }
       .study-cloud {
         width: 100%;
-        height: calc(100vh - 190px);
-        position: absolute;
-        z-index: 1;
-        left: 0px;
+        height: calc(100vh - 105px);
       }
     }
   }
@@ -985,9 +1001,9 @@ watch(studyTab, () => {
 .buttonGroup-bottom-slider,
 .buttonGroup-bottom-volume-bar {
   .el-slider__button {
-    width: 16px;
-    height: 16px;
-    margin-bottom: 5px;
+    width: 0.1rem;
+    height: 0.1rem;
+    margin-bottom: 0.02rem;
   }
   .el-slider__bar {
     background: #4d57ff;

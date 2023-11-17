@@ -11,6 +11,9 @@ import { ResultProps } from "@/interface/Common";
 import { ElMessage, ElMessageBox } from "element-plus";
 
 import KeywordItem from "@/components/keywordItem.vue";
+const props = defineProps<{
+  targetDate: number;
+}>();
 const { agentKey } = storeToRefs(appStore.agentStore);
 const dayjs: any = inject("dayjs");
 // const expandState = ref<boolean>(false);
@@ -24,6 +27,9 @@ const changeSize = ref<number>(0);
 const chartDate = ref<number>(0);
 const xData = ref<any>([]);
 const yData = ref<any>([]);
+onMounted(() => {
+  chartDate.value = props.targetDate;
+});
 const getData = async () => {
   chartDate.value = chartDate.value
     ? chartDate.value
@@ -62,7 +68,9 @@ const getData = async () => {
 const getChartData = async () => {
   let dataRes = (await api.request.get("study/chart", {
     agentKey: agentKey.value,
-    begTime: dayjs().subtract(7, "days").startOf("day").valueOf(),
+    begTime: props.targetDate
+      ? props.targetDate
+      : dayjs().subtract(7, "days").startOf("day").valueOf(),
     endTime: dayjs().endOf("day").valueOf(),
   })) as ResultProps;
   if (dataRes.msg === "OK") {
@@ -194,8 +202,8 @@ watchEffect(() => {
           <div
             class="calendar-chart"
             v-if="
-              (chartData[0] && chartData[0].length > 2) ||
-              (chartData[1] && chartData[1].length > 2)
+              (chartData[0] && chartData[0].length > 0) ||
+              (chartData[1] && chartData[1].length > 0)
             "
           >
             <line-chart

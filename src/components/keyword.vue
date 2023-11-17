@@ -32,9 +32,13 @@ const chooseTab = ref<string[]>([]);
 const chooseKeywordTabs = computed(() => {
   let list: any = [];
   chooseTab.value = [];
-  if (keywordTabs.value && user.value?.config?.keywordTab) {
+  if (keywordTabs.value) {
     keywordTabs.value.forEach((item) => {
-      if (user.value?.config.keywordTab.indexOf(item._key) !== -1) {
+      if (
+        !user.value?.config?.keywordTab ||
+        user.value?.config.keywordTab.length === 0 ||
+        user.value?.config.keywordTab.indexOf(item._key) !== -1
+      ) {
         list.push(item);
         checkTab.value.push(true);
         chooseTab.value.push(item._key);
@@ -42,10 +46,6 @@ const chooseKeywordTabs = computed(() => {
         checkTab.value.push(false);
       }
     });
-    console.log(keywordTabs.value);
-    if (props.type === "outer") {
-      keywordTab.value = keywordTabs.value[0]._key;
-    }
   }
   return list;
 });
@@ -158,6 +158,11 @@ const openTuLink = () => {
 const changeList = (list) => {
   keywordList.value = _.cloneDeep(list);
 };
+watch(chooseTab, (newTab) => {
+  if (props.type === "outer") {
+    keywordTab.value = newTab[0];
+  }
+});
 watch(
   () => props.keywordKey,
   (newWordKey) => {
@@ -212,7 +217,10 @@ watch(
     <div class="data-right-content">
       <el-tabs v-model="keywordTab">
         <el-tab-pane label="生词表" name="word" v-if="type === 'inner'">
-          <div class="data-right-iframe">
+          <div
+            class="data-right-iframe"
+            style="overflow-x: hidden; overflow-y: auto"
+          >
             <template v-if="keywordList.length > 0">
               <KeywordItem @changeList="changeList" :list="keywordList" />
             </template>
@@ -265,7 +273,7 @@ watch(
         >保存</el-button
       > -->
       </div>
-      <div>
+      <div v-if="keywordKey">
         <el-button
           type="primary"
           round
@@ -291,6 +299,7 @@ watch(
   box-sizing: border-box;
   position: relative;
   z-index: 1;
+  background-color: #fff;
   @include scroll();
   .data-right-title {
     width: 100%;

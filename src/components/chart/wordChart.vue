@@ -6,7 +6,7 @@ const props = defineProps<{
   chartData: any;
 }>();
 const emits = defineEmits<{
-  (e: "chooseDate", date: string): void;
+  (e: "chooseWord", word: string, index: number, type: string): void;
 }>();
 let chart: any = null;
 let option: any = null;
@@ -113,7 +113,8 @@ onMounted(() => {
 
   option && chart.setOption(option);
   chart.on("click", function (params) {
-    console.log(params);
+    emits("chooseWord", params.name, 0, "cloud");
+    // chart.resize();
   });
 });
 watch(

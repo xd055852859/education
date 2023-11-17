@@ -13,8 +13,9 @@ import router from "@/router";
 import { ElMessage } from "element-plus";
 const dayjs: any = inject("dayjs");
 const { user } = storeToRefs(appStore.authStore);
-const { agentInfo, agentKey } = storeToRefs(appStore.agentStore);
+const { agentList, agentInfo, agentKey } = storeToRefs(appStore.agentStore);
 const { setLessonKey } = appStore.lessonStore;
+const { getAgentList, setAgentKey } = appStore.agentStore;
 const calendarNumList = ref<any>([]);
 const calendarTimeList = ref<any>([]);
 const userVisible = ref<boolean>(false);
@@ -118,6 +119,7 @@ watchEffect(() => {
     getData();
     getFoldData();
     getNum();
+    getAgentList();
   }
 });
 </script>
@@ -163,17 +165,46 @@ watchEffect(() => {
                   }"
                 />
               </div>
-              <div class="dp-space-center">
-                你好, {{ agentInfo?.name }}
-                <FontIcon
-                  iconName="zhankai"
-                  :iconStyle="{
-                    color: '#666',
-                    fontSize: '14px',
-                    marginLeft: '10px',
-                  }"
-                />
-              </div>
+              <el-dropdown>
+                <div class="dp-space-center">
+                  你好, {{ agentInfo?.name }}
+                  <FontIcon
+                    iconName="zhankai"
+                    :iconStyle="{
+                      color: '#666',
+                      fontSize: '14px',
+                      marginLeft: '10px',
+                    }"
+                  />
+                </div>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item
+                      v-for="(item, index) in agentList"
+                      :key="`agent${item._key}`"
+                    >
+                      <div
+                        class="agent-item select-third-item icon-point"
+                        @click="setAgentKey(item._key)"
+                      >
+                        <div class="select-item-logo">
+                          <Avatar
+                            :src="item.icon"
+                            :alt="item.name"
+                            :style="{ width: '0.28rem', height: '0.28rem' }"
+                          />
+                        </div>
+                        <div class="select-item-name single-to-long">
+                          {{ item.name }}
+                        </div>
+                        <div v-if="item._key === agentKey">
+                          <img src="/common/choose.svg" alt="" />
+                        </div>
+                      </div>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
             <div class="data-bottom">
               <div
@@ -181,7 +212,7 @@ watchEffect(() => {
                 @click="$router.push('/home/concern/care')"
               >
                 <div class="data-title" style="color: #5478fb">
-                  {{ noteNum }}<span>个</span>
+                  {{ keywordCount }}<span>个</span>
                 </div>
                 <div class="data-subtitle">
                   <img src="/overview/logo1.svg" alt="" />生词库
@@ -192,7 +223,7 @@ watchEffect(() => {
                 @click="$router.push('/home/concern/uncare')"
               >
                 <div class="data-title" style="color: #ff5660">
-                  {{ keywordCount }}<span>个</span>
+                  {{ noteNum }}<span>个</span>
                 </div>
                 <div class="data-subtitle">
                   <img src="/overview/logo2.svg" alt="" />熟词库
@@ -512,4 +543,8 @@ watchEffect(() => {
   }
 }
 </style>
-<style></style>
+<style>
+.agent-item {
+  width: 400px;
+}
+</style>

@@ -106,8 +106,10 @@ const pauseMedia = () => {
   audioRef.value.pause();
   audioIsPlay.value = true;
 };
-watchEffect(() => {
-  calculateDuration();
+watchEffect(() => { 
+  if (props.src) {
+    calculateDuration();
+  }
 });
 defineExpose({
   handleTimeChange,

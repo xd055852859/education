@@ -186,8 +186,13 @@ watchEffect(() => {
         :key="`calendar${calendarIndex}`"
       >
         <div
-          class="calendar-day-item"
+          class="calendar-day-item icon-pointer"
           :class="{ 'calendar-day-choose': calendarItem.targetDay }"
+          @click="
+            calendarTimeList.indexOf(calendarItem.startTime) !== -1
+              ? $router.push(`/home/calendar/${calendarItem.startTime}`)
+              : null
+          "
         >
           <div
             class="calendar-day-title"

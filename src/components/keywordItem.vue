@@ -180,18 +180,19 @@ const deleteKeyword = async (index, keywordKey, keywordIndex) => {
 .calendar-keyword {
   width: 100%;
   border-radius: 14px;
-  box-shadow: 0px 2px 9px 0px rgba(178, 178, 178, 0.5);
   padding: 15px 33px;
   box-sizing: border-box;
   margin-bottom: 20px;
+  box-shadow: 0px 2px 5px 0px rgba(178, 178, 178, 0.5);
   .keyword-title {
     width: 100%;
     height: 28px;
     font-size: 18px;
     font-weight: 500;
-    color: $commonColor;
+    color: #666666;
     line-height: 26px;
     margin-bottom: 10px;
+
     @include flex(space-between, center, null);
   }
   .keyword-box {
@@ -201,33 +202,30 @@ const deleteKeyword = async (index, keywordKey, keywordIndex) => {
     @include p-number(14px, 28px);
     .keyword-box-title {
       width: 100%;
-      height: 40px;
-      font-size: 28px;
+      height: 32px;
+      font-size: 30px;
       font-family: DIN Black, DIN Black-Black;
       font-weight: 900;
-      line-height: 35px;
+      line-height: 32px;
       margin-bottom: 6px;
+      color: #4d57ff;
+      @include flex(space-between, center, null);
       .concernItem-box-icon {
-        display: none;
-      }
-      &:hover {
-        .concernItem-box-icon {
-          @include flex(center, center, null);
-        }
+        @include flex(center, center, null);
       }
     }
     .keyword-box-subtitle {
       width: 100%;
-      font-size: 22px;
+      font-size: 18px;
       color: #333333;
-      line-height: 26px;
-      margin-bottom: 10px;
+      line-height: 32px;
     }
     .keyword-box-content {
-      background: #ffffff;
-      font-size: 20px;
-      padding: 0px 10px;
-      box-sizing: border-box;
+      font-size: 16px;
+      line-height: 28px;
+      white-space: pre-wrap;
+      color: #4d57ff;
+      @include p-number(10px, 10px);
     }
     .keyword-box-icon {
       display: none;
@@ -242,6 +240,7 @@ const deleteKeyword = async (index, keywordKey, keywordIndex) => {
   }
 
   &:hover {
+    box-shadow: 0px 2px 10px 0px rgba(78, 78, 78, 0.5);
     .keyword-box {
       .keyword-box-icon {
         @include flex(center, center, null);

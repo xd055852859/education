@@ -51,9 +51,6 @@ const rules = reactive<FormRules<RuleForm>>({
     // { min: 1, max: 12, message: "请输入不超过", trigger: "blur" },
   ],
 });
-onMounted(() => {
-  getAgentList();
-});
 const uploadImage = (file, type) => {
   let mimeType = ["image/*"];
   if (file) {
