@@ -4,6 +4,7 @@ import "echarts-wordcloud";
 const props = defineProps<{
   wordId: string;
   chartData: any;
+  keyword?: string;
 }>();
 const emits = defineEmits<{
   (e: "chooseWord", word: string, index: number, type: string): void;
@@ -24,7 +25,6 @@ const color = [
 onMounted(() => {
   let chartDom: any = document.getElementById(props.wordId);
   chart = echarts.init(chartDom);
-  console.log(chartDom.parentElement.offsetWidth);
   option = {
     series: [
       {
@@ -120,7 +120,6 @@ onMounted(() => {
 watch(
   () => props.chartData,
   (newVal) => {
-    console.log(newVal);
     //@ts-ignore
     chart.setOption<echarts.EChartsOption>({
       series: [
@@ -133,6 +132,15 @@ watch(
     chart.resize();
   },
   { deep: true }
+);
+watch(
+  () => props.keyword,
+  (newWord) => {
+    if (!newWord)
+      chart.resize({
+        width: document.documentElement.offsetWidth,
+      });
+  }
 );
 </script>
 <template>

@@ -44,24 +44,24 @@ const sharePano = () => {
 <style scoped lang="scss">
 .code-container {
   width: 100%;
-  height: 450px;
-  @include p-number(0px, 25px);
+  height: 400Px;
+  @include p-number(0px, 25Px);
   .code-url {
     width: 100%;
-    height: 90px;
+    height: 90Px;
     @include flex(space-between, center, null);
-    margin-bottom: 70px;
+    margin-bottom: 70Px;
     .code-input {
       flex: 1;
       border: 1px solid #efefef;
-      padding: 8px;
-      border-radius: 8px;
-      margin-right:20px;
+      padding: 8Px;
+      border-radius: 8Px;
+      margin-right:20Px;
     }
   }
   .code-box {
     width: 100%;
-    height: 180px;
+    height: 150Px;
     @include flex(center, center, null);
   }
 }

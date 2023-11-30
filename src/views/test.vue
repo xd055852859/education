@@ -117,24 +117,6 @@ onMounted(() => {
 
   option && chart.setOption(option);
 });
-const videoRef = ref<any>(null);
-const options = reactive({
-  src: "https://cdn.jsdelivr.net/gh/xdlumia/files/video-play/IronMan.mp4", //视频源
-  poster: "", //封面
-});
-const onPlay = (ev) => {
-  console.log("播放");
-};
-const onPause = (ev) => {
-  console.log(ev, "暂停");
-};
-
-const onTimeupdate = (ev) => {
-  console.log(ev, "时间更新");
-};
-const onCanplay = (ev) => {
-  console.log(ev, "可以播放");
-};
 
 const screenshot = (id, imgType) => {
   let video: any = document.getElementById(id);

@@ -95,9 +95,9 @@ export const uploadFile = async (
     let observable = qiniu.upload(
       file,
       fileType
-        ? new Date().getTime() + "org." + fileType
+        ? new Date().getTime() + "_cjyy." + fileType
         : new Date().getTime() +
-            "_org" +
+            "_cjyy" +
             (file.name ? file.name.substr(file.name.lastIndexOf(".")) : ".png"),
       uptoken,
       putExtra,

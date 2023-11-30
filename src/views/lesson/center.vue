@@ -93,7 +93,7 @@ watch(
 </script>
 <template>
   <div class="lesson-center">
-    <Header title="课程中心" :backPath="'/home'" />
+    <Header title="课程库" :backPath="'/home'" />
     <div class="lesson-center-tag">
       <div
         v-for="(item, index) in tagList"

@@ -18,6 +18,7 @@ const props = defineProps<{
 }>();
 const emits = defineEmits<{
   (e: "setKeyword", keyword: string): void;
+  (e: "reloadData", keywordKey: string, note: string): void;
 }>();
 const { agentKey } = storeToRefs(appStore.agentStore);
 const { user } = storeToRefs(appStore.authStore);
@@ -29,16 +30,14 @@ const keywordTabs = ref<any>([]);
 const keywordTab = ref<string>("word");
 const keywordList = ref<any>([]);
 const chooseTab = ref<string[]>([]);
+const dropdownRef = ref<any>(null);
 const chooseKeywordTabs = computed(() => {
   let list: any = [];
+  checkTab.value = [];
   chooseTab.value = [];
   if (keywordTabs.value) {
     keywordTabs.value.forEach((item) => {
-      if (
-        !user.value?.config?.keywordTab ||
-        user.value?.config.keywordTab.length === 0 ||
-        user.value?.config.keywordTab.indexOf(item._key) !== -1
-      ) {
+      if (user.value?.config.keywordTab.indexOf(item._key) !== -1) {
         list.push(item);
         checkTab.value.push(true);
         chooseTab.value.push(item._key);
@@ -65,16 +64,18 @@ const getList = async () => {
         keywordsItem.note = keywordsItem.note.replace(/\n/g, "<br/>");
       }
       if (keywordsItem.sentences) {
-        keywordsItem.sentences = keywordsItem.sentences.map((sentenceItem) => {
-          let reg = new RegExp(`${keywordsItem.keyword}`, "g");
-          sentenceItem = Array.isArray(sentenceItem)
-            ? sentenceItem.join("")
-            : sentenceItem;
-          sentenceItem = sentenceItem
-            .replace(reg, `#${keywordsItem.keyword}#`)
-            .split("#");
-          return sentenceItem;
-        });
+        keywordsItem.sentences = [
+          keywordsItem.sentences.map((sentenceItem) => {
+            let reg = new RegExp(`${keywordsItem.keyword}`, "g");
+            sentenceItem = Array.isArray(sentenceItem)
+              ? sentenceItem.join("")
+              : sentenceItem;
+            sentenceItem = sentenceItem
+              .replace(reg, `#${keywordsItem.keyword}#`)
+              .split("#");
+            return sentenceItem;
+          }),
+        ];
       }
       let index = _.findIndex(keywordList.value, {
         mediaKey: keywordsItem.mediaKey,
@@ -113,14 +114,14 @@ const getTabData = async () => {
     keywordTabs.value = keyWordRes.data;
   }
 };
-const updateTab = async (key, value) => {
+const updateTab = async (key, value, tabIndex) => {
   let index = chooseTab.value.indexOf(key);
   if (index === -1) {
     chooseTab.value.push(key);
-    checkTab.value[index] = true;
+    checkTab.value[tabIndex] = true;
   } else {
     chooseTab.value.splice(index, 1);
-    checkTab.value[index] = false;
+    checkTab.value[tabIndex] = false;
   }
   const keyWordRes = (await api.request.patch("user", {
     config: { ...user.value?.config, keywordTab: chooseTab.value },
@@ -132,14 +133,23 @@ const updateTab = async (key, value) => {
     });
   }
 };
-const saveNote = async () => {
+const saveNote = async (type?: string) => {
   let noteRes = (await api.request.patch("study/note", {
     agentKey: agentKey.value,
     keywordKey: props.keywordKey,
     note: note.value,
   })) as ResultProps;
   if (noteRes.msg === "OK") {
-    // ElMessage.success("保存备注成功");
+    if (type) {
+      ElMessage.success("保存备注成功");
+    }
+    keywordList.value.forEach((item, index) => {
+      let keywordIndex = _.findIndex(item.keywords, { _key: props.keywordKey });
+      if (keywordIndex !== -1) {
+        item.keywords[keywordIndex].note = note.value;
+      }
+    });
+    emits("reloadData", props.keywordKey, note.value)
   }
 };
 const openTuLink = () => {
@@ -163,6 +173,15 @@ watch(chooseTab, (newTab) => {
     keywordTab.value = newTab[0];
   }
 });
+watchEffect(() => {
+  if (
+    (!user.value?.config?.keywordTab ||
+      user.value?.config?.keywordTab.length === 0) &&
+    dropdownRef.value
+  ) {
+    dropdownRef.value.handleOpen();
+  }
+});
 watch(
   () => props.keywordKey,
   (newWordKey) => {
@@ -179,48 +198,38 @@ watch(
     <div class="data-right-title dp-space-center">
       {{ keyword }}
       <div class="dp-center-center">
-        <el-dropdown trigger="click" :hide-on-click="false">
+        <!-- .study-audio-content  -->
+        <el-dropdown trigger="click" :hide-on-click="false" ref="dropdownRef">
           <div class="icon-point dp--center">
-            <el-icon><MoreFilled /></el-icon>
+            <el-icon>
+              <MoreFilled />
+            </el-icon>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item
-                v-for="(item, index) in keywordTabs"
-                :key="`tab${item._key}`"
-              >
+              <el-dropdown-item v-for="(item, index) in keywordTabs" :key="`tab${item._key}`">
                 <div class="dp-space-center" style="width: 120px">
-                  <el-checkbox
-                    v-model="checkTab[index]"
-                    :label="item.name"
-                    @change="
-                      (value) => {
-                        updateTab(item._key, value);
-                      }
-                    "
-                  />
+                  <el-checkbox v-model="checkTab[index]" :label="item.name" @change="(value) => {
+                      updateTab(item._key, value, index);
+                    }
+                    " />
                   {{ item.type }}
-                </div></el-dropdown-item
-              >
+                </div>
+              </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        <div
-          class="icon-point dp--center"
-          style="margin-left: 10px"
-          @click="emits('setKeyword', '')"
-        >
-          <el-icon color="#999" size="18"><Close /></el-icon>
+        <div class="icon-point dp--center" style="margin-left: 10px" @click="emits('setKeyword', '')">
+          <el-icon color="#999" size="18">
+            <Close />
+          </el-icon>
         </div>
       </div>
     </div>
     <div class="data-right-content">
       <el-tabs v-model="keywordTab">
         <el-tab-pane label="生词表" name="word" v-if="type === 'inner'">
-          <div
-            class="data-right-iframe"
-            style="overflow-x: hidden; overflow-y: auto"
-          >
+          <div class="data-right-iframe" style="overflow-x: hidden; overflow-y: auto">
             <template v-if="keywordList.length > 0">
               <KeywordItem @changeList="changeList" :list="keywordList" />
             </template>
@@ -229,41 +238,23 @@ watch(
             </div>
           </div>
         </el-tab-pane>
-        <el-tab-pane
-          v-for="item in chooseKeywordTabs"
-          :key="item._key"
-          :label="item.name"
-          :name="item._key"
-          ><div class="data-right-iframe">
+        <el-tab-pane v-for="item in chooseKeywordTabs" :key="item._key" :label="item.name" :name="item._key">
+          <div class="data-right-iframe">
             <IframeView :url="`${item.url}${keyword}`" />
           </div>
         </el-tab-pane>
       </el-tabs>
     </div>
 
-    <div
-      class="data-right-button"
-      :style="
-        noteVisible
-          ? { boxShadow: '0px 2px 9px 0px rgba(178, 178, 178, 0.5)' }
-          : {}
-      "
-    >
-      <div
-        class="dp-center-center icon-point"
-        @click="noteVisible = false"
-        v-if="noteVisible"
-      >
+    <div class="data-right-button" :style="noteVisible
+        ? { boxShadow: '0px 2px 9px 0px rgba(178, 178, 178, 0.5)' }
+        : {}
+      ">
+      <div class="dp-center-center icon-point" @click="noteVisible = false" v-if="noteVisible">
         <FontIcon iconName="zhankai" :iconStyle="{ color: '#333' }" />
       </div>
       <div class="data-right-note" v-if="noteVisible">
-        <el-input
-          v-model="note"
-          :rows="6"
-          type="textarea"
-          placeholder="请输入备注"
-          @change="saveNote"
-        />
+        <el-input v-model="note" :rows="6" type="textarea" placeholder="请输入备注" @change="saveNote()" />
         <!-- <el-button
         type="primary"
         round
@@ -274,19 +265,11 @@ watch(
       > -->
       </div>
       <div v-if="keywordKey">
-        <el-button
-          type="primary"
-          round
-          class="left-button"
-          @click="
-            noteVisible && note ? saveNote() : null;
-            noteVisible = !noteVisible;
-          "
-          >{{ noteVisible ? "保存备注" : "写备注" }}</el-button
-        >
-        <el-button class="right-button" link @click="openTuLink"
-          >反馈吐槽</el-button
-        >
+        <el-button type="primary" round class="left-button" @click="
+          noteVisible && note ? saveNote('save') : null;
+        noteVisible = !noteVisible;
+        ">{{ noteVisible ? "保存备注" : "写备注" }}</el-button>
+        <el-button class="right-button" link @click="openTuLink">反馈吐槽</el-button>
       </div>
     </div>
   </div>
@@ -301,6 +284,7 @@ watch(
   z-index: 1;
   background-color: #fff;
   @include scroll();
+
   .data-right-title {
     width: 100%;
     height: 40px;
@@ -312,6 +296,7 @@ watch(
     padding: 0px 20px 0px 10px;
     box-sizing: border-box;
   }
+
   .data-right-content {
     width: 100%;
     height: calc(100% - 120px);
@@ -337,14 +322,17 @@ watch(
     z-index: 2;
     bottom: 0px;
     left: 0px;
+
     .data-right-note {
       width: 100%;
       margin-bottom: 18px;
     }
+
     .left-button {
       width: 246px;
       height: 38px;
     }
+
     .right-button {
       width: 150px;
       height: 38px;
@@ -359,6 +347,7 @@ watch(
       margin-bottom: 5px;
     }
   }
+
   .data-right-note {
     .el-textarea__inner {
       background: #f9f9f9;

@@ -19,13 +19,14 @@ const { getAgentList, setAgentKey } = appStore.agentStore;
 const calendarNumList = ref<any>([]);
 const calendarTimeList = ref<any>([]);
 const userVisible = ref<boolean>(false);
+const onceVisible = ref<boolean>(false);
 const foldVisible = ref<boolean>(false);
 const subscribeList = ref<any>([]);
 const foldList = ref<any>([]);
 const studyTime = ref<number>(0);
 const keywordCount = ref<number>(0);
+const masterNum = ref<number>(0);
 const noteNum = ref<number>(0);
-
 const getCalendarNum = async (startTime, endTime) => {
   let numRes = (await api.request.get("study/calendar", {
     agentKey: agentKey.value,
@@ -66,6 +67,7 @@ const getNum = async () => {
     studyTime.value = numRes.data.studyTime;
     keywordCount.value = numRes.data.keywordCount;
     noteNum.value = numRes.data.keywordCount2;
+    masterNum.value = numRes.data.masterNum;
   }
 };
 const chooseLesson = (item) => {
@@ -85,7 +87,11 @@ const foldLesson = async (item, index, folded) => {
       foldList.value.push(newItem[0]);
     } else {
       let newItem = foldList.value.splice(index, 1);
-      subscribeList.value.push(newItem[0]);
+      if (newItem[0].top) {
+        subscribeList.value.unshift(newItem[0]);
+      } else {
+        subscribeList.value.push(newItem[0]);
+      }
     }
   }
 };
@@ -109,7 +115,6 @@ const topLesson = async (item, index, top) => {
           topIndex = subscribeIndex;
         }
       });
-      console.log(topIndex);
       subscribeList.value.splice(topIndex + 1, 0, item);
     }
   }
@@ -127,72 +132,49 @@ watchEffect(() => {
   <div class="overview">
     <div class="overview-header">
       <div class="dp--center overview-user">
-        <div @mouseenter="userVisible = true">
-          <FontIcon
-            iconName="a-shensuocaidan1x"
-            :iconStyle="{ fontSize: '22px', marginRight: '10px' }"
-          />
+        <div @mouseenter="onceVisible ? (userVisible = true) : null" @mouseleave="onceVisible = true">
+          <FontIcon iconName="a-shensuocaidan1x" :iconStyle="{ fontSize: '22px', marginRight: '10px' }" />
         </div>
         <img src="/overview/logo.svg" alt="" />
       </div>
-      <el-button
-        type="primary"
-        class="overview-button"
-        round
-        @click="$router.push('center')"
-        ><img src="/overview/overviewHeader.svg" alt="" />课程库</el-button
-      >
+      <el-button type="primary" class="overview-button" round @click="$router.push('center')"><img
+          src="/overview/overviewHeader.svg" alt="" />课程库</el-button>
     </div>
-    <div class="overview-box">
+    <div class="overview-box" @mousemove.once="onceVisible = true">
       <div class="overview-container">
         <div class="overview-top">
           <div class="calendar-box">
-            <Calendar
-              @getCalendarNum="getCalendarNum"
-              :calendarTimeList="calendarTimeList"
-            />
+            <Calendar @getCalendarNum="getCalendarNum" :calendarTimeList="calendarTimeList" />
           </div>
           <div class="data-box">
             <div class="data-top">
               <div @click="userVisible = true" class="data-top-avatar">
-                <Avatar
-                  :src="user?.userAvatar"
-                  :alt="user?.userName"
-                  :style="{
-                    width: '0.3rem',
-                    height: '0.3rem',
-                    marginRight: '0.07rem',
-                  }"
-                />
+                <Avatar :src="agentInfo?.icon" :alt="agentInfo?.name" :style="{
+                  width: '0.3rem',
+                  height: '0.3rem',
+                  marginRight: '0.07rem',
+                }" />
               </div>
               <el-dropdown>
                 <div class="dp-space-center">
-                  你好, {{ agentInfo?.name }}
-                  <FontIcon
-                    iconName="zhankai"
-                    :iconStyle="{
-                      color: '#666',
-                      fontSize: '14px',
-                      marginLeft: '10px',
-                    }"
-                  />
+                  你好, {{ agentInfo?.name }}, 共学习了 {{
+                    dayjs
+                      .duration(studyTime * 60000)
+                      .asHours()
+                      .toFixed(1)
+                  }} 小时, {{ keywordCount + noteNum + masterNum }} 个词汇
+                  <FontIcon iconName="zhankai" :iconStyle="{
+                    color: '#666',
+                    fontSize: '14px',
+                    marginLeft: '10px',
+                  }" />
                 </div>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item
-                      v-for="(item, index) in agentList"
-                      :key="`agent${item._key}`"
-                    >
-                      <div
-                        class="agent-item select-third-item icon-point"
-                        @click="setAgentKey(item._key)"
-                      >
+                    <el-dropdown-item v-for="(item, index) in agentList" :key="`agent${item._key}`">
+                      <div class="agent-item select-third-item icon-point" @click="setAgentKey(item._key)">
                         <div class="select-item-logo">
-                          <Avatar
-                            :src="item.icon"
-                            :alt="item.name"
-                            :style="{ width: '0.28rem', height: '0.28rem' }"
-                          />
+                          <Avatar :src="item.icon" :alt="item.name" :style="{ width: '0.28rem', height: '0.28rem' }" />
                         </div>
                         <div class="select-item-name single-to-long">
                           {{ item.name }}
@@ -207,33 +189,31 @@ watchEffect(() => {
               </el-dropdown>
             </div>
             <div class="data-bottom">
-              <div
-                class="data-container"
-                @click="$router.push('/home/concern/care')"
-              >
+              <div class="data-container" @click="$router.push('/home/concern/care')">
                 <div class="data-title" style="color: #5478fb">
                   {{ keywordCount }}<span>个</span>
                 </div>
                 <div class="data-subtitle">
-                  <img src="/overview/logo1.svg" alt="" />生词库
+                  <img src="/overview/logo1.svg" alt="" />生词
                 </div>
               </div>
-              <div
-                class="data-container"
-                @click="$router.push('/home/concern/uncare')"
-              >
-                <div class="data-title" style="color: #ff5660">
+              <div class="data-container" @click="$router.push('/home/concern/uncare')">
+                <div class="data-title" style="color: #13C78C">
                   {{ noteNum }}<span>个</span>
                 </div>
                 <div class="data-subtitle">
-                  <img src="/overview/logo2.svg" alt="" />熟词库
+                  <img src="/overview/logo2.svg" alt="" />熟词
                 </div>
               </div>
-
-              <div
-                class="data-container"
-                @click="$router.push('/home/calendar')"
-              >
+              <div class="data-container" @click="$router.push('/home/concern/uncare')">
+                <div class="data-title" style="color: #ff5660">
+                  {{ masterNum }}<span>个</span>
+                </div>
+                <div class="data-subtitle">
+                  <img src="/overview/logo4.svg" alt="" />超熟词
+                </div>
+              </div>
+              <div class="data-container" @click="$router.push(`/home/calendar/0`)">
                 <div class="data-title" style="color: #eb930c">
                   {{
                     dayjs
@@ -243,7 +223,7 @@ watchEffect(() => {
                   }}<span>小时</span>
                 </div>
                 <div class="data-subtitle">
-                  <img src="/overview/logo3.svg" alt="" />学习日历
+                  <img src="/overview/logo3.svg" alt="" />学习记录
                 </div>
               </div>
             </div>
@@ -261,47 +241,29 @@ watchEffect(() => {
           </div>
         </div>
         <div class="overview-center">
-          订阅课件( {{ subscribeList.length }} )
+          订阅( {{ subscribeList.length }} )
         </div>
         <div class="overview-bottom">
-          <div
-            class="overview-bottom-box"
-            :style="{
-              alignContent: subscribeList.length > 0 ? 'flex-start' : 'center',
-            }"
-          >
+          <div class="overview-bottom-box" :style="{
+            alignContent: subscribeList.length > 0 ? 'flex-start' : 'center',
+          }">
             <template v-if="subscribeList.length > 0">
-              <template
-                class="dp-space-center"
-                v-for="(item, index) in subscribeList"
-                :key="`lesson${item._key}`"
-              >
-                <LessonItem
-                  :item="item"
-                  @clickLesson="chooseLesson(item)"
-                  :last="index === subscribeList.length - 1"
-                >
+              <template class="dp-space-center" v-for="(item, index) in subscribeList" :key="`lesson${item._key}`">
+                <LessonItem :item="item" @clickLesson="chooseLesson(item)" :last="index === subscribeList.length - 1">
                   <template #button>
-                    <div
-                      class="lessonItem-button dp-center-center"
-                      @click="$event.stopPropagation()"
-                    >
-                      <el-dropdown trigger="click" :hide-on-click="false">
+                    <div class="lessonItem-button dp-center-center" @click="$event.stopPropagation()">
+                      <el-dropdown trigger="click" :hide-on-click="false" :teleported="false">
                         <div class="icon-point dp--center">
-                          <el-icon><MoreFilled /></el-icon>
+                          <el-icon>
+                            <MoreFilled />
+                          </el-icon>
                         </div>
                         <template #dropdown>
                           <el-dropdown-menu>
-                            <el-dropdown-item
-                              @click="topLesson(item, index, !item.top)"
-                              >{{
-                                item.top ? "取消置顶" : "置顶"
-                              }}</el-dropdown-item
-                            >
-                            <el-dropdown-item
-                              @click="foldLesson(item, index, true)"
-                              >折叠</el-dropdown-item
-                            >
+                            <el-dropdown-item @click="topLesson(item, index, !item.top)">{{
+                              item.top ? "取消置顶" : "置顶"
+                            }}</el-dropdown-item>
+                            <el-dropdown-item @click="foldLesson(item, index, true)">折叠</el-dropdown-item>
                           </el-dropdown-menu>
                         </template>
                       </el-dropdown>
@@ -310,52 +272,32 @@ watchEffect(() => {
                 </LessonItem>
               </template>
             </template>
-            <div
-              class="dp-center-center"
-              v-else
-              style="width: 100%; height: 100%"
-            >
+            <div class="dp-center-center" v-else style="width: 100%; height: 100%">
               <el-empty description="无资源" />
             </div>
-            <div
-              @click="foldVisible = !foldVisible"
-              style="width: 100%"
-              class="overview-fold-title"
-              v-if="foldList.length > 0"
-            >
+            <div @click="foldVisible = !foldVisible" style="width: 100%" class="overview-fold-title"
+              v-if="foldList.length > 0">
               折叠 ({{ foldList.length }})
-              <img
-                :src="
-                  foldVisible
-                    ? '/common/doubleup.svg'
-                    : '/common/doubledown.svg'
-                "
-                alt=""
-              />
+              <img :src="foldVisible
+                ? '/common/doubleup.svg'
+                : '/common/doubledown.svg'
+                " alt="" />
               <div class="overview-fold-line"></div>
             </div>
             <template v-if="foldVisible">
-              <template
-                class="dp-space-center"
-                v-for="(item, index) in foldList"
-                :key="`fold${item._key}`"
-              >
+              <template class="dp-space-center" v-for="(item, index) in foldList" :key="`fold${item._key}`">
                 <LessonItem :item="item" @clickLesson="chooseLesson(item)">
                   <template #button>
-                    <div
-                      class="lessonItem-button dp-center-center"
-                      @click="$event.stopPropagation()"
-                    >
+                    <div class="lessonItem-button dp-center-center" @click="$event.stopPropagation()">
                       <el-dropdown trigger="click" :hide-on-click="false">
                         <div class="icon-point dp--center">
-                          <el-icon><MoreFilled /></el-icon>
+                          <el-icon>
+                            <MoreFilled />
+                          </el-icon>
                         </div>
                         <template #dropdown>
                           <el-dropdown-menu>
-                            <el-dropdown-item
-                              @click="foldLesson(item, index, false)"
-                              >取消折叠</el-dropdown-item
-                            >
+                            <el-dropdown-item @click="foldLesson(item, index, false)">取消折叠</el-dropdown-item>
                           </el-dropdown-menu>
                         </template>
                       </el-dropdown>
@@ -369,13 +311,7 @@ watchEffect(() => {
       </div>
     </div>
   </div>
-  <el-drawer
-    v-model="userVisible"
-    title="用户"
-    direction="ltr"
-    size="16%"
-    :with-header="false"
-  >
+  <el-drawer v-model="userVisible" title="用户" direction="ltr" size="16%" :with-header="false">
     <userCenter />
   </el-drawer>
 </template>
@@ -388,6 +324,7 @@ watchEffect(() => {
   background-repeat: no-repeat;
   padding-top: 40px;
   box-sizing: border-box;
+
   .overview-header {
     width: 100%;
     height: 30px;
@@ -395,22 +332,26 @@ watchEffect(() => {
     padding: 0px 57px 0px 28px;
     box-sizing: border-box;
     @include flex(space-between, center, null);
+
     .overview-user {
       height: 100%;
       font-size: 22px;
       color: #000000;
       line-height: 22px;
+
       img {
         width: 146px;
         height: 30px;
       }
     }
+
     .overview-button {
       width: 168px;
       height: 52px;
       font-size: 20px;
       font-weight: 500;
       color: #ffffff;
+
       img {
         width: 22px;
         height: 22px;
@@ -418,18 +359,22 @@ watchEffect(() => {
       }
     }
   }
+
   .overview-box {
     width: 100%;
     height: calc(100vh - 100px);
     box-sizing: border-box;
     @include flex(center, flex-start, null);
+
     .overview-container {
       width: 1200px;
       height: 100%;
+
       .overview-top {
         width: 100%;
         height: 300px;
         @include flex(space-between, center, null);
+
         .calendar-box {
           width: 275px;
           background: #ffffff;
@@ -437,9 +382,11 @@ watchEffect(() => {
           box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.09);
           @include p-number(17px, 21px);
         }
+
         .data-box {
           width: calc(100% - 375px);
           @include flex(center, space-between, wrap);
+
           .data-top {
             width: 100%;
             height: 67px;
@@ -448,18 +395,21 @@ watchEffect(() => {
             line-height: 33px;
             margin-bottom: 50px;
             @include flex(flex-start, center, null);
-            .data-top-avatar {
-            }
+
+            .data-top-avatar {}
           }
+
           .data-bottom {
             width: 100%;
             height: 105px;
             @include flex(space-between, center, null);
+
             .data-container {
-              width: 33%;
+              width: 24%;
               height: 100%;
               cursor: pointer;
               @include flex(flex-start, center, wrap);
+
               .data-title {
                 width: 100%;
                 height: 67px;
@@ -470,6 +420,7 @@ watchEffect(() => {
                 margin-bottom: 4px;
                 padding-left: 11px;
                 box-sizing: border-box;
+
                 span {
                   font-size: 22px;
                   font-weight: normal;
@@ -477,6 +428,7 @@ watchEffect(() => {
                   margin-left: 8px;
                 }
               }
+
               .data-subtitle {
                 width: 100%;
                 height: 35px;
@@ -484,6 +436,7 @@ watchEffect(() => {
                 color: #333333;
                 line-height: 36px;
                 @include flex(flex-start, center, null);
+
                 img {
                   width: 35px;
                   height: 35px;
@@ -494,6 +447,7 @@ watchEffect(() => {
           }
         }
       }
+
       .overview-center {
         width: 100%;
         height: 33px;
@@ -503,6 +457,7 @@ watchEffect(() => {
         line-height: 33px;
         margin: 25px 0px 17px 0px;
       }
+
       .overview-bottom {
         width: 100%;
         height: calc(100% - 450px);
@@ -517,20 +472,23 @@ watchEffect(() => {
           @include p-number(0px, 32px);
           @include scroll();
           @include flex(center, center, wrap);
+
           .overview-fold-title {
             width: 100%;
             height: 20px;
-            font-size: 14px;
+            font-size: 18px;
             color: #333333;
             line-height: 20px;
             margin-top: 20px;
             cursor: pointer;
             @include flex(flex-start, center, null);
+
             img {
               width: 10px;
               height: 9px;
               margin: 0px 10px;
             }
+
             .overview-fold-line {
               flex: 1;
               height: 1px;

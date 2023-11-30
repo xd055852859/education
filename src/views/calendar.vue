@@ -12,7 +12,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 
 import KeywordItem from "@/components/keywordItem.vue";
 const props = defineProps<{
-  targetDate: number;
+  targetDate: number | string;
 }>();
 const { agentKey } = storeToRefs(appStore.agentStore);
 const dayjs: any = inject("dayjs");
@@ -27,8 +27,10 @@ const changeSize = ref<number>(0);
 const chartDate = ref<number>(0);
 const xData = ref<any>([]);
 const yData = ref<any>([]);
+const lineData = ref<any>([]);
 onMounted(() => {
-  chartDate.value = props.targetDate;
+  //@ts-ignore
+  chartDate.value = parseInt(props.targetDate);
 });
 const getData = async () => {
   chartDate.value = chartDate.value
@@ -68,13 +70,28 @@ const getData = async () => {
 const getChartData = async () => {
   let dataRes = (await api.request.get("study/chart", {
     agentKey: agentKey.value,
-    begTime: props.targetDate
-      ? props.targetDate
-      : dayjs().subtract(7, "days").startOf("day").valueOf(),
+    begTime: dayjs().subtract(7, "days").startOf("day").valueOf(),
     endTime: dayjs().endOf("day").valueOf(),
   })) as ResultProps;
   if (dataRes.msg === "OK") {
+    chartData.value = [];
     let list: any = [];
+    lineData.value = [
+      {
+        name: "关键字",
+        type: "bar",
+        min: 0,
+        max: 100,
+        areaColor: ["141", "169", "541"],
+      },
+      {
+        name: "学习时间",
+        type: "line",
+        min: 0,
+        max: 24,
+        areaColor: ["255", "218", "142"],
+      },
+    ];
     list[0] = dataRes.data.keywordNum.map((item) => {
       item.name = "关键字";
       item.type = "bar";
@@ -84,16 +101,11 @@ const getChartData = async () => {
       return item;
     });
     list[1] = dataRes.data.studyTime.map((item) => {
-      item.name = "学习时间";
-      item.type = "line";
-      item.min = 0;
-      item.max = 24;
       item.num = item.count;
       item.count = dayjs
         .duration(item.count * 60000)
         .asHours()
         .toFixed(1);
-      item.areaColor = ["255", "218", "142"];
       return item;
     });
     xData.value = _.sortBy(
@@ -162,12 +174,10 @@ const getChartData = async () => {
         },
       },
     ];
-    console.log(chartData.value);
     chartIndex.value = chartData.value[0].length - 1;
   }
 };
 const chooseWord = (word, wordKey) => {
-  console.log(word);
   keyword.value = word;
   keywordKey.value = wordKey;
   changeSize.value = 1;
@@ -175,10 +185,13 @@ const chooseWord = (word, wordKey) => {
 const changeList = (list) => {
   keywordList.value = _.cloneDeep(list);
 };
-const chooseDate = (date, index) => {
+const chooseDate = (date) => {
   chartDate.value = dayjs(date).startOf("day").valueOf();
 };
-
+const reloadData = () => {
+  // getData();
+  getChartData();
+};
 // const expandKeyword=(index)=>{
 //   keywordList.value[index].expandState = !keywordList.value[index].expandState;
 // }
@@ -202,8 +215,9 @@ watchEffect(() => {
           <div
             class="calendar-chart"
             v-if="
-              (chartData[0] && chartData[0].length > 0) ||
-              (chartData[1] && chartData[1].length > 0)
+              ((chartData[0] && chartData[0].length > 0) ||
+                (chartData[1] && chartData[1].length > 0)) &&
+              targetDate == 0
             "
           >
             <line-chart
@@ -213,6 +227,7 @@ watchEffect(() => {
               @chooseDate="chooseDate"
               :yData="yData"
               :xData="xData"
+              :lineData="lineData"
             />
           </div>
 
@@ -239,6 +254,7 @@ watchEffect(() => {
               :keyword="keyword"
               @chooseWord="chooseWord"
               :type="'outer'"
+              @reloadData="reloadData"
             />
           </template>
         </div>

@@ -16,6 +16,7 @@ const props = defineProps<{
 const emits = defineEmits<{
   (e: "changeList", list: any): void;
   (e: "chooseWord", word: string, wordKey: string): void;
+  (e: "reloadData"): void;
 }>();
 
 const archiveKeyword = async (index, keywordKey, keywordIndex, isArchived) => {
@@ -47,6 +48,7 @@ const deleteKeyword = async (index, keywordKey, keywordIndex) => {
         list.splice(index, 1);
       }
       emits("changeList", list);
+      emits("reloadData");
     }
   });
 };
@@ -82,7 +84,7 @@ const deleteKeyword = async (index, keywordKey, keywordIndex) => {
       >
         <div class="keyword-box-title dp-space-center">
           {{ keywordItem.keyword }}
-          <div class="dp-center-center">
+          <div class="dp-center-center" v-if="type === 'outer'">
             <div
               v-if="keywordItem.isArchived"
               class="concernItem-box-icon icon-point"
@@ -115,7 +117,9 @@ const deleteKeyword = async (index, keywordKey, keywordIndex) => {
         </div>
         <div
           class="keyword-box-subtitle"
-          v-for="(sentenceItem, sentenceIndex) in keywordItem.sentences"
+          v-for="(sentenceItem, sentenceIndex) in [
+            ...new Set(keywordItem.sentences),
+          ]"
           :key="`sentence${sentenceIndex}`"
         >
           <span

@@ -94,11 +94,6 @@ const getTargetDate = (targetDate: any, calendarDayNum: number) => {
           targetDate.clone().add(1, "months").month() + 1
         }-${nextFirstDate}`
       );
-      console.log(
-        `${targetDate.clone().year()}-${
-          targetDate.clone().add(1, "months").month() + 1
-        }-${nextFirstDate}`
-      );
       strDate.push({
         month: "next",
         day: nextFirstDate,
@@ -139,7 +134,6 @@ const getTargetDate = (targetDate: any, calendarDayNum: number) => {
       strDate.push(obj);
     }
   }
-  console.log(strDate);
   emits(
     "getCalendarNum",
     strDate[0].startTime,
@@ -161,7 +155,7 @@ watchEffect(() => {
         src="/overview/leftCalendar.svg"
         alt=""
       />
-      <div>{{ calendarYear }} {{ formatMonth(calendarMonth, "zh") }}</div>
+      <div>{{ calendarYear }}年 {{ calendarMonth }}月</div>
       <img
         @click="chooseMonth('right')"
         src="/overview/rightCalendar.svg"
@@ -186,8 +180,12 @@ watchEffect(() => {
         :key="`calendar${calendarIndex}`"
       >
         <div
-          class="calendar-day-item icon-pointer"
-          :class="{ 'calendar-day-choose': calendarItem.targetDay }"
+          class="calendar-day-item"
+          :class="{
+            'calendar-day-choose': calendarItem.targetDay,
+            'icon-point':
+              calendarTimeList.indexOf(calendarItem.startTime) !== -1,
+          }"
           @click="
             calendarTimeList.indexOf(calendarItem.startTime) !== -1
               ? $router.push(`/home/calendar/${calendarItem.startTime}`)

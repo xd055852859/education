@@ -7,9 +7,10 @@ const props = defineProps<{
   changeSize?: number;
   yData?: any;
   xData?: any;
+  lineData?: any;
 }>();
 const emits = defineEmits<{
-  (e: "chooseDate", date: string, index: number): void;
+  (e: "chooseDate", date: string): void;
 }>();
 const dayjs: any = inject("dayjs");
 let chart: any | null = null;
@@ -29,26 +30,25 @@ onMounted(() => {
   ];
 
   seriesData.value = props.chartData.map((item, index) => {
-    console.log(item);
     let newItem: any = {
-      name: item[0].name,
+      name: props.lineData[index].name,
       type: "line",
-      min: item[0].min,
-      max: item[0].max,
+      min: props.lineData[index].min,
+      max: props.lineData[index].max,
       yAxisIndex: index,
       showSymbol: false,
       itemStyle: {
-        color: `rgb(${item[0].areaColor[0]},${item[0].areaColor[1]},${item[0].areaColor[2]})`
+        color: `rgb(${props.lineData[index].areaColor[0]},${props.lineData[index].areaColor[1]},${props.lineData[index].areaColor[2]})`,
       },
       areaStyle: {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
           {
             offset: 0,
-            color: `rgba(${item[0].areaColor[0]},${item[0].areaColor[1]},${item[0].areaColor[2]},0.6)`,
+            color: `rgba(${props.lineData[index].areaColor[0]},${props.lineData[index].areaColor[1]},${props.lineData[index].areaColor[2]},0.6)`,
           },
           {
             offset: 1,
-            color: `rgba(${item[0].areaColor[0]},${item[0].areaColor[1]},${item[0].areaColor[2]},0)`,
+            color: `rgba(${props.lineData[index].areaColor[0]},${props.lineData[index].areaColor[1]},${props.lineData[index].areaColor[2]},0)`,
           },
         ]),
       },
@@ -58,12 +58,12 @@ onMounted(() => {
     item.forEach((countItem) => {
       newItem.data.push(countItem.count);
     });
+    console.log(newItem);
     return newItem;
   });
-  nameData.value = props.chartData.map((item) => {
-    return item[0]?.name;
+  nameData.value = props.lineData.map((item) => {
+    return item.name;
   });
-  console.log(props.xData);
   let chartDom: any = document.getElementById(props.lineId);
   chart = echarts.init(chartDom, null, {
     width: chartDom.parentElement.offsetWidth * 1.05,
@@ -80,9 +80,10 @@ onMounted(() => {
       // containLabel: true
     },
     xAxis: {
-      name: "日期",
+      name: "",
       type: "category",
       data: props.xData,
+      triggerEvent: true
     },
     yAxis: props.yData,
     tooltip: {
@@ -92,56 +93,53 @@ onMounted(() => {
   };
 
   option && chart.setOption(option);
-  console.log(seriesData.value);
   chart.on("click", function (params) {
-    console.log(params);
-    emits("chooseDate", params.name, params.dataIndex);
+    console.log(params)
+    if (params.componentType === "xAxis") {
+      emits("chooseDate", params.value);
+    } else if (params.componentType === "series") {
+      emits("chooseDate", params.name);
+    }
+
   });
 });
 watch(
   () => props.chartData,
   (newVal) => {
-    xAxisData.value = [
-      ...props.chartData[0].map((item) => {
-        return dayjs(item.ctime).format("MM-DD");
-      }),
-      ...props.chartData[1].map((item) => {
-        return dayjs(item.ctime).format("MM-DD");
-      }),
-    ];
-    seriesData.value = newVal.map((item, index) => {
+    seriesData.value = props.chartData.map((item, index) => {
       let newItem: any = {
-        name: item[0].name,
+        name: props.lineData[index].name,
         type: "line",
-        min: item[0].min,
-        max: item[0].max,
+        min: props.lineData[index].min,
+        max: props.lineData[index].max,
         yAxisIndex: index,
         showSymbol: false,
-        data: [],
-        smooth: true,
+        itemStyle: {
+          color: `rgb(${props.lineData[index].areaColor[0]},${props.lineData[index].areaColor[1]},${props.lineData[index].areaColor[2]})`,
+        },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
             {
               offset: 0,
-              color: `rgba(${item[0].areaColor[0]},${item[0].areaColor[1]},${item[0].areaColor[2]},0.3)`,
+              color: `rgba(${props.lineData[index].areaColor[0]},${props.lineData[index].areaColor[1]},${props.lineData[index].areaColor[2]},0.6)`,
             },
             {
               offset: 1,
-              color: `rgba(${item[0].areaColor[0]},${item[0].areaColor[1]},${item[0].areaColor[2]},0.8)`,
+              color: `rgba(${props.lineData[index].areaColor[0]},${props.lineData[index].areaColor[1]},${props.lineData[index].areaColor[2]},0)`,
             },
           ]),
         },
+        data: [],
+        smooth: true,
       };
       item.forEach((countItem) => {
         newItem.data.push(countItem.count);
       });
+      console.log(newItem);
       return newItem;
     });
     //@ts-ignore
     chart.setOption<echarts.EChartsOption>({
-      xAxis: {
-        data: xAxisData.value,
-      },
       series: seriesData.value,
     });
     //@ts-ignore

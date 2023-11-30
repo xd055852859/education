@@ -266,3 +266,9 @@ body,
     transform: rotate(360deg);
   }
 }
+
+@media (orientation: portrait) {
+  body {
+    transform: rotate(90deg);
+  }
+}

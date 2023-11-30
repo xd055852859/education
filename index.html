@@ -3,16 +3,74 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/common/logo.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width,
+    initial-scale=1.0,maximum-scale=1.0, user-scalable=no,
+    orientation=landscape"
+    />
     <title>场景英语</title>
     <link
       rel="stylesheet"
       href="//at.alicdn.com/t/c/font_4292368_szioz62y57.css"
     />
   </head>
-  <script type="text/javascript" src='/tucao.js'></script> 
+  <script type="text/javascript" src="/tucao.js"></script>
+
   <body>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
+  <script>
+    // // 检测设备方向
+    window.addEventListener("load", function () {
+      console.log(window.orientation)
+      if (window.orientation === 0 || window.orientation === 180) {
+        // 设备处于竖屏模式，强制横屏
+        document.body.style.transform = "rotate(90deg)";
+      } else {
+        // 设备处于横屏模式，恢复原始样式
+        document.body.style.transform = "none";
+      }
+    });
+    // // 检测设备方向
+    window.addEventListener("orientationchange", function () {
+      if (window.orientation === 0 || window.orientation === 180) {
+        // 设备处于竖屏模式，强制横屏
+        document.body.style.transform = "rotate(90deg)";
+      } else {
+        // 设备处于横屏模式，恢复原始样式
+        document.body.style.transform = "none";
+      }
+    });
+    //     获取当前宽高，计算，并旋转
+    // var width = window.innerWidth,
+    //   height = window.innerHeight;
+    // if (width < height) {
+    //   var diff = height / 2 - width / 2;
+    //   document.body.style.width = height + "px";
+    //   document.body.style.height = width + "px";
+    //   document.body.style.transform =
+    //     "rotate(90deg) translate(" + diff + "px," + diff + "px)";
+    // }
+    // //绑定事件
+    // var evt = "onorientationchange" in window ? "orientationchange" : "resize";
+    // window.addEventListener(evt, function () {
+    //   setTimeout(function () {
+    //     var width1 = window.innerWidth,
+    //       height1 = window.innerHeight;
+    //     if (width1 < height1) {
+    //       var diff1 = height1 / 2 - width1 / 2;
+    //       document.body.style.width = height1 + "px";
+    //       document.body.style.height = width1 + "px";
+    //       document.body.style.transform =
+    //         "rotate(90deg) translate(" + diff1 + "px," + diff1 + "px)";
+    //     } else {
+    //       document.body.style.width = "100%";
+    //       document.body.style.height = "100%";
+    //       document.body.style.transform = "";
+    //     }
+    //   }, 400);
+    // });
+  </script>
 </html>

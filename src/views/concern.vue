@@ -15,6 +15,7 @@ const { agentKey } = storeToRefs(appStore.agentStore);
 const keywordTab = ref<string>("care");
 const keyword = ref<string>("");
 const keywordKey = ref<string>("");
+const keywordIndex = ref<number>(-1);
 const archivedNum = ref<number>(0);
 const keywordNum = ref<number>(0);
 const expandState = ref<boolean>(false);
@@ -23,10 +24,13 @@ const total = ref<number>(0);
 const keywordList = ref<any>([]);
 onMounted(() => {
   keywordTab.value = props.tab;
+  //@ts-ignore
+  expandState.value = localStorage.getItem("expandState") === "true"
 });
-const setKeyword = (word, wordKey) => {
+const setKeyword = (word, wordKey, wordIndex) => {
   keyword.value = word;
   keywordKey.value = wordKey;
+  keywordIndex.value = wordIndex
 };
 const getNumData = async () => {
   let dataRes = (await api.request.get("study/keyword/summary", {
@@ -38,7 +42,6 @@ const getNumData = async () => {
   }
 };
 const addNum = (num, type?: string) => {
-  console.log(num, type);
   if (type === "uncare") {
     archivedNum.value = archivedNum.value + num;
   } else if (type === "care") {
@@ -107,7 +110,7 @@ const archiveKeyword = async (e, key, index) => {
   bar.style.left = left + "px";
   bar.style.top = top + "px";
   bar.style.transition =
-    "left 1.5s linear, top 1.5s cubic-bezier(0.5, -0.5, 1, 1)";
+    "left 1s linear, top 1s cubic-bezier(0.5, -0.5, 1, 1)";
   document.body.appendChild(bar);
   // 添加动画属性
   let timer = setTimeout(() => {
@@ -143,9 +146,8 @@ const deleteKeyword = async (key, index) => {
     }
   });
 };
-const chooseWord = (word, wordKey) => {
-  console.log(word);
-  setKeyword(word, wordKey);
+const chooseWord = (word, wordKey, wordIndex) => {
+  setKeyword(word, wordKey, wordIndex);
 };
 const scrollKeyword = (e) => {
   //文档内容实际高度（包括超出视窗的溢出部分）
@@ -161,8 +163,18 @@ const scrollKeyword = (e) => {
     page.value++;
   }
 };
+const changeExpand = () => {
+  expandState.value = !expandState.value;
+  localStorage.setItem("expandState", expandState.value + '');
+}
+const reloadData = (key: string, note: string) => {
+  keywordList.value[keywordIndex.value].note = note;
+}
 watch(keywordTab, () => {
   page.value === 1;
+  keyword.value = "";
+  keywordKey.value = "";
+  keywordIndex.value = -1;
 });
 watchEffect(() => {
   getNumData();
@@ -171,7 +183,7 @@ watchEffect(() => {
 </script>
 <template>
   <div class="keyword">
-    <Header :title="'关注点'" :backPath="'/home'" />
+    <Header :title="'词库'" :backPath="'/home'" />
 
     <!-- class="study-audio" -->
     <!-- <video autoPlay controls ref="audioRef">
@@ -180,100 +192,64 @@ watchEffect(() => {
     <div class="keyword-container">
       <div class="keyword-left">
         <div class="keyword-tab">
-          <div
-            class="keyword-tab-item"
-            :class="{ 'keyword-tab-choose': keywordTab === 'care' }"
-            @click="keywordTab = 'care'"
-          >
-            {{ `关注点(${keywordNum})` }}
+          <div class="keyword-tab-item" :class="{ 'keyword-tab-choose': keywordTab === 'care' }"
+            @click="keywordTab = 'care'">
+            {{ `生词(${keywordNum})` }}
           </div>
-          <div
-            class="keyword-tab-item"
-            :class="{ 'keyword-tab-choose': keywordTab === 'uncare' }"
-            @click="keywordTab = 'uncare'"
-            id="dest"
-          >
-            {{ `归档(${archivedNum})` }}
+          <div class="keyword-tab-item" :class="{ 'keyword-tab-choose': keywordTab === 'uncare' }"
+            @click="keywordTab = 'uncare'" id="dest">
+            {{ `熟词(${archivedNum})` }}
+          </div>
+          <div class="keyword-tab-item" :class="{ 'keyword-tab-choose': keywordTab === 'uncare' }"
+            @click="keywordTab = 'master'" id="dest">
+            {{ `超熟词(${archivedNum})` }}
           </div>
         </div>
-        <div
-          class="keyword-box"
-          v-if="keywordList.length > 0"
-          @scroll="scrollKeyword"
-        >
-          <div
-            v-for="(item, index) in keywordList"
-            :key="`keyword${item._key}`"
-            class="concernItem-box"
-            @click="chooseWord(item.keyword, item._key)"
-          >
+        <div class="keyword-box" v-if="keywordList.length > 0" @scroll="scrollKeyword">
+          <div v-for="(item, index) in keywordList" :key="`keyword${item._key}`" class="concernItem-box"
+            @click="chooseWord(item.keyword, item._key, index)">
             <div class="concernItem-box-title">
               <div class="dp--center">
                 {{ item.keyword }}
-                <div
-                  class="concernItem-box-img"
-                  v-if="expandState"
-                  @click.stop="archiveKeyword($event, item._key, index)"
-                >
+                <div class="concernItem-box-img" v-if="keywordTab === 'care'"
+                  @click.stop="archiveKeyword($event, item._key, index)">
                   <img src="/common/fly.svg" alt="" />
                 </div>
               </div>
               <div class="dp-center-center" v-if="expandState">
-                <div
-                  class="concernItem-box-icon icon-point"
-                  style="margin-left: 10px"
-                  @click="deleteKeyword(item._key, index)"
-                >
-                  <el-icon :size="16" color="#b3b3b3"><Delete /></el-icon>
+                <div class="concernItem-box-icon icon-point" style="margin-left: 10px"
+                  @click.stop="deleteKeyword(item._key, index)">
+                  <el-icon :size="16" color="#b3b3b3">
+                    <Delete />
+                  </el-icon>
                 </div>
               </div>
             </div>
             <template v-if="expandState">
-              <div
-                class="concernItem-box-subtitle"
-                v-for="(sentenceItem, sentenceIndex) in item.sentence"
-                :key="`sentence${sentenceIndex}`"
-              >
-                <span
-                  v-for="(wordItem, wordIndex) in sentenceItem"
-                  :key="`word${wordIndex}`"
-                  :style="
-                    wordItem === item.keyword
-                      ? {
-                          background: '#e8e9ff',
-                          cursor: 'pointer',
-                        }
-                      : {}
-                  "
-                >
+              <div class="concernItem-box-subtitle" v-for="(sentenceItem, sentenceIndex) in item.sentence"
+                :key="`sentence${sentenceIndex}`">
+                <span v-for="(wordItem, wordIndex) in sentenceItem" :key="`word${wordIndex}`" :style="wordItem === item.keyword
+                  ? {
+                    background: '#e8e9ff',
+                    cursor: 'pointer',
+                  }
+                  : {}
+                  ">
                   {{ wordItem }}
                 </span>
               </div>
-              <div
-                class="concernItem-box-content"
-                v-if="item.note"
-                v-html="item.note"
-              ></div>
+              <div class="concernItem-box-content" v-if="item.note" v-html="item.note"></div>
             </template>
           </div>
         </div>
-        <div
-          class="keyword-expand icon-point dp-center-center"
-          @click="expandState = !expandState"
-        >
+        <div class="keyword-expand icon-point dp-center-center" @click="changeExpand">
           {{ expandState ? "详细模式" : "简洁模式" }}
-          <FontIcon
-            :iconName="expandState ? 'shouqi' : 'zhankai'"
-            :iconStyle="{ color: '#666', fontSize: '14px', marginLeft: '5px' }"
-          />
+          <FontIcon :iconName="expandState ? 'shouqi' : 'zhankai'"
+            :iconStyle="{ color: '#666', fontSize: '14px', marginLeft: '5px' }" />
         </div>
       </div>
-      <Keyword
-        :keyword="keyword"
-        :keywordKey="keywordKey"
-        @setKeyword="keyword = ''"
-        type="outer"
-      />
+      <Keyword :keyword="keyword" :keywordKey="keywordKey" @setKeyword="keyword = ''" type="outer"
+        @reloadData="reloadData" />
     </div>
   </div>
 </template>
@@ -284,6 +260,7 @@ watchEffect(() => {
   align-content: flex-start;
   @include p-number(34px, 0px);
   @include flex(center, center, wrap);
+
   .keyword-container {
     width: 100vw;
     height: calc(100vh - 120px);
@@ -291,16 +268,19 @@ watchEffect(() => {
     padding: 0px 119px 0px 78px;
     box-sizing: border-box;
     @include flex(space-between, center, null);
+
     .keyword-left {
       min-width: 1120px;
       flex: 1;
       height: 100%;
       position: relative;
       z-index: 1;
+
       .keyword-tab {
         width: 100%;
         height: 50px;
         @include flex(flex-start, center, null);
+
         .keyword-tab-item {
           width: 50%;
           height: 50px;
@@ -310,6 +290,7 @@ watchEffect(() => {
           text-align: center;
           cursor: pointer;
         }
+
         .keyword-tab-choose {
           height: 45px;
           font-size: 20px;
@@ -317,6 +298,7 @@ watchEffect(() => {
           line-height: 45px;
         }
       }
+
       .keyword-expand {
         height: 22px;
         font-size: 16px;
@@ -327,6 +309,7 @@ watchEffect(() => {
         top: 15px;
         right: 10px;
       }
+
       .keyword-box {
         width: 100%;
         height: calc(100vh - 190px);
@@ -336,10 +319,11 @@ watchEffect(() => {
 
         .concernItem-box {
           background: #fff;
-          border-radius: 12px;
+          // border-radius: 12px;
           margin-bottom: 22px;
           box-shadow: 0px 2px 5px 0px rgba(178, 178, 178, 0.5);
           @include p-number(14px, 28px);
+
           .concernItem-box-title {
             width: 100%;
             height: 32px;
@@ -350,28 +334,33 @@ watchEffect(() => {
             margin-bottom: 6px;
             color: #4d57ff;
             @include flex(space-between, center, null);
+
             .concernItem-box-img {
               width: 26px;
               height: 26px;
               margin-left: 16px;
               overflow: hidden;
               cursor: pointer;
+
               img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
               }
             }
+
             .concernItem-box-icon {
               @include flex(center, center, null);
             }
           }
+
           .concernItem-box-subtitle {
             width: 100%;
             font-size: 18px;
             color: #333333;
             line-height: 32px;
           }
+
           .concernItem-box-content {
             font-size: 16px;
             line-height: 28px;
@@ -379,6 +368,7 @@ watchEffect(() => {
             color: #4d57ff;
             @include p-number(10px, 10px);
           }
+
           &:hover {
             box-shadow: 0px 2px 10px 0px rgba(78, 78, 78, 0.5);
           }
@@ -395,6 +385,7 @@ watchEffect(() => {
   position: fixed;
   z-index: 10;
 }
+
 .fly-div img {
   width: 100%;
   height: 100%;

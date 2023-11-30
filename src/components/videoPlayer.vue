@@ -41,7 +41,6 @@ function calculateDuration() {
       videoRef.value.oncanplay = function () {
         duration.value = videoRef.value.duration; // 计算音频时长
         durationTime.value = transTime(videoRef.value.duration); //换算成时间格式
-        console.log(duration.value);
       };
       videoRef.value.volume = 0.5; // 设置默认音量50%
     }
@@ -104,7 +103,6 @@ const handleVideoVolume = (val) => {
   videoRef.value.volume = val / 100;
 };
 const changeVolume = () => {
-
   videoHuds.value = !videoHuds.value;
 };
 const playMedia = (playState) => {
@@ -116,9 +114,9 @@ const playMedia = (playState) => {
     isPlay.value = false;
   }
 };
-const reloadMedia = () => {
-  reloadState.value = !reloadState.value;
-  reloadIndex.value = reloadState.value? props.videoIndex : -1;
+const reloadMedia = (state) => {
+  reloadState.value = state ? state : !reloadState.value;
+  reloadIndex.value = reloadState.value ? props.videoIndex : -1;
 };
 watchEffect(() => {
   calculateDuration();
@@ -138,44 +136,24 @@ defineExpose({
   handleTimeChange,
   playMedia,
   reloadMedia,
-  changeVolume
+  changeVolume,
 });
 </script>
 <template>
   <div class="video-content">
-    <video
-      @timeupdate="updateProgress"
-      :controls="false"
-      ref="videoRef"
-      class="video-resource"
-      @click="playVideo"
-    >
+    <video @timeupdate="updateProgress" :controls="false" ref="videoRef" class="video-resource"
+      :class="{ 'video-resource-preview': videoType === 'preview' }" @click="playVideo">
       <source :src="src" type="video/*" />
       您的浏览器不支持视频播放
     </video>
-    <div class="video-box" v-if="videoType === 'normal'">
-      <FontIcon
-        customClassName="video-button"
-        iconName="a-zanting2"
-        @iconClick="playVideo"
-        :iconStyle="{ fontSize: '18px', color: '#fff' }"
-        v-if="isPlay"
-      />
-      <FontIcon
-        customClassName="video-button"
-        iconName="a-bofang2"
-        @iconClick="playVideo"
-        :iconStyle="{ fontSize: '18px', color: '#fff' }"
-        v-else
-      />
+    <div class="video-box" v-if="videoType === 'normal' || videoType === 'preview'">
+      <FontIcon customClassName="video-button" iconName="a-zanting2" @iconClick="playVideo"
+        :iconStyle="{ fontSize: '18px', color: '#fff' }" v-if="isPlay" />
+      <FontIcon customClassName="video-button" iconName="a-bofang2" @iconClick="playVideo"
+        :iconStyle="{ fontSize: '18px', color: '#fff' }" v-else />
 
-      <div class="video-container">
-        <el-slider
-          class="video-slider"
-          v-model="currentProgress"
-          :show-tooltip="false"
-          @change="handleProgressChange"
-        />
+      <div class="video-container" :style="videoType === 'preview' ? { width: 'calc(100% - 60px)' } : {}">
+        <el-slider class="video-slider" v-model="currentProgress" :show-tooltip="false" @change="handleProgressChange" />
         <div class="video-time">
           <span style="margin-left: 10px">{{ videoStart }}</span>
           /
@@ -184,61 +162,33 @@ defineExpose({
       </div>
       <div class="volume">
         <div class="volume-progress" v-show="videoHuds">
-          <el-slider
-            vertical
-            height="100px"
-            class="volume-bar"
-            v-model="videoVolume"
-            :show-tooltip="false"
-            @change="handleVideoVolume"
-          />
+          <el-slider vertical height="100px" class="volume-bar" v-model="videoVolume" :show-tooltip="false"
+            @change="handleVideoVolume" />
         </div>
 
-        <FontIcon
-          v-if="videoVolume <= 0"
-          customClassName="video-button"
-          iconName="jingyin"
-          :iconStyle="{ fontSize: '14px', color: '#888' }"
-          @click.stop="videoHuds = !videoHuds"
-        />
-        <FontIcon
-          v-if="videoVolume > 0"
-          customClassName="video-button"
-          iconName="shengyin"
-          :iconStyle="{ fontSize: '14px', color: '#fff' }"
-          @click.stop="videoHuds = !videoHuds"
-        />
+        <FontIcon v-if="videoVolume <= 0" customClassName="video-button" iconName="jingyin"
+          :iconStyle="{ fontSize: '14px', color: '#888' }" @click.stop="videoHuds = !videoHuds" />
+        <FontIcon v-if="videoVolume > 0" customClassName="video-button" iconName="shengyin"
+          :iconStyle="{ fontSize: '14px', color: '#fff' }" @click.stop="videoHuds = !videoHuds" />
       </div>
-      <el-tooltip content="上一句">
-        <FontIcon
-          customClassName="video-button"
-          iconName="shangyiju"
-          @iconClick="emits('changeVideoIndex', 'last')"
-          :iconStyle="{ fontSize: '18px', color: '#fff' }"
-        />
-      </el-tooltip>
-      <el-tooltip content="循环">
-        <FontIcon
-          customClassName="video-button"
-          iconName="zhongbo2"
-          :iconStyle="{
+      <template v-if="videoType === 'normal'">
+        <el-tooltip content="上一句">
+          <FontIcon customClassName="video-button" iconName="shangyiju" @iconClick="emits('changeVideoIndex', 'last')"
+            :iconStyle="{ fontSize: '18px', color: '#fff' }" />
+        </el-tooltip>
+        <el-tooltip content="循环">
+          <FontIcon customClassName="video-button" iconName="zhongbo2" :iconStyle="{
             fontSize: '22px',
             color: reloadState ? '#fff' : '#444',
             margin: '0px 20px',
             animation: reloadState ? 'fadenum 3s infinite' : '',
-          }"
-          @click.stop="reloadMedia()"
-        />
-      </el-tooltip>
-      <el-tooltip content="下一句">
-        <FontIcon
-          customClassName="video-button"
-          @click="playVideo"
-          iconName="xiayiju"
-          @iconClick="emits('changeVideoIndex', 'next')"
-          :iconStyle="{ fontSize: '18px', color: '#fff' }"
-        />
-      </el-tooltip>
+          }" @click.stop="reloadMedia(true)" />
+        </el-tooltip>
+        <el-tooltip content="下一句">
+          <FontIcon customClassName="video-button" @click="playVideo" iconName="xiayiju"
+            @iconClick="emits('changeVideoIndex', 'next')" :iconStyle="{ fontSize: '18px', color: '#fff' }" />
+        </el-tooltip>
+      </template>
     </div>
 
     <slot name="custom" v-else></slot>
@@ -250,12 +200,18 @@ defineExpose({
   height: 100%;
   position: relative;
   z-index: 1;
+
   // background-color: rgb(23, 23, 33);
   .video-resource {
     width: 100%;
     height: calc(100% - 205px);
     background-color: rgb(23, 23, 33);
   }
+
+  .video-resource-preview {
+    height: calc(100% - 140px);
+  }
+
   .video-box {
     width: 100%;
     height: 50px;
@@ -267,27 +223,32 @@ defineExpose({
     left: 0px;
     bottom: 0px;
     @include flex(flex-start, center, null);
+
     .video-button {
       width: 35px;
       height: 100%;
       margin: 0px 2px;
       @include flex(center, center, null);
     }
+
     .video-img {
       width: 35px;
       height: 35px;
       margin: 0px 12px;
     }
+
     .video-container {
       width: calc(100% - 300px);
       height: 100%;
       margin: 0px 10px 0px 30px;
       @include flex(space-between, center, null);
+
       .video-slider {
         width: calc(100% - 120px);
         height: 2px;
         background: #4d57ff;
       }
+
       .video-time {
         font-size: 14px;
         color: #fff;
@@ -298,6 +259,7 @@ defineExpose({
   .volume {
     position: relative;
     margin-right: 15px;
+
     .volume-progress {
       width: 32px;
       height: 140px;
@@ -305,10 +267,12 @@ defineExpose({
       top: -142px;
       right: -4px;
     }
+
     .volume-bar {
       background: #f1f1f1;
       border-radius: 4px;
     }
+
     .volume-icon {
       width: 24px;
       height: 24px;
@@ -321,24 +285,28 @@ defineExpose({
 .video-slider,
 .volume-bar {
   .el-slider__button {
-    width: 16px;
-    height: 16px;
-    margin-bottom: 5px;
+    width: 16Px;
+    height: 16Px;
+    margin-bottom: 3Px;
   }
+
   .el-slider__bar {
     background: #4d57ff;
   }
 }
+
 .video-slider {
   .el-slider__button-wrapper {
     width: 4px;
   }
 }
+
 .volume-bar {
   .el-slider__runway {
     margin: 0 14px !important;
   }
 }
+
 @keyframes fadenum {
   100% {
     transform: rotate(360deg);
