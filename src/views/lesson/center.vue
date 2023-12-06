@@ -162,8 +162,8 @@ watch(
 </template>
 <style scoped lang="scss">
 .lesson-center {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   background: #f9f9f9;
   display: flex;
   align-items: center;

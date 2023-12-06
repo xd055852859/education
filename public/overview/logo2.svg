@@ -3,15 +3,15 @@
     <title>熟词</title>
     <defs>
         <linearGradient x1="70.2220372%" y1="26.7915707%" x2="28.6688552%" y2="75.3850081%" id="linearGradient-1">
-            <stop stop-color="#0FDF99" offset="0%"></stop>
-            <stop stop-color="#13C78C" offset="100%"></stop>
+            <stop stop-color="#FFA48D" offset="0%"></stop>
+            <stop stop-color="#FF5660" offset="100%"></stop>
         </linearGradient>
     </defs>
-    <g id="有光英语20230929✅" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g id="首页-定稿-定稿" transform="translate(-999.000000, -336.000000)">
+    <g id="场景英语web端20230929✅" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="首页-定稿-定稿" transform="translate(-1046.000000, -336.000000)">
             <g id="编组-5" transform="translate(420.000000, 134.000000)">
-                <g id="编组-8" transform="translate(387.399784, 127.078983)">
-                    <g id="编组-11备份" transform="translate(191.600216, 1.921017)">
+                <g id="编组-8" transform="translate(347.399784, 129.000000)">
+                    <g id="编组-11备份" transform="translate(278.600216, 0.000000)">
                         <g id="熟词" transform="translate(0.000000, 73.000000)">
                             <g transform="translate(2.833333, 0.000000)">
                                 <path d="M5,0 L23.3333333,0 C26.0947571,0 28.3333333,2.30511296 28.3333333,5.14861389 L28.3333333,33.2830985 C28.3333333,33.9242879 27.9859323,34.5119151 27.4329715,34.806723 C26.8800107,35.101531 26.2135715,35.0543459 25.705,34.6843796 L16.0941667,27.6959943 C14.9418216,26.8578663 13.4018645,26.8575226 12.2491667,27.6951362 L2.6275,34.6860958 C2.11882251,35.0556587 1.45252854,35.1024918 0.89980018,34.8075338 C0.347071816,34.5125758 0,33.9250025 0,33.2839566 L0,5.14861389 C0,2.30511296 2.23857625,0 5,0 Z" id="路径" fill="url(#linearGradient-1)"></path>

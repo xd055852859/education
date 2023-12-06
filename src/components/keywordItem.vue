@@ -72,7 +72,7 @@ const deleteKeyword = async (index, keywordKey, keywordIndex) => {
         />
       </div>
     </div>
-    <div class="keyword-title" v-if="type === 'outer'">
+    <div class="keyword-title" v-if="type === 'outer' && item.mediaNum > 1">
       {{ item.mediaName }}
     </div>
     <template v-if="item.expandState">
@@ -82,9 +82,20 @@ const deleteKeyword = async (index, keywordKey, keywordIndex) => {
         class="keyword-box"
         style="width: 100%"
       >
-        <div class="keyword-box-title dp-space-center">
+        <div class="keyword-box-title dp--center">
           {{ keywordItem.keyword }}
-          <div class="dp-center-center" v-if="type === 'outer'">
+          <img
+            :src="
+              keywordItem.status
+                ? keywordItem.isArchived
+                  ? '/overview/logo2.svg'
+                  : '/overview/logo1.svg'
+                : '/overview/logo4.svg'
+            "
+            alt=""
+            v-if="type === 'outer'"
+          />
+          <!-- <div class="dp-center-center">
             <div
               v-if="keywordItem.isArchived"
               class="concernItem-box-icon icon-point"
@@ -111,9 +122,11 @@ const deleteKeyword = async (index, keywordKey, keywordIndex) => {
               style="margin-left: 10px"
               @click="deleteKeyword(index, keywordItem._key, keywordIndex)"
             >
-              <el-icon :size="18"><Delete /></el-icon>
+              <el-icon :size="18">
+                <Delete />
+              </el-icon>
             </div>
-          </div>
+          </div> -->
         </div>
         <div
           class="keyword-box-subtitle"
@@ -188,6 +201,7 @@ const deleteKeyword = async (index, keywordKey, keywordIndex) => {
   box-sizing: border-box;
   margin-bottom: 20px;
   box-shadow: 0px 2px 5px 0px rgba(178, 178, 178, 0.5);
+
   .keyword-title {
     width: 100%;
     height: 28px;
@@ -199,11 +213,13 @@ const deleteKeyword = async (index, keywordKey, keywordIndex) => {
 
     @include flex(space-between, center, null);
   }
+
   .keyword-box {
     background: #f2f4fb;
     border-radius: 12px;
     margin-bottom: 30px;
     @include p-number(14px, 28px);
+
     .keyword-box-title {
       width: 100%;
       height: 32px;
@@ -213,17 +229,24 @@ const deleteKeyword = async (index, keywordKey, keywordIndex) => {
       line-height: 32px;
       margin-bottom: 6px;
       color: #4d57ff;
-      @include flex(space-between, center, null);
+      // @include flex(space-between, center, null);
+      img {
+        width: 30px;
+        height: 30px;
+        margin-left: 15px;
+      }
       .concernItem-box-icon {
         @include flex(center, center, null);
       }
     }
+
     .keyword-box-subtitle {
       width: 100%;
       font-size: 18px;
       color: #333333;
       line-height: 32px;
     }
+
     .keyword-box-content {
       font-size: 16px;
       line-height: 28px;
@@ -231,10 +254,12 @@ const deleteKeyword = async (index, keywordKey, keywordIndex) => {
       color: #4d57ff;
       @include p-number(10px, 10px);
     }
+
     .keyword-box-icon {
       display: none;
     }
   }
+
   .keyword-title-box {
     height: 36px;
     font-size: 18px;
@@ -245,6 +270,7 @@ const deleteKeyword = async (index, keywordKey, keywordIndex) => {
 
   &:hover {
     box-shadow: 0px 2px 10px 0px rgba(78, 78, 78, 0.5);
+
     .keyword-box {
       .keyword-box-icon {
         @include flex(center, center, null);
@@ -252,9 +278,10 @@ const deleteKeyword = async (index, keywordKey, keywordIndex) => {
     }
   }
 }
+
 .calendar-empty {
   width: 100%;
-  height: calc(100vh - 490px);
+  height: calc(100% - 490px);
   @include flex(center, center, null);
 }
 </style>

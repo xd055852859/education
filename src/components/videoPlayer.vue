@@ -11,6 +11,7 @@ const emits = defineEmits<{
   (e: "videoTimeupdate", time: number): void;
   (e: "changeVideoIndex", type: string);
   (e: "reloadVideo", time: number, index: number): void;
+  (e: "loadNext"): void;
 }>();
 
 const isPlay = ref<boolean>(false); //音频是否在播放
@@ -23,27 +24,31 @@ const videoRef = ref<any>(null);
 const currentProgress = ref<number>(0);
 const reloadState = ref<boolean>(false);
 const reloadIndex = ref<number>(-1);
+onMounted(() => {
+  videoRef.value.addEventListener(
+    "ended",
+    function () {
+      currentProgress.value = 0;
+      emits("loadNext");
+    },
+    false
+  );
+});
 // 获取音频时长
 function calculateDuration() {
   if (videoRef.value) {
-    videoRef.value.loop = false;
     videoRef.value.src = props.src;
+    videoRef.value.pause();
+    isPlay.value = false;
     // 监听音频播放完毕
-    videoRef.value.addEventListener(
-      "ended",
-      function () {
-        isPlay.value = false;
-        currentProgress.value = 0;
-      },
-      false
-    );
-    if (videoRef.value != null) {
-      videoRef.value.oncanplay = function () {
-        duration.value = videoRef.value.duration; // 计算音频时长
-        durationTime.value = transTime(videoRef.value.duration); //换算成时间格式
-      };
-      videoRef.value.volume = 0.5; // 设置默认音量50%
-    }
+    videoRef.value.oncanplay = function () {
+      duration.value = videoRef.value.duration; // 计算音频时长
+      durationTime.value = transTime(videoRef.value.duration); //换算成时间格式
+      // nextTick(() => {
+        videoRef.value.play();
+        isPlay.value = true;
+      // });
+    };
   }
 }
 // 音频播放时间换算
@@ -85,18 +90,21 @@ const handleProgressChange = (val) => {
     return;
   }
   // 更新音频的当前播放时间
-  handleTimeChange(duration.value * (val / 100));
+  handleTimeChange(duration.value * (val / 100), "", true);
 };
-const handleTimeChange = (time, type?: string) => {
+const handleTimeChange = (time, type?: string, play?: boolean) => {
   if (type) {
     reloadState.value = false;
   }
   videoRef.value.pause();
   videoRef.value.currentTime = time;
-  nextTick(() => {
-    videoRef.value.play();
-    isPlay.value = true;
-  });
+  isPlay.value = false;
+  if (!play) {
+    nextTick(() => {
+      videoRef.value.play();
+      isPlay.value = true;
+    });
+  }
 };
 //调整音量
 const handleVideoVolume = (val) => {
@@ -141,19 +149,51 @@ defineExpose({
 </script>
 <template>
   <div class="video-content">
-    <video @timeupdate="updateProgress" :controls="false" ref="videoRef" class="video-resource"
-      :class="{ 'video-resource-preview': videoType === 'preview' }" @click="playVideo">
+    <video
+      @timeupdate="updateProgress"
+      :controls="false"
+      ref="videoRef"
+      class="video-resource"
+      :class="{ 'video-resource-preview': videoType === 'preview' }"
+      @click="playVideo"
+      :loop="false"
+      :volume="0.5"
+    >
       <source :src="src" type="video/*" />
       您的浏览器不支持视频播放
     </video>
-    <div class="video-box" v-if="videoType === 'normal' || videoType === 'preview'">
-      <FontIcon customClassName="video-button" iconName="a-zanting2" @iconClick="playVideo"
-        :iconStyle="{ fontSize: '18px', color: '#fff' }" v-if="isPlay" />
-      <FontIcon customClassName="video-button" iconName="a-bofang2" @iconClick="playVideo"
-        :iconStyle="{ fontSize: '18px', color: '#fff' }" v-else />
+    <div v-if="!isPlay" class="play-button" @click="playVideo">
+      <img src="/common/playBig.svg" alt="" />
+    </div>
+    <div
+      class="video-box"
+      v-if="videoType === 'normal' || videoType === 'preview'"
+    >
+      <FontIcon
+        customClassName="video-button"
+        iconName="a-zanting2"
+        @iconClick="playVideo"
+        :iconStyle="{ fontSize: '18px', color: '#fff' }"
+        v-if="isPlay"
+      />
+      <FontIcon
+        customClassName="video-button"
+        iconName="a-bofang2"
+        @iconClick="playVideo"
+        :iconStyle="{ fontSize: '18px', color: '#fff' }"
+        v-else
+      />
 
-      <div class="video-container" :style="videoType === 'preview' ? { width: 'calc(100% - 60px)' } : {}">
-        <el-slider class="video-slider" v-model="currentProgress" :show-tooltip="false" @change="handleProgressChange" />
+      <div
+        class="video-container"
+        :style="videoType === 'preview' ? { width: 'calc(100% - 60px)' } : {}"
+      >
+        <el-slider
+          class="video-slider"
+          v-model="currentProgress"
+          :show-tooltip="false"
+          @change="handleProgressChange"
+        />
         <div class="video-time">
           <span style="margin-left: 10px">{{ videoStart }}</span>
           /
@@ -162,31 +202,63 @@ defineExpose({
       </div>
       <div class="volume">
         <div class="volume-progress" v-show="videoHuds">
-          <el-slider vertical height="100px" class="volume-bar" v-model="videoVolume" :show-tooltip="false"
-            @change="handleVideoVolume" />
+          <el-slider
+            vertical
+            height="100px"
+            class="volume-bar"
+            v-model="videoVolume"
+            :show-tooltip="false"
+            @change="handleVideoVolume"
+          />
         </div>
 
-        <FontIcon v-if="videoVolume <= 0" customClassName="video-button" iconName="jingyin"
-          :iconStyle="{ fontSize: '14px', color: '#888' }" @click.stop="videoHuds = !videoHuds" />
-        <FontIcon v-if="videoVolume > 0" customClassName="video-button" iconName="shengyin"
-          :iconStyle="{ fontSize: '14px', color: '#fff' }" @click.stop="videoHuds = !videoHuds" />
+        <FontIcon
+          v-if="videoVolume <= 0"
+          customClassName="video-button"
+          iconName="jingyin"
+          :iconStyle="{ fontSize: '14px', color: '#888' }"
+          @click.stop="videoHuds = !videoHuds"
+        />
+        <FontIcon
+          v-if="videoVolume > 0"
+          customClassName="video-button"
+          iconName="shengyin"
+          :iconStyle="{ fontSize: '14px', color: '#fff' }"
+          @click.stop="videoHuds = !videoHuds"
+        />
       </div>
       <template v-if="videoType === 'normal'">
         <el-tooltip content="上一句">
-          <FontIcon customClassName="video-button" iconName="shangyiju" @iconClick="emits('changeVideoIndex', 'last')"
-            :iconStyle="{ fontSize: '18px', color: '#fff' }" />
+          <FontIcon
+            customClassName="video-button"
+            iconName="shangyiju"
+            @iconClick="emits('changeVideoIndex', 'last')"
+            :iconStyle="{ fontSize: '18px', color: '#fff' }"
+          />
         </el-tooltip>
         <el-tooltip content="循环">
-          <FontIcon customClassName="video-button" iconName="zhongbo2" :iconStyle="{
-            fontSize: '22px',
-            color: reloadState ? '#fff' : '#444',
-            margin: '0px 20px',
-            animation: reloadState ? 'fadenum 3s infinite' : '',
-          }" @click.stop="reloadMedia(true)" />
+          <FontIcon
+            customClassName="video-button"
+            iconName="zhongbo2"
+            :iconStyle="{
+              fontSize: '22px',
+              color: reloadState ? '#fff' : '#444',
+              margin: '0px 20px',
+              animation: isPlay
+                ? `fadenum ${reloadState ? 1.5 : 3}s infinite`
+                : '',
+            }"
+            @click.stop="reloadMedia(true)"
+          />
         </el-tooltip>
         <el-tooltip content="下一句">
-          <FontIcon customClassName="video-button" @click="playVideo" iconName="xiayiju"
-            @iconClick="emits('changeVideoIndex', 'next')" :iconStyle="{ fontSize: '18px', color: '#fff' }" />
+          <FontIcon
+            customClassName="video-button"
+            @click="playVideo"
+            iconName="xiayiju"
+            @iconClick="emits('changeVideoIndex', 'next')"
+            :iconStyle="{ fontSize: '18px', color: '#fff' }"
+          />
         </el-tooltip>
       </template>
     </div>
@@ -201,10 +273,24 @@ defineExpose({
   position: relative;
   z-index: 1;
 
+  .play-button {
+    width: 260px;
+    height: 260px;
+    position: absolute;
+    z-index: 2;
+    top: calc(50% - 205px);
+    left: calc(50% - 130px);
+
+    img {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
   // background-color: rgb(23, 23, 33);
   .video-resource {
     width: 100%;
-    height: calc(100% - 205px);
+    height: calc(100% - 195px);
     background-color: rgb(23, 23, 33);
   }
 
@@ -285,9 +371,9 @@ defineExpose({
 .video-slider,
 .volume-bar {
   .el-slider__button {
-    width: 16Px;
-    height: 16Px;
-    margin-bottom: 3Px;
+    width: 16px;
+    height: 16px;
+    margin-bottom: 3px;
   }
 
   .el-slider__bar {
@@ -295,9 +381,23 @@ defineExpose({
   }
 }
 
+.buttonGroup-bottom-slider {
+  .el-slider__button-wrapper {
+    width: 25px !important;
+
+    @include flex(center, center, null);
+
+    .el-slider__button {
+      width: 16px;
+      height: 16px;
+      margin-bottom: -3px;
+    }
+  }
+}
+
 .video-slider {
   .el-slider__button-wrapper {
-    width: 4px;
+    width: 4px !important;
   }
 }
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" id="htmlId">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/common/logo.svg" />
@@ -12,7 +12,7 @@
     <title>场景英语</title>
     <link
       rel="stylesheet"
-      href="//at.alicdn.com/t/c/font_4292368_szioz62y57.css"
+      href="//at.alicdn.com/t/c/font_4292368_6hg0dgkbv48.css"
     />
   </head>
   <script type="text/javascript" src="/tucao.js"></script>
@@ -22,27 +22,7 @@
     <script type="module" src="/src/main.ts"></script>
   </body>
   <script>
-    // // 检测设备方向
-    window.addEventListener("load", function () {
-      console.log(window.orientation)
-      if (window.orientation === 0 || window.orientation === 180) {
-        // 设备处于竖屏模式，强制横屏
-        document.body.style.transform = "rotate(90deg)";
-      } else {
-        // 设备处于横屏模式，恢复原始样式
-        document.body.style.transform = "none";
-      }
-    });
-    // // 检测设备方向
-    window.addEventListener("orientationchange", function () {
-      if (window.orientation === 0 || window.orientation === 180) {
-        // 设备处于竖屏模式，强制横屏
-        document.body.style.transform = "rotate(90deg)";
-      } else {
-        // 设备处于横屏模式，恢复原始样式
-        document.body.style.transform = "none";
-      }
-    });
+  
     //     获取当前宽高，计算，并旋转
     // var width = window.innerWidth,
     //   height = window.innerHeight;

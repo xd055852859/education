@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import 'vue-cropper/dist/index.css'
+import { VueCropper } from "vue-cropper";
 import appStore from "@/store";
 import { storeToRefs } from "pinia";
 import {
@@ -9,7 +11,7 @@ import {
 } from "element-plus";
 import { Close, Plus, Delete, Edit } from "@element-plus/icons-vue";
 import _ from "lodash";
-import { uploadFile } from "@/services/util";
+import { base64ToFile, fileToBase64, uploadFile } from "@/services/util";
 import Share from "@/components/share.vue";
 import Avatar from "@/components/avatar.vue";
 import api from "@/services/api";
@@ -32,12 +34,15 @@ const agentVisible = ref<boolean>(false);
 const suggestionVisible = ref<boolean>(false);
 const shareVisible = ref<boolean>(false);
 const urlVisible = ref<boolean>(false);
+const cropperVisible = ref<boolean>(false);
 const shareUrl = ref<string>("");
 const score = ref<number>(0);
 const content = ref<string>("");
 const userType = ref<string>("user");
 const targetAgentKey = ref<string>("");
 const colors = ref<any>({ 4: "#99A9BF", 8: "#b3e19d", 10: "#FF9900" });
+const urlBase64 = ref<any>(null)
+const cropperRef = ref<any>(null)
 const ruleFormRef = ref<FormInstance>();
 const ruleForm = reactive<RuleForm>({
   userAvatar: "",
@@ -53,18 +58,26 @@ const rules = reactive<FormRules<RuleForm>>({
     // { min: 1, max: 12, message: "请输入不超过", trigger: "blur" },
   ],
 });
-const uploadImage = (file, type) => {
-  let mimeType = ["image/*"];
+const uploadImage = async (file, type) => {
   if (file) {
-    uploadFile(file, mimeType, async (url, name) => {
-      switch (type) {
-        case "userAvatar":
-          ruleForm.userAvatar = url;
-          break;
-      }
-    });
+    urlBase64.value = await fileToBase64(file);
+    cropperVisible.value = true;
+    console.log(urlBase64.value)
   }
 };
+const saveImg = () => {
+  let mimeType = ["image/*"];
+  cropperRef.value.getCropData(data => {
+    // do something
+    console.log(data)
+    let file = base64ToFile(data);
+    uploadFile(file, mimeType, async (url) => {
+      ruleForm.userAvatar = url;
+      cropperVisible.value = false;
+    });
+  })
+
+}
 const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
   await formEl.validate(async (valid, fields) => {
@@ -270,6 +283,18 @@ const shareHtml = () => {
         <img src="/user/logo6.svg" alt="" />退出登录
       </div>
     </div>
+
+    <el-dialog v-model="cropperVisible" title="裁剪图片" width="600px">
+      <div style="width:100%;height:450px">
+        <VueCropper ref="cropperRef" :img="urlBase64" autoCrop="true" centerBox="true" />
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="cropperVisible = false">取消</el-button>
+          <el-button type="primary" @click="saveImg()">确认</el-button>
+        </span>
+      </template>
+    </el-dialog>
     <el-dialog v-model="userVisible" :title="userType === 'user' ? '用户设置' : '角色设置'" width="450px">
       <div class="user-set dp-center-center">
         <el-form ref="ruleFormRef" :model="ruleForm" :rules="rules" label-width="70px" status-icon label-position="left"
@@ -300,15 +325,12 @@ const shareHtml = () => {
         </span>
       </template>
     </el-dialog>
-    <el-dialog v-model="agentVisible" width="450px" :show-close="false">
+    <el-dialog v-model="agentVisible" width="450px">
       <template #header="{ close, titleId, titleClass }">
         <div class="agent-header dp-space-center">
           <div :id="titleId" :class="titleClass">角色管理</div>
           <div class="dp--center" style="justify-content: flex-end">
             <el-button type="primary" @click="setAgent" style="margin-right: 10px">新增角色</el-button>
-            <el-icon @click="close" class="icon-point dialog-close-button" :size="22">
-              <Close />
-            </el-icon>
           </div>
         </div>
       </template>
@@ -353,9 +375,9 @@ const shareHtml = () => {
         </div>
       </template>
     </el-dialog>
-    <el-dialog v-model="urlVisible" title="用户协议" :width="'70vw'" custom-class="url-box">
+    <el-dialog v-model="urlVisible" title="用户协议" :width="'70%'" class="url-box">
       <div style="width:100%;height:500px">
-        <IframeView url="https://notecute.com/#/post?key=1499044542&view=table&hideHead=1&publicShare=1&isWebview=1" />
+        <IframeView url="https://notecute.com/#/post?key=1499044542&view=digest&hideHead=1&publicShare=1&isWebview=1" />
       </div>
 
     </el-dialog>
@@ -433,12 +455,13 @@ const shareHtml = () => {
 
 .agent-container {
   width: 100%;
-  height: 50vh;
+  height: 300px;
 
-  @include p-number(0px, 10px);
+  @include p-number(10px, 10px);
   @include scroll();
 
   .agent-item {
+    width: 100%;
     @include p-number(0px, 20px);
 
     &:hover {
@@ -457,20 +480,23 @@ const shareHtml = () => {
 }
 </style>
 <style lang="scss">
-.url-box{
-  .el-dialog__header{
-    height:50px;
-    padding-top:0Px;
-    padding-bottom:0Px;
-    margin-right:0px;
+.url-box {
+  .el-dialog__header {
+    height: 50px;
+    padding-top: 0Px;
+    padding-bottom: 0Px;
+    margin-right: 0px;
     background-color: #F7F7F7;
-    @include flex(space-between,center,null);
-    .el-dialog__title{
+    @include flex(space-between, center, null);
+
+    .el-dialog__title {
       font-size: 16Px;
     }
   }
-  .el-dialog__headerbtn{
-    height:50px;
-    top:0px;
+
+  .el-dialog__headerbtn {
+    height: 50px;
+    top: 0px;
   }
-}</style>
+}
+</style>

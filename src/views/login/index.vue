@@ -14,7 +14,8 @@ const showLogin = ref<boolean>(false);
         <img src="/common/logoTitle.svg" alt="" />
       </div>
       <div class="login-container">
-        <Login v-if="loginState === 'login'" /> <Reset v-else />
+        <Login v-if="loginState === 'login'" />
+        <Reset v-else />
       </div>
       <div class="login-bottom">登录或注册代表你同意 用户条款</div>
     </div>
@@ -22,12 +23,8 @@ const showLogin = ref<boolean>(false);
       <img class="title-login-logo" src="/login/titleLogo.svg" alt="" />
       <div class="title-header">
         <img class="title-header-logo" src="/common/homeLogo.svg" alt="" />
-        <el-button
-          type="primary"
-          @click="token ? $router.replace('/home') : (showLogin = true)"
-          class="title-login-button"
-          round
-          >立即体验
+        <el-button type="primary" @click="token ? $router.replace('/home') : (showLogin = true)"
+          class="title-login-button" round>立即体验
         </el-button>
       </div>
     </div>
@@ -35,12 +32,13 @@ const showLogin = ref<boolean>(false);
 </template>
 <style lang="scss">
 .login {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   background-image: url("/common/commonBg.png");
   background-size: 100% 100%;
   background-repeat: no-repeat;
   @include flex(center, center, null);
+
   .login-box {
     width: 450px;
     height: 580px;
@@ -51,16 +49,19 @@ const showLogin = ref<boolean>(false);
     box-sizing: border-box;
     position: relative;
     z-index: 1;
+
     .login-logo {
       width: 100%;
       height: 58px;
       margin-bottom: 45px;
       @include flex(center, center, null);
+
       img {
         width: 163px;
         height: 58px;
       }
     }
+
     .login-container {
       width: 100%;
       height: calc(100% - 127px);
@@ -68,6 +69,7 @@ const showLogin = ref<boolean>(false);
       box-sizing: border-box;
       position: relative;
       z-index: 1;
+
       .login-input {
         width: 100%;
         height: 45px;
@@ -75,6 +77,7 @@ const showLogin = ref<boolean>(false);
         border-radius: 4px;
         color: #999999;
         @include flex(space-between, center, null);
+
         .el-input__wrapper {
           height: 100%;
           background-color: $loginInput;
@@ -89,11 +92,13 @@ const showLogin = ref<boolean>(false);
         z-index: 2;
         left: 0px;
         bottom: 60px;
+
         .login-button {
           width: 100%;
           height: 48px;
           border-radius: 4px;
         }
+
         .login-prompt {
           width: 100%;
           height: 20px;
@@ -102,12 +107,14 @@ const showLogin = ref<boolean>(false);
           cursor: pointer;
           line-height: 20px;
           margin-top: 15px;
-          > span {
+
+          >span {
             color: $commonColor;
           }
         }
       }
     }
+
     .login-bottom {
       width: 100%;
       height: 47px;
@@ -123,20 +130,20 @@ const showLogin = ref<boolean>(false);
       bottom: 0px;
     }
   }
+
   .title-box {
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     position: relative;
     z-index: 1;
     @include flex(center, center, wrap);
+
     .title-login-logo {
-      width: 606px;
-      height: 259px;
+      width: 30%;
       position: absolute;
       z-index: 2;
-      top: 318px;
-      right: 656px;
     }
+
     .title-header {
       width: 100%;
       position: absolute;
@@ -146,10 +153,12 @@ const showLogin = ref<boolean>(false);
       padding: 0px 57px;
       box-sizing: border-box;
       @include flex(space-between, center, wrap);
+
       .title-header-logo {
         width: 146px;
         height: 31px;
       }
+
       .title-login-button {
         width: 158px;
         height: 52px;
@@ -160,6 +169,5 @@ const showLogin = ref<boolean>(false);
       }
     }
   }
-}
-</style>
+}</style>
 <style></style>

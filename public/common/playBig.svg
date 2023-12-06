@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="156px" height="156px" viewBox="0 0 156 156" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>播放</title>
+    <defs>
+        <path d="M70,0 C31.5,0 0,31.5 0,70 C0,108.5 31.5,140 70,140 C108.5,140 140,108.5 140,70 C140,31.5 108.5,0 70,0 Z M70,134.166667 C34.7083334,134.166667 5.83333338,105.291667 5.83333338,70 C5.83333338,34.7083334 34.7083334,5.83333338 70,5.83333338 C105.291667,5.83333338 134.166667,34.7083334 134.166667,70 C134.166667,105.291667 105.291667,134.166667 70,134.166667 Z" id="path-1"></path>
+        <filter x="-9.3%" y="-7.9%" width="118.6%" height="118.6%" filterUnits="objectBoundingBox" id="filter-2">
+            <feOffset dx="0" dy="2" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="4" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.810342002 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+        <path d="M91.875,60.375 L68.5416666,44.9166666 C60.6666666,39.6666666 53.9583334,43.1666666 53.9583334,52.7916666 L53.9583334,87.7916666 C53.9583334,97.4166666 60.375,100.916667 68.5416666,95.6666666 L91.875,80.2083334 C99.75,74.375 99.75,65.625 91.875,60.375 Z" id="path-3"></path>
+        <filter x="-29.7%" y="-19.8%" width="159.3%" height="146.7%" filterUnits="objectBoundingBox" id="filter-4">
+            <feOffset dx="0" dy="2" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="4" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.810342002 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+    </defs>
+    <g id="场景英语20230929✅" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" opacity="0.5">
+        <g id="播放备份" transform="translate(-489.000000, -441.000000)">
+            <g id="播放" transform="translate(497.000000, 447.000000)">
+                <g id="形状" fill-rule="nonzero">
+                    <use fill="black" fill-opacity="1" filter="url(#filter-2)" xlink:href="#path-1"></use>
+                    <use fill="#FFFFFF" xlink:href="#path-1"></use>
+                </g>
+                <g id="路径">
+                    <use fill="black" fill-opacity="1" filter="url(#filter-4)" xlink:href="#path-3"></use>
+                    <use fill="#FFFFFF" fill-rule="evenodd" xlink:href="#path-3"></use>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

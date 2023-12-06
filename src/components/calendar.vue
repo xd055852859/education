@@ -184,10 +184,13 @@ watchEffect(() => {
           :class="{
             'calendar-day-choose': calendarItem.targetDay,
             'icon-point':
-              calendarTimeList.indexOf(calendarItem.startTime) !== -1,
+              calendarTimeList.indexOf(calendarItem.startTime) !== -1 ||
+              calendarItem.targetDay,
           }"
           @click="
-            calendarTimeList.indexOf(calendarItem.startTime) !== -1
+            calendarItem.targetDay
+              ? $router.push(`/home/calendar/0`)
+              : calendarTimeList.indexOf(calendarItem.startTime) !== -1
               ? $router.push(`/home/calendar/${calendarItem.startTime}`)
               : null
           "

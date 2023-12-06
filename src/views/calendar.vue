@@ -11,6 +11,7 @@ import { ResultProps } from "@/interface/Common";
 import { ElMessage, ElMessageBox } from "element-plus";
 
 import KeywordItem from "@/components/keywordItem.vue";
+import { SplitVendorChunkCache } from "vite";
 const props = defineProps<{
   targetDate: number | string;
 }>();
@@ -185,8 +186,9 @@ const chooseWord = (word, wordKey) => {
 const changeList = (list) => {
   keywordList.value = _.cloneDeep(list);
 };
-const chooseDate = (date) => {
+const chooseDate = (date, index) => {
   chartDate.value = dayjs(date).startOf("day").valueOf();
+  chartIndex.value = index;
 };
 const reloadData = () => {
   // getData();
@@ -212,23 +214,12 @@ watchEffect(() => {
       <div class="calendar-left">
         <Header :title="'学习日历'" :backPath="'/home'" />
         <div class="calendar-left-box">
-          <div
-            class="calendar-chart"
-            v-if="
-              ((chartData[0] && chartData[0].length > 0) ||
-                (chartData[1] && chartData[1].length > 0)) &&
-              targetDate == 0
-            "
-          >
-            <line-chart
-              line-id="board-chart"
-              :chart-data="chartData"
-              :changeSize="changeSize"
-              @chooseDate="chooseDate"
-              :yData="yData"
-              :xData="xData"
-              :lineData="lineData"
-            />
+          <div class="calendar-chart" v-if="((chartData[0] && chartData[0].length > 0) ||
+            (chartData[1] && chartData[1].length > 0)) &&
+            targetDate == 0
+            ">
+            <line-chart line-id="board-chart" :chart-data="chartData" :changeSize="changeSize" @chooseDate="chooseDate"
+              :yData="yData" :xData="xData" :lineData="lineData" />
           </div>
 
           <!-- v-if="index < item.length - 1" -->
@@ -240,59 +231,50 @@ watchEffect(() => {
             </div>
             <div class="calendar-title" v-if="chartIndex !== -1">
               学习了
-              {{
-                dayjs
-                  .duration(chartData[1][chartIndex].num * 60000)
-                  .asMinutes()
-                  .toFixed(2)
+              <span v-if="chartData[1] && chartData[1][chartIndex]">{{
+                chartData[1][chartIndex].count
               }}
-              分钟，新增了{{ chartData[0][chartIndex].count }}张知识库片
+                小时</span>,<span v-if="chartData[0] && chartData[0][chartIndex]">新增了{{ chartData[0][chartIndex].count
+                }}张知识库片</span>
             </div>
-            <KeywordItem
-              @changeList="changeList"
-              :list="keywordList"
-              :keyword="keyword"
-              @chooseWord="chooseWord"
-              :type="'outer'"
-              @reloadData="reloadData"
-            />
+            <KeywordItem @changeList="changeList" :list="keywordList" :keyword="keyword" @chooseWord="chooseWord"
+              :type="'outer'" @reloadData="reloadData" />
           </template>
         </div>
       </div>
 
-      <Keyword
-        :keyword="keyword"
-        :keywordKey="keywordKey"
-        @setKeyword="keyword = ''"
-        type="outer"
-      />
+      <Keyword :keyword="keyword" :keywordKey="keywordKey" @setKeyword="keyword = ''" type="outer" />
     </div>
   </div>
 </template>
 <style scoped lang="scss">
 .calendar {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
+
   // align-content: flex-start;
   // @include p-number(34px, 0px);
   // @include flex(center, center, wrap);
   .calendar-container {
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     @include flex(space-between, center, null);
+
     .calendar-left {
       flex: 1;
       height: 100%;
 
       @include flex(space-between, center, wrap);
+
       .calendar-left-box {
         min-width: 1120px;
         flex: 1;
-        height: calc(100vh - 120px);
+        height: calc(100% - 120px);
         padding: 10px 120px;
         margin-top: 25px;
         box-sizing: border-box;
         @include scroll();
+
         .calendar-chart {
           width: 100%;
           height: 300px;
@@ -303,6 +285,7 @@ watchEffect(() => {
           padding-top: 15px;
           box-sizing: border-box;
         }
+
         .calendar-title {
           width: 100%;
           height: 40px;

@@ -11,6 +11,8 @@ const emits = defineEmits<{
   (e: "audioTimeupdate", time: number): void;
   (e: "changeAudioIndex", type: string);
   (e: "reloadAudio", time: number, index: number): void;
+  (e: "endMedia"): void;
+  (e: "loadNext"): void;
 }>();
 
 const isPlay = ref<boolean>(false); //音频是否在播放
@@ -35,6 +37,7 @@ function calculateDuration() {
       function () {
         isPlay.value = false;
         currentProgress.value = 0;
+        emits('loadNext');
       },
       false
     );
@@ -88,21 +91,24 @@ const handleProgressChange = (val) => {
     return;
   }
   // 更新音频的当前播放时间
-  handleTimeChange(duration.value * (val / 100));
+  handleTimeChange(duration.value * (val / 100), '', 0, true);
 };
-const handleTimeChange = (time, type?: string, index?: number) => {
+const handleTimeChange = (time, type?: string, index?: number, play?: boolean) => {
   if (type && index !== -1) {
     reloadIndex.value = index as number;
   }
   audioRef.value.pause();
   audioRef.value.currentTime = time;
-  nextTick(() => {
-    audioRef.value.play();
-    isPlay.value = true;
-    // if (type) {
-    //   reloadState.value = true;
-    // }
-  });
+  isPlay.value = false;
+  if (!play) {
+    nextTick(() => {
+      audioRef.value.play();
+      isPlay.value = true;
+      // if (type) {
+      //   reloadState.value = true;
+      // }
+    });
+  }
 };
 //调整音量
 const handleAudioVolume = (val) => {
@@ -150,7 +156,7 @@ defineExpose({
 });
 </script>
 <template>
-  <audio @timeupdate="updateProgress" controls ref="audioRef" style="display: none">
+  <audio @timeupdate="updateProgress" @ended="emits('endMedia')" controls ref="audioRef" style="display: none">
     <source :src="src" type="audio/*" />
     您的浏览器不支持音频播放
   </audio>
@@ -185,7 +191,7 @@ defineExpose({
       <FontIcon customClassName="audio-button" iconName="zhongbo2" :iconStyle="{
         fontSize: '22px',
         color: reloadState ? '#4D57FF' : '#888',
-        animation: reloadState ? 'fadenum 3s infinite' : '',
+        animation: isPlay ? `fadenum ${reloadState ? 1.5 : 3}s infinite` : '',
       }" @click.stop="
   reloadState = !reloadState;
 reloadIndex = reloadState ? audioIndex : -1;
@@ -303,13 +309,27 @@ reloadIndex = reloadState ? audioIndex : -1;
 .audio-slider,
 .volume-bar {
   .el-slider__button {
-    width: 16px;
-    height: 16px;
-    margin-bottom: 5px;
+    width: 16Px;
+    height: 16Px;
+    margin-bottom: 5Px;
   }
 
   .el-slider__bar {
     background: #4d57ff;
+  }
+}
+
+.buttonGroup-bottom-slider {
+  .el-slider__button-wrapper {
+    width: 25px !important;
+
+    @include flex(center, center, null);
+
+    .el-slider__button {
+      width: 16px;
+      height: 16px;
+      margin-bottom: -3px;
+    }
   }
 }
 

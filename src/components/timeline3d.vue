@@ -791,8 +791,8 @@ const render = () => {
 </template>
 <style scoped lang="scss">
 .timeline3d {
-  width: 100vw;
-  height: calc(100vh - 200px);
+  width: 100%;
+  height: calc(100% - 200px);
   position: fixed;
   z-index: 1;
   top: 80px;

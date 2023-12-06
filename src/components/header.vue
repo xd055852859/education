@@ -14,7 +14,7 @@ const props = withDefaults(
   <div className="header">
     <div className="header-title" :style="{ color: color }">
       <div v-if="backPath" @click="$router.push(backPath)" class="header-back">
-        <el-icon :style="{ color: color }"><ArrowLeft /></el-icon>
+        <el-icon :style="{ color: color,fontSize:'25px' }"><ArrowLeft /></el-icon>
       </div>
       <slot name="icon"></slot>
       {{ title }}

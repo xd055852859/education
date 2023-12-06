@@ -211,8 +211,8 @@ watchEffect(() => {
 </template>
 <style scoped lang="scss">
 .preview {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   background: #161620;
   padding: 34px 0px;
   box-sizing: border-box;

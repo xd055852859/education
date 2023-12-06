@@ -93,12 +93,12 @@ watchEffect(() => {
 </template>
 <style scoped lang="scss">
 .note {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   @include flex(space-between, center, null);
   .note-left {
     width: 240px;
-    height: 100vh;
+    height: 100%;
     padding: 10px 15px 10px 25px;
     box-sizing: border-box;
     background: #f8f9ff;
@@ -160,8 +160,8 @@ watchEffect(() => {
     }
   }
   .note-right {
-    width: calc(100vw - 240px);
-    height: 100vh;
+    width: calc(100% - 240px);
+    height: 100%;
   }
 }
 </style>

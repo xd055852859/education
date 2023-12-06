@@ -13,11 +13,13 @@ export const getSearchParamValue = (search: string, paramName: string) => {
     return null;
   }
 };
-
+export const textPoint=(text)=>{
+  return /^[^\~\!\@\#\$\%\^\&\*\<\>\?\'\"\！\￥\……\（\）\-\+\=\——\{\}\[\]\【\】\|\:\;\：\；\‘\“\%\\\、\，\。\,\.\/\？\`\·\(\)\_\《\》]*$/.test(text)
+}
 // 生成标识符
 export const guid = (len, radix) => {
   var chars =
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".split("");
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstu%xyz".split("");
   var uuid: any = [],
     i;
   radix = radix || chars.length;

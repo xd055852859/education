@@ -8,6 +8,7 @@ export interface ResultProps {
   totalNum?: number;
   total?: number;
   rooter?: any;
+  playMedia?:string|number
 }
 export interface Notice {
   _key: string;

@@ -10,7 +10,7 @@ const props = defineProps<{
   lineData?: any;
 }>();
 const emits = defineEmits<{
-  (e: "chooseDate", date: string): void;
+  (e: "chooseDate", date: string, index: number): void;
 }>();
 const dayjs: any = inject("dayjs");
 let chart: any | null = null;
@@ -96,9 +96,9 @@ onMounted(() => {
   chart.on("click", function (params) {
     console.log(params)
     if (params.componentType === "xAxis") {
-      emits("chooseDate", params.value);
+      emits("chooseDate", params.value, params.dataIndex);
     } else if (params.componentType === "series") {
-      emits("chooseDate", params.name);
+      emits("chooseDate", params.name, params.dataIndex);
     }
 
   });

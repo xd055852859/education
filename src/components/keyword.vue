@@ -98,7 +98,13 @@ const getData = async (wordKey) => {
     keywordKey: wordKey,
   })) as ResultProps;
   if (keyWordRes.msg === "OK") {
-    note.value = keyWordRes.data.note ? keyWordRes.data.note : "";
+    if (keyWordRes.data.note) {
+      note.value = keyWordRes.data.note;
+      noteVisible.value = true;
+    } else {
+      note.value = keyWordRes.data.note;
+      noteVisible.value = false;
+    }
   }
 };
 const getTabData = async () => {
@@ -199,7 +205,7 @@ watch(
       {{ keyword }}
       <div class="dp-center-center">
         <!-- .study-audio-content  -->
-        <el-dropdown trigger="click" :hide-on-click="false" ref="dropdownRef">
+        <el-dropdown trigger="click" :hide-on-click="false" ref="dropdownRef" :teleported="false">
           <div class="icon-point dp--center">
             <el-icon>
               <MoreFilled />
@@ -208,10 +214,10 @@ watch(
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item v-for="(item, index) in keywordTabs" :key="`tab${item._key}`">
-                <div class="dp-space-center" style="width: 120px">
+                <div class="dp-space-center data-tab-item" style="width: 120px">
                   <el-checkbox v-model="checkTab[index]" :label="item.name" @change="(value) => {
-                      updateTab(item._key, value, index);
-                    }
+                    updateTab(item._key, value, index);
+                  }
                     " />
                   {{ item.type }}
                 </div>
@@ -227,7 +233,7 @@ watch(
       </div>
     </div>
     <div class="data-right-content">
-      <el-tabs v-model="keywordTab">
+      <el-tabs v-model="keywordTab" style="height: 100%;">
         <el-tab-pane label="生词表" name="word" v-if="type === 'inner'">
           <div class="data-right-iframe" style="overflow-x: hidden; overflow-y: auto">
             <template v-if="keywordList.length > 0">
@@ -247,8 +253,8 @@ watch(
     </div>
 
     <div class="data-right-button" :style="noteVisible
-        ? { boxShadow: '0px 2px 9px 0px rgba(178, 178, 178, 0.5)' }
-        : {}
+      ? { boxShadow: '0px 2px 9px 0px rgba(178, 178, 178, 0.5)' }
+      : {}
       ">
       <div class="dp-center-center icon-point" @click="noteVisible = false" v-if="noteVisible">
         <FontIcon iconName="zhankai" :iconStyle="{ color: '#333' }" />
@@ -268,7 +274,7 @@ watch(
         <el-button type="primary" round class="left-button" @click="
           noteVisible && note ? saveNote('save') : null;
         noteVisible = !noteVisible;
-        ">{{ noteVisible ? "保存备注" : "写备注" }}</el-button>
+        ">{{ noteVisible ? "保存笔记" : "+学习笔记" }}</el-button>
         <el-button class="right-button" link @click="openTuLink">反馈吐槽</el-button>
       </div>
     </div>
@@ -277,7 +283,7 @@ watch(
 <style scoped lang="scss">
 .data-right {
   width: 523px;
-  height: 100vh;
+  height: 100%;
   padding: 25px 0px 10px 0px;
   box-sizing: border-box;
   position: relative;
@@ -304,13 +310,16 @@ watch(
     padding: 0px 15px;
     box-sizing: border-box;
 
+
     .data-right-iframe {
       width: 100%;
-      height: calc(100vh - 220px);
+      height: 100%;
       padding: 0px 10px;
       box-sizing: border-box;
       // @include scroll();
     }
+
+
   }
 
   .data-right-button {
@@ -346,8 +355,18 @@ watch(
     .el-tabs__header {
       margin-bottom: 5px;
     }
-  }
 
+    .el-tabs__content {
+      height: calc(100% - 55px);
+
+      .el-tab-pane {
+        height: 100%;
+      }
+    }
+  }
+.data-tab-item{
+  .el-checkbox__label {font-size: 18px;}
+}
   .data-right-note {
     .el-textarea__inner {
       background: #f9f9f9;

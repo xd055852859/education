@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="156px" height="156px" viewBox="0 0 156 156" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>暂停</title>
+    <defs>
+        <path d="M70,0 C31.5,0 0,31.5 0,70 C0,108.5 31.5,140 70,140 C108.5,140 140,108.5 140,70 C140,31.5 108.5,0 70,0 Z M70,134.166667 C34.7083334,134.166667 5.83333338,105.291667 5.83333338,70 C5.83333338,34.7083334 34.7083334,5.83333338 70,5.83333338 C105.291667,5.83333338 134.166667,34.7083334 134.166667,70 C134.166667,105.291667 105.291667,134.166667 70,134.166667 Z" id="path-1"></path>
+        <filter x="-9.3%" y="-7.9%" width="118.6%" height="118.6%" filterUnits="objectBoundingBox" id="filter-2">
+            <feOffset dx="0" dy="2" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="4" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.810342002 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+        <rect id="path-3" x="51.5789474" y="40.5263158" width="11.0526316" height="58.9473684" rx="5.52"></rect>
+        <filter x="-117.6%" y="-18.7%" width="335.2%" height="144.1%" filterUnits="objectBoundingBox" id="filter-4">
+            <feOffset dx="0" dy="2" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="4" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.810342002 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+        <rect id="path-5" x="77.3684211" y="40.5263158" width="11.0526316" height="58.9473684" rx="5.52"></rect>
+        <filter x="-117.6%" y="-18.7%" width="335.2%" height="144.1%" filterUnits="objectBoundingBox" id="filter-6">
+            <feOffset dx="0" dy="2" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="4" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.810342002 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+    </defs>
+    <g id="场景英语20230929✅" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" opacity="0.50149891">
+        <g id="播放备份" transform="translate(-707.000000, -441.000000)">
+            <g id="暂停" transform="translate(715.000000, 447.000000)">
+                <g id="形状" fill-rule="nonzero">
+                    <use fill="black" fill-opacity="1" filter="url(#filter-2)" xlink:href="#path-1"></use>
+                    <use fill="#FFFFFF" xlink:href="#path-1"></use>
+                </g>
+                <g id="矩形">
+                    <use fill="black" fill-opacity="1" filter="url(#filter-4)" xlink:href="#path-3"></use>
+                    <use fill="#FFFFFF" fill-rule="evenodd" xlink:href="#path-3"></use>
+                </g>
+                <g id="矩形">
+                    <use fill="black" fill-opacity="1" filter="url(#filter-6)" xlink:href="#path-5"></use>
+                    <use fill="#FFFFFF" fill-rule="evenodd" xlink:href="#path-5"></use>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

@@ -2,6 +2,7 @@
 import Header from "@/components/header.vue";
 import FontIcon from "@/components/fontIcon.vue";
 import Keyword from "@/components/keyword.vue";
+import ErrorWord from "@/components/errorword.vue";
 import IframeView from "@/components/iframeView.vue";
 import AudioPlayer from "@/components/audioPlayer.vue";
 import { OnClickOutside } from "@vueuse/components";
@@ -13,6 +14,7 @@ import { storeToRefs } from "pinia";
 import _ from "lodash";
 import WordChart from "@/components/chart/wordChart.vue";
 import VideoPlayer from "@/components/videoPlayer.vue";
+import { is_mobile, textPoint } from "@/services/util";
 const { token } = storeToRefs(appStore.authStore);
 const { agentKey } = storeToRefs(appStore.agentStore);
 const { lessonKey, lessonInfo } = storeToRefs(appStore.lessonStore);
@@ -43,7 +45,12 @@ const noteVisible = ref<boolean>(false);
 const noteUrl = ref<string>("");
 const textList = ref<any>([]);
 const studyMediaRef = ref<any>(null);
-const reloadState = ref<boolean>(true)
+const reloadState = ref<boolean>(true);
+const changeIndex = ref<number>(-1);
+const biaodian =
+  '[=,.?!@#$%^&*()_+:"<>/\[\]\\`~——，。、《》？；’：“【】、{}|·！￥…（）-]';
+const errorVisible = ref<boolean>(false);
+const errorKey = ref<string>("");
 onMounted(() => {
   setLessonKey(props.lessonKey);
   getMedia();
@@ -55,11 +62,17 @@ onUnmounted(() => {
 });
 const getMedia = async () => {
   let mediaRes = (await api.request.get("media", {
+    agentKey: agentKey.value,
     resourceKey: props.lessonKey,
   })) as ResultProps;
   if (mediaRes.msg === "OK") {
     mediaList.value = mediaRes.data;
-    mediaListIndex.value = 0;
+    if (mediaRes.playMedia) {
+      let index = _.findIndex(mediaList.value, { _key: mediaRes.playMedia });
+      mediaListIndex.value = index !== -1 ? index : 0;
+    } else {
+      mediaListIndex.value = 0;
+    }
   }
 };
 const getArticleList = async (key) => {
@@ -74,8 +87,10 @@ const getArticleList = async (key) => {
       item.original = item.original.match(
         /\b\w+\b|[\x21-\x2f\x3a-\x40\x5b-\x60\x7B-\x7F]/g
       );
-      text = text.filter((item) => item.length > 2);
-      list.push(...text);
+      if (text && text.length > 0) {
+        text = text.filter((item) => item.length > 2);
+        list.push(...text);
+      }
       return item;
     });
     list.forEach((item) => {
@@ -93,13 +108,33 @@ const getCaption = async (key) => {
     mediaKey: key,
   })) as ResultProps;
   if (captionaRes.msg === "OK") {
-    captionsList.value = captionaRes.data.map((item, index) => {
-      item.original = item.original
-        .replace(/\n/g, "")
-        .match(/\b\w+\b|[\x21-\x2f\x3a-\x40\x5b-\x60\x7B-\x7F]/g);
-      return item;
+    captionaRes.data.forEach((item, index) => {
+      if (lessonInfo.value.language === "en") {
+        item.original = item.original
+          .replace(/\n/g, "")
+          .match(/\b\w+\b|[\x21-\x2f\x3a-\x40\x5b-\x60\x7B-\x7F]/g);
+        captionsList.value[index] = item;
+      } else if (lessonInfo.value.language === "cn") {
+        openText(item.original.replace(/\n/g, ""), (data) => {
+          item.original = data;
+          captionsList.value[index] = item;
+        });
+      }
     });
     console.log(captionsList.value);
+  }
+};
+const openText = async (text, callback) => {
+  let textRes = (await api.request.get(
+    "",
+    {
+      text: text,
+    },
+    false,
+    "https://dictdata.qingtime.cn/getWords"
+  )) as ResultProps;
+  if (textRes.msg === "OK") {
+    callback(textRes.data);
   }
 };
 const videoTimeupdate = (time) => {
@@ -114,7 +149,7 @@ const videoTimeupdate = (time) => {
         sentenceKey.value = item._key;
       }
     });
-    console.log(captionObj.value);
+    // console.log(captionObj.value);
     // if (!captionsState.value) {
     // captionObj.value = null;
     // keyIndex.value = -1;
@@ -173,19 +208,30 @@ const changeMediaIndex = (type) => {
 
 const clickMedia = (time, type?: string, key?: string, index?: number) => {
   let currentTime = time / 1000;
-  if (type && key) {
-    sentenceKey.value = key;
+  if (key) {
+    errorKey.value = key;
+    errorVisible.value = true;
+    keyword.value = "";
+    keywordKey.value = "";
+    if (type) {
+      sentenceKey.value = key;
+    }
   }
   studyMediaRef.value.handleTimeChange(currentTime, type, index);
 };
 const reloadMedia = (time, index) => {
-  if (time * 1000 >= captionsList.value[index].endTime) {
+  if (
+    captionsList.value[index] &&
+    time * 1000 >= captionsList.value[index].endTime
+  ) {
     mediaIndex.value = index;
     sentenceKey.value = captionsList.value[index]._key;
     clickMedia(captionsList.value[index].startTime);
   }
 };
 const chooseWord = async (word, index, type: string, key?: string) => {
+  errorKey.value = "";
+  errorVisible.value = false;
   keyword.value = word;
   keyIndex.value = index;
   setMusicSrc("/music/click.mp3");
@@ -237,9 +283,20 @@ const clickNode = () => {
     noteUrl.value = `https://mind.qingtime.cn/?token=${token.value}&getDataApi={"url":"${getApi}","params":${getParams},"docDataName":"content"}&patchDataApi={"url":"${patchApi}","params":${getParams},"docDataName":"note"}&getUptokenApi={"url":"${uptokenApi}","params":${uptokenParams}}&isEdit=2&hideHead=1`;
   }
 };
+const loadNext = () => {
+  mediaListIndex.value = mediaListIndex.value + 1;
+  console.log(mediaListIndex.value);
+  if (mediaListIndex.value < mediaList.value.length) {
+    api.request.patch("subscribe/playRecord", {
+      agentKey: agentKey.value,
+      mediaKey: mediaList.value[mediaListIndex.value]._key,
+    });
+  }
+};
 watch([mediaListIndex, lessonInfo], ([newIndex, newInfo]) => {
   // audioRef.value.pause();
   // videoRef.value.pause();
+  articleList.value = [];
   if (newInfo && mediaList.value.length > 0) {
     if (newInfo.mediaType === "video") {
       studyTab.value = "video";
@@ -252,13 +309,15 @@ watch([mediaListIndex, lessonInfo], ([newIndex, newInfo]) => {
     if (videoRef.value) {
       videoRef.value.pause();
     }
+    console.log(newIndex);
+    console.log(mediaList.value[newIndex]);
     mediaSrc.value = mediaList.value[newIndex].url;
     if (newInfo.mediaType !== "pdf") {
       getCaption(mediaList.value[newIndex]._key);
     }
     getArticleList(mediaList.value[newIndex]._key);
     clearMedia();
-    if (studyMediaRef.value) {
+    if (studyMediaRef.value && newInfo.mediaType === "audio") {
       let divDomList: any = document.getElementsByClassName(
         "study-audio-caption"
       );
@@ -283,99 +342,235 @@ watch(studyTab, () => {
   sentenceKey.value = "";
   keyIndex.value = -1;
   keyword.value = "";
+  changeIndex.value = -1;
+  errorKey.value = "";
+  errorVisible.value = false;
 });
 </script>
 <template>
-  <div class="study" v-if="lessonInfo">
+  <div class="study" v-if="lessonInfo" @click="changeIndex = -1">
     <!-- class="study-audio" -->
     <!-- <video autoPlay controls ref="audioRef">
       <source :src="audioSrc" type="audio/mpeg" />
     </video> -->
-    <audio :src="audioSrc" ref="audioRef" controls autoplay class="study-read"></audio>
+    <audio
+      :src="audioSrc"
+      ref="audioRef"
+      controls
+      autoplay
+      class="study-read"
+    ></audio>
     <div class="study-container">
       <div class="study-left">
-        <Header :title="mediaList[mediaListIndex].name" :backPath="'/home'">
+        <Header :title="mediaList[mediaListIndex]?.name" :backPath="'/home'">
           <template #icon>
-            <el-dropdown max-height="80vh">
+            <el-dropdown
+              max-height="300px"
+              :trigger="is_mobile() ? 'click' : 'hover'"
+              :teleported="!is_mobile()"
+            >
               <div class="icon-point" style="margin-right: 8px">
                 <FontIcon iconName="liebiao" />
               </div>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item @click="mediaListIndex = index" v-for="(item, index) in mediaList"
-                    :key="`media${item._key}`" :style="mediaListIndex === index
-                      ? { backgroundColor: '#edeeff', color: '#4d57ff' }
-                      : {}
-                      ">{{ item.name }}
+                  <el-dropdown-item
+                    @click="
+                      mediaListIndex = index;
+                      api.request.patch('subscribe/playRecord', {
+                        agentKey: agentKey,
+                        mediaKey: item._key,
+                      });
+                    "
+                    v-for="(item, index) in mediaList"
+                    :key="`media${item._key}`"
+                    :style="
+                      mediaListIndex === index
+                        ? { backgroundColor: '#edeeff', color: '#4d57ff' }
+                        : {}
+                    "
+                    >{{ item.name }}
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
           </template>
+          <template #button>
+            <div class="study-tab">
+              <div
+                class="study-tab-item"
+                :class="{ 'study-tab-choose': studyTab === 'video' }"
+                @click="studyTab = 'video'"
+                v-if="lessonInfo.mediaType === 'video'"
+              >
+                视频
+              </div>
+              <div
+                class="study-tab-item"
+                :class="{ 'study-tab-choose': studyTab === 'audio' }"
+                @click="studyTab = 'audio'"
+                v-if="lessonInfo.mediaType === 'audio'"
+              >
+                音频
+              </div>
+              <div
+                class="study-tab-item"
+                :class="{ 'study-tab-choose': studyTab === 'original' }"
+                @click="studyTab = 'original'"
+              >
+                原文
+              </div>
+              <div
+                class="study-tab-item"
+                :class="{ 'study-tab-choose': studyTab === 'translation' }"
+                @click="studyTab = 'translation'"
+              >
+                译文
+              </div>
+              <div
+                class="study-tab-item"
+                :class="{ 'study-tab-choose': studyTab === 'cloud' }"
+                @click="studyTab = 'cloud'"
+              >
+                词频
+              </div>
+            </div></template
+          >
         </Header>
-        <div class="study-tab">
-          <div class="study-tab-item" :class="{ 'study-tab-choose': studyTab === 'video' }" @click="studyTab = 'video'"
-            v-if="lessonInfo.mediaType === 'video'">
-            视频
-          </div>
-          <div class="study-tab-item" :class="{ 'study-tab-choose': studyTab === 'audio' }" @click="studyTab = 'audio'"
-            v-if="lessonInfo.mediaType === 'audio'">
-            音频
-          </div>
-          <div class="study-tab-item" :class="{ 'study-tab-choose': studyTab === 'original' }"
-            @click="studyTab = 'original'">
-            原文
-          </div>
-          <div class="study-tab-item" :class="{ 'study-tab-choose': studyTab === 'translation' }"
-            @click="studyTab = 'translation'">
-            译文
-          </div>
-          <div class="study-tab-item" :class="{ 'study-tab-choose': studyTab === 'cloud' }" @click="studyTab = 'cloud'">
-            词频
-          </div>
-        </div>
 
-        <div class="study-cloud" v-if="studyTab === 'cloud' && textList.length > 0">
-          <WordChart :chartData="textList" :wordId="'study-word'" @chooseWord="chooseWord" :keyword="keyword" />
+        <div
+          class="study-cloud"
+          v-if="studyTab === 'cloud' && textList.length > 0"
+        >
+          <WordChart
+            :chartData="textList"
+            :wordId="'study-word'"
+            @chooseWord="chooseWord"
+            :keyword="keyword"
+          />
         </div>
-        <div class="study-box" v-else :style="studyTab === 'video' ? { padding: '10px 0px' } : { padding: '10px 15px' }">
+        <div
+          class="study-box"
+          v-else
+          :style="
+            studyTab === 'video'
+              ? { padding: '10px 0px' }
+              : { padding: '10px 15px' }
+          "
+        >
           <template v-if="studyTab === 'original' && articleList.length > 0">
-            <div v-for="(item, index) in articleList" :key="`original${index}`" class="text-item">
+            <div
+              v-for="(item, index) in articleList"
+              :key="`original${index}`"
+              class="text-item"
+              @click.stop="
+                errorKey = item._key;
+                errorVisible = true;
+                keyword = '';
+                keywordKey = '';
+              "
+              :style="
+                errorKey === item._key ? { backgroundColor: '#F5F5F5' } : {}
+              "
+            >
               <!--                 :style="sentenceKey === item._key ? { color: '#4D57FF' } : {}" -->
               <div style="width: 2em"></div>
-              <span v-for="(textItem, textIndex) in item.original" :key="`originalText${textIndex}`"
-                :class="{ 'text-point': !/\b\w+\b/g.test(textItem) }" @click="
+              <!-- <div v-if="errorKey === item._key" class="study-original-mask">
+                {{ item.translation }}
+              </div> -->
+              <span
+                v-for="(textItem, textIndex) in item.original"
+                :key="`originalText${textIndex}`"
+                :class="{ 'text-point': !/\b\w+\b/g.test(textItem) }"
+                @click.stop="
                   /\b\w+\b/g.test(textItem)
                     ? chooseWord(textItem, textIndex, 'section', item._key)
                     : ''
-                  " :style="keyword === textItem && /\b\w+\b/g.test(textItem)
-    ? {
-      color: '#4D57FF',
-    }
-    : {}
-    ">{{ textItem }}</span>
+                "
+                :style="
+                  changeIndex !== index
+                    ? keyword === textItem && /\b\w+\b/g.test(textItem)
+                      ? {
+                          color: '#4D57FF',
+                        }
+                      : {}
+                    : { opacity: 0 }
+                "
+                >{{ textItem }}</span
+              >
             </div>
           </template>
           <template v-if="studyTab === 'translation' && articleList.length > 0">
-            <div v-for="(item, index) in articleList" :key="`translation${index}`" class="text-item icon-point" :style="item && sentenceKey === item._key ? { color: '#4D57FF' } : {}
-              " style="text-indent: 2em">
+            <div
+              v-for="(item, index) in articleList"
+              :key="`translation${index}`"
+              class="text-item icon-point"
+              :style="// changeIndex === index
+              //   ? { backgroundColor: '#F5F5F5' }
+              // :
+              { textIndent: '2em' }"
+            >
+              <!-- <template v-if="changeIndex === index">
+                <div style="width: 2em"></div>
+                <span
+                  v-for="(textItem, textIndex) in item.original"
+                  :key="`originalText${textIndex}`"
+                  :class="{ 'text-point': !/\b\w+\b/g.test(textItem) }"
+                  @click.stop="
+                    /\b\w+\b/g.test(textItem)
+                      ? chooseWord(textItem, textIndex, 'section', item._key)
+                      : ''
+                  "
+                  :style="
+                    keyword === textItem && /\b\w+\b/g.test(textItem)
+                      ? {
+                          color: '#4D57FF',
+                        }
+                      : {}
+                  "
+                  >{{ textItem }}</span
+                >
+              </template>
+              <template v-else> -->
               {{ item.translation }}
+              <!-- </template> -->
             </div>
           </template>
           <template v-if="studyTab === 'video'">
             <div class="study-video">
-              <VideoPlayer :src="mediaSrc" :title="lessonInfo.name" :cover="lessonInfo.cover" :videoIndex="mediaIndex"
-                @videoTimeupdate="videoTimeupdate" @changeVideoIndex="changeMediaIndex" @reloadVideo="reloadMedia"
-                ref="studyMediaRef" videoType="custom">
+              <VideoPlayer
+                :src="mediaSrc"
+                :title="lessonInfo.name"
+                :cover="lessonInfo.cover"
+                :videoIndex="mediaIndex"
+                @videoTimeupdate="videoTimeupdate"
+                @changeVideoIndex="changeMediaIndex"
+                @reloadVideo="reloadMedia"
+                @loadNext="loadNext"
+                ref="studyMediaRef"
+                videoType="custom"
+              >
                 <template #custom>
                   <div class="study-video-content" v-if="studyMediaRef">
-                    <div class="study-video-caption" @mouseenter="
-                      studyMediaRef.reloadMedia(true);
-                    setMusicSrc('/music/inout.mp3');
-                    " @mouseleave="
-  studyMediaRef.reloadMedia(false);
-setMusicSrc('/music/inout.mp3');
-">
+                    <div
+                      class="study-video-caption"
+                      @mouseenter="
+                        studyMediaRef.reloadMedia(true);
+                        setMusicSrc('/music/inout.mp3');
+                      "
+                      @mouseleave="
+                        studyMediaRef.reloadMedia(false);
+                        setMusicSrc('/music/inout.mp3');
+                      "
+                      @click="
+                        captionObj
+                          ? ((errorKey = captionObj._key),
+                            (errorVisible = true),
+                            (keyword = ''),
+                            (keywordKey = ''))
+                          : null
+                      "
+                    >
                       <template v-if="captionObj">
                         <!-- <div class="study-video-subtitle">
                           <div
@@ -392,102 +587,207 @@ setMusicSrc('/music/inout.mp3');
                           </div>
                         </div> -->
                         <div class="study-original">
-                          <span v-for="(item, index) in captionObj.original" :key="`originalCaption${index}`"
-                            :class="{ 'text-point': !/\b\w+\b/g.test(item) }" @click="
-                              /\b\w+\b/g.test(item)
-                                ? chooseWord(
-                                  item,
-                                  index,
-                                  'caption',
-                                  captionObj._key
-                                )
-                                : ''
-                              " :style="keyword === item &&
-    index === keyIndex &&
-    /\b\w+\b/g.test(item)
-    ? {
-      color: '#4D57FF',
-    }
-    : {}
-    ">
-                            {{ item }}
-                          </span>
+                          <template v-if="lessonInfo.language === 'en'">
+                            <span
+                              v-for="(item, index) in captionObj.original"
+                              :key="`originalCaption${index}`"
+                              :class="{ 'text-point': !/\b\w+\b/g.test(item) }"
+                              @click.stop="
+                                /\b\w+\b/g.test(item)
+                                  ? chooseWord(
+                                      item,
+                                      index,
+                                      'caption',
+                                      captionObj._key
+                                    )
+                                  : ''
+                              "
+                              :style="
+                                keyword === item &&
+                                index === keyIndex &&
+                                /\b\w+\b/g.test(item)
+                                  ? {
+                                      color: '#4D57FF',
+                                    }
+                                  : {}
+                              "
+                            >
+                              {{ item }}
+                            </span>
+                          </template>
+                          <template v-else-if="lessonInfo.language === 'cn'">
+                            <div
+                              v-for="(item, index) in captionObj.original"
+                              :key="`caption${index}`"
+                            >
+                              <span
+                                v-for="(textItem, textIndex) in item"
+                                :key="`originalCaption${textIndex}`"
+                                :class="{
+                                  'text-point':
+                                    !textPoint(textItem) || !isNaN(textItem),
+                                }"
+                                @click.stop="
+                                  textPoint(textItem) && isNaN(textItem)
+                                    ? chooseWord(
+                                        textItem,
+                                        textIndex,
+                                        'caption',
+                                        captionObj._key
+                                      )
+                                    : ''
+                                "
+                                :style="
+                                  keyword === textItem &&
+                                  textIndex === keyIndex &&
+                                  textPoint(textItem) &&
+                                  isNaN(textItem)
+                                    ? {
+                                        color: '#4D57FF',
+                                      }
+                                    : {}
+                                "
+                              >
+                                {{ textItem }}
+                              </span>
+                            </div>
+                          </template>
                         </div>
                       </template>
                     </div>
                     <div class="study-video-buttonGroup">
                       <div class="buttonGroup-top">
-                        <div class="buttonGroup-top-text" @click="changeMediaIndex('last')">
-                          <FontIcon iconName="shangyiju1" :iconStyle="{
-                            fontSize: '10px',
-                            marginRight: '3px',
-                          }" />上句
+                        <div
+                          class="buttonGroup-top-text"
+                          @click="changeMediaIndex('last')"
+                        >
+                          <FontIcon
+                            iconName="shangyiju1"
+                            :iconStyle="{
+                              fontSize: '10px',
+                              marginRight: '3px',
+                            }"
+                          />上句
                         </div>
-                        <div class="buttonGroup-top-center"
-                          @click="studyMediaRef.reloadMedia(reloadState); reloadState = !reloadState" :style="{
-                            animation:
-                              studyMediaRef.reloadState && captionObj
-                                ? 'fadenum 3s infinite'
-                                : '',
-                          }">
+                        <div
+                          class="buttonGroup-top-center"
+                          @click="
+                            studyMediaRef.reloadMedia(reloadState);
+                            reloadState = !reloadState;
+                          "
+                          :style="{
+                            animation: studyMediaRef.isPlay
+                              ? `fadenum ${
+                                  studyMediaRef.reloadState ? 1.5 : 3
+                                }s infinite`
+                              : '',
+                          }"
+                        >
                           <img src="/common/reload.svg" alt="" />
                         </div>
-                        <div class="buttonGroup-top-text" style="justify-content: flex-end"
-                          @click="changeMediaIndex('next')">
+                        <div
+                          class="buttonGroup-top-text"
+                          style="justify-content: flex-end"
+                          @click="changeMediaIndex('next')"
+                        >
                           下句
-                          <FontIcon iconName="xiayiju1" :iconStyle="{
-                            fontSize: '10px',
-                            marginLeft: '3px',
-                          }" />
+                          <FontIcon
+                            iconName="xiayiju1"
+                            :iconStyle="{
+                              fontSize: '10px',
+                              marginLeft: '3px',
+                            }"
+                          />
                         </div>
                       </div>
-                      <div class="buttonGroup-center" :style="{
-                        color: studyMediaRef.reloadState ? '#4d57ff' : '#666',
-                      }">
-                        <template v-if="studyMediaRef.reloadState && captionObj"><span
-                            style="font-weight: 600; margin-right: 2px">磨耳朵:
+                      <div
+                        class="buttonGroup-center"
+                        :style="{
+                          color: studyMediaRef.reloadState ? '#4d57ff' : '#666',
+                        }"
+                      >
+                        <template
+                          v-if="studyMediaRef.reloadState && captionObj"
+                        >
+                          <span style="font-weight: 600; margin-right: 2px">
+                            磨耳朵:
                           </span>
-                          {{ `第 ${mediaIndex + 1} 句 ` }}</template>
+                          {{ `第 ${mediaIndex + 1} 句 ` }}
+                        </template>
                         <template v-else-if="captionObj">{{
-                          `欣赏至第 ${mediaIndex + 1} 句 (共 ${captionsList.length
-                            } 句)`
+                          `欣赏至第 ${mediaIndex + 1} 句 (共 ${
+                            captionsList.length
+                          } 句)`
                         }}</template>
                       </div>
                       <div class="buttonGroup-bottom">
-                        <FontIcon customClassName="buttonGroup-bottom-button" iconName="a-zanting2"
-                          @iconClick="studyMediaRef.playVideo" :iconStyle="{ fontSize: '10px' }"
-                          v-if="studyMediaRef.isPlay" />
-                        <FontIcon customClassName="buttonGroup-bottom-button" iconName="a-bofang2"
-                          @iconClick="studyMediaRef.playVideo" :iconStyle="{ fontSize: '10px' }" v-else />
-                        <OnClickOutside @trigger="studyMediaRef.videoHuds = false">
+                        <FontIcon
+                          customClassName="buttonGroup-bottom-button"
+                          iconName="a-zanting2"
+                          @iconClick="studyMediaRef.playVideo"
+                          :iconStyle="{ fontSize: '10px' }"
+                          v-if="studyMediaRef.isPlay"
+                        />
+                        <FontIcon
+                          customClassName="buttonGroup-bottom-button"
+                          iconName="a-bofang2"
+                          @iconClick="studyMediaRef.playVideo"
+                          :iconStyle="{ fontSize: '10px' }"
+                          v-else
+                        />
+                        <OnClickOutside
+                          @trigger="studyMediaRef.videoHuds = false"
+                        >
                           <div class="buttonGroup-bottom-volume">
-                            <div class="buttonGroup-bottom-volume-progress" v-show="studyMediaRef.videoHuds">
-                              <el-slider vertical height="100px" class="buttonGroup-bottom-volume-bar"
-                                v-model="studyMediaRef.videoVolume" :show-tooltip="false"
-                                @change="studyMediaRef.handleVideoVolume" />
+                            <div
+                              class="buttonGroup-bottom-volume-progress"
+                              v-show="studyMediaRef.videoHuds"
+                            >
+                              <el-slider
+                                vertical
+                                height="100px"
+                                class="buttonGroup-bottom-volume-bar"
+                                v-model="studyMediaRef.videoVolume"
+                                :show-tooltip="false"
+                                @change="studyMediaRef.handleVideoVolume"
+                              />
                             </div>
 
-                            <FontIcon v-if="studyMediaRef.videoVolume <= 0" customClassName="buttonGroup-bottom-button"
-                              iconName="jingyin" :iconStyle="{
+                            <FontIcon
+                              v-if="studyMediaRef.videoVolume <= 0"
+                              customClassName="buttonGroup-bottom-button"
+                              iconName="jingyin"
+                              :iconStyle="{
                                 fontSize: '10px',
                                 color: '#888',
-                              }" @click.stop="
-  studyMediaRef.videoHuds =
-  !studyMediaRef.videoHuds
-  " />
-                            <FontIcon v-if="studyMediaRef.videoVolume > 0" customClassName="buttonGroup-bottom-button"
-                              iconName="shengyin" :iconStyle="{
+                              }"
+                              @click.stop="
+                                studyMediaRef.videoHuds =
+                                  !studyMediaRef.videoHuds
+                              "
+                            />
+                            <FontIcon
+                              v-if="studyMediaRef.videoVolume > 0"
+                              customClassName="buttonGroup-bottom-button"
+                              iconName="shengyin"
+                              :iconStyle="{
                                 fontSize: '10px',
                                 color: '#333',
-                              }" @click.stop="
-  studyMediaRef.videoHuds =
-  !studyMediaRef.videoHuds
-  " />
+                              }"
+                              @click.stop="
+                                studyMediaRef.videoHuds =
+                                  !studyMediaRef.videoHuds
+                              "
+                            />
                           </div>
                         </OnClickOutside>
                         <div class="buttonGroup-bottom-container">
-                          <el-slider class="buttonGroup-bottom-slider" v-model="studyMediaRef.currentProgress"
-                            :show-tooltip="false" @change="studyMediaRef.handleProgressChange" />
+                          <el-slider
+                            class="buttonGroup-bottom-slider"
+                            v-model="studyMediaRef.currentProgress"
+                            :show-tooltip="false"
+                            @change="studyMediaRef.handleProgressChange"
+                          />
                           <div class="buttonGroup-bottom-time">
                             <span style="margin-right: 2px">{{
                               studyMediaRef.videoStart
@@ -506,112 +806,255 @@ setMusicSrc('/music/inout.mp3');
             </div>
           </template>
           <template v-if="studyTab === 'audio'">
-            <div class="study-caption study-audio-caption">
-              <div v-for="(item, index) in captionsList" :key="`caption${index}`" class="text-item"
-                style="padding-left: 10px">
-                <FontIcon iconName="a-bofang2" customClassName="study-audio-icon" :iconStyle="{
-                  fontSize: '16px',
-                  color: '#4D57FF',
-                }" v-if="index === mediaIndex" />
-                <div class="study-original" :style="sentenceKey === item._key ? { color: '#4D57FF' } : {}" @click="
-                  sentenceKey !== item._key
-                    ? clickMedia(item.startTime, 'outer', item._key, index)
-                    : null
-                  ">
-                  <span v-for="(textItem, textIndex) in item.original" :key="`originalCaption${textIndex}`"
-                    :class="{ 'text-point': !/\b\w+\b/g.test(textItem) }" @click="
-                      /\b\w+\b/g.test(textItem) && sentenceKey === item._key
-                        ? chooseWord(textItem, textIndex, 'caption', item._key)
-                        : ''
-                      " :style="keyword === textItem &&
-    textIndex === keyIndex &&
-    /\b\w+\b/g.test(item)
-    ? {
-      color: '#4D57FF',
-    }
-    : {}
-    ">{{ textItem }}</span>
+            <div
+              class="study-caption study-audio-caption"
+              @mouseenter="studyMediaRef.reloadMedia(true)"
+              @mouseleave="studyMediaRef.reloadMedia(false)"
+            >
+              <div
+                v-for="(item, index) in captionsList"
+                :key="`caption${index}`"
+                class="text-item"
+                style="padding-left: 10px"
+              >
+                <FontIcon
+                  iconName="a-bofang2"
+                  customClassName="study-audio-icon"
+                  :iconStyle="{
+                    fontSize: '16px',
+                    color: '#4D57FF',
+                  }"
+                  v-if="index === mediaIndex"
+                />
+                <div
+                  class="study-original"
+                  style="width: 100%"
+                  :style="sentenceKey === item._key ? { color: '#4D57FF' } : {}"
+                  @click="
+                    sentenceKey !== item._key
+                      ? clickMedia(item.startTime, 'outer', item._key, index)
+                      : null
+                  "
+                >
+                  <!--           @click="
+                       ;
+                      " -->
+                  <template v-if="lessonInfo.language === 'en'">
+                    <span
+                      v-for="(textItem, textIndex) in item.original"
+                      :key="`originalCaption${textIndex}`"
+                      :class="{ 'text-point': !/\b\w+\b/g.test(textItem) }"
+                      @click="
+                        /\b\w+\b/g.test(textItem) && sentenceKey === item._key
+                          ? chooseWord(
+                              textItem,
+                              textIndex,
+                              'caption',
+                              item._key
+                            )
+                          : ''
+                      "
+                      :style="
+                        keyword === textItem &&
+                        textIndex === keyIndex &&
+                        /\b\w+\b/g.test(item)
+                          ? {
+                              color: '#4D57FF',
+                              fontWeight: 900,
+                            }
+                          : {}
+                      "
+                      >{{ textItem }}</span
+                    >
+                  </template>
+                  <template v-else-if="lessonInfo.language === 'cn'">
+                    <div
+                      v-for="(captionItem, captionIndex) in item.original"
+                      :key="`caption${captionIndex}`"
+                      style="width: 100%"
+                    >
+                      <span
+                        v-for="(textItem, textIndex) in captionItem"
+                        :key="`textCaption${textIndex}`"
+                        :class="{
+                          'text-point':
+                            !textPoint(textItem) || !isNaN(textItem),
+                        }"
+                        @click.stop="
+                          textPoint(textItem) && isNaN(textItem)
+                            ? chooseWord(
+                                textItem,
+                                textIndex,
+                                'caption',
+                                captionItem._key
+                              )
+                            : ''
+                        "
+                        :style="
+                          keyword === textItem &&
+                          textIndex === keyIndex &&
+                          textPoint(textItem) &&
+                          isNaN(textItem)
+                            ? {
+                                color: '#4D57FF',
+                              }
+                            : {}
+                        "
+                      >
+                        {{ textItem }}
+                      </span>
+                    </div>
+                  </template>
                 </div>
               </div>
             </div>
             <div class="study-audio" v-if="lessonInfo">
-              <AudioPlayer :src="mediaSrc" :title="lessonInfo.name" :cover="lessonInfo.cover" :audioIndex="mediaIndex"
-                @audioTimeupdate="audioTimeupdate" @changeAudioIndex="changeMediaIndex" @reloadAudio="reloadMedia"
-                ref="studyMediaRef" audioType="custom">
+              <AudioPlayer
+                :src="mediaSrc"
+                :title="lessonInfo.name"
+                :cover="lessonInfo.cover"
+                :audioIndex="mediaIndex"
+                @audioTimeupdate="audioTimeupdate"
+                @changeAudioIndex="changeMediaIndex"
+                @reloadAudio="reloadMedia"
+                @loadNext="loadNext"
+                ref="studyMediaRef"
+                audioType="custom"
+              >
                 <template #custom>
                   <div class="study-audio-content" v-if="studyMediaRef">
                     <!-- <div class="study-video-caption"></div> -->
                     <div class="study-video-buttonGroup">
                       <div class="buttonGroup-top">
-                        <div class="buttonGroup-top-text" @click="changeMediaIndex('last')">
-                          <FontIcon iconName="shangyiju1" :iconStyle="{
-                            fontSize: '10px',
-                            marginRight: '3px',
-                          }" />上句
+                        <div
+                          class="buttonGroup-top-text"
+                          @click="changeMediaIndex('last')"
+                        >
+                          <FontIcon
+                            iconName="shangyiju1"
+                            :iconStyle="{
+                              fontSize: '10px',
+                              marginRight: '3px',
+                            }"
+                          />上句
                         </div>
-                        <div class="buttonGroup-top-center"
-                          @click="studyMediaRef.reloadMedia(reloadState); reloadState = !reloadState" :style="{
-                            animation: studyMediaRef.reloadState
-                              ? 'fadenum 3s infinite'
+                        <div
+                          class="buttonGroup-top-center"
+                          @click="
+                            studyMediaRef.reloadMedia(reloadState);
+                            reloadState = !reloadState;
+                          "
+                          :style="{
+                            animation: studyMediaRef.isPlay
+                              ? `fadenum ${
+                                  studyMediaRef.reloadState ? 1.5 : 3
+                                }s infinite`
                               : '',
-                          }">
+                          }"
+                        >
                           <img src="/common/reload.svg" alt="" />
                         </div>
-                        <div class="buttonGroup-top-text" style="justify-content: flex-end"
-                          @click="changeMediaIndex('next')">
+                        <div
+                          class="buttonGroup-top-text"
+                          style="justify-content: flex-end"
+                          @click="changeMediaIndex('next')"
+                        >
                           下句
-                          <FontIcon iconName="xiayiju1" :iconStyle="{
-                            fontSize: '10px',
-                            marginLeft: '3px',
-                          }" />
+                          <FontIcon
+                            iconName="xiayiju1"
+                            :iconStyle="{
+                              fontSize: '10px',
+                              marginLeft: '3px',
+                            }"
+                          />
                         </div>
                       </div>
-                      <div class="buttonGroup-center" :style="{
-                        color: studyMediaRef.reloadState ? '#4d57ff' : '#666',
-                      }">
-                        <template v-if="studyMediaRef.reloadState"><span style="font-weight: 600; margin-right: 2px">磨耳朵:
+                      <div
+                        class="buttonGroup-center"
+                        :style="{
+                          color: studyMediaRef.reloadState ? '#4d57ff' : '#666',
+                        }"
+                      >
+                        <template v-if="studyMediaRef.reloadState"
+                          ><span style="font-weight: 600; margin-right: 2px"
+                            >磨耳朵:
                           </span>
-                          {{ `第 ${mediaIndex + 1} 句 ` }}</template>
+                          {{ `第 ${mediaIndex + 1} 句 ` }}</template
+                        >
                         <template v-else>{{
-                          `欣赏至第 ${mediaIndex + 1} 句 (共 ${captionsList.length
-                            } 句)`
+                          `欣赏至第 ${mediaIndex + 1} 句 (共 ${
+                            captionsList.length
+                          } 句)`
                         }}</template>
                       </div>
                       <div class="buttonGroup-bottom">
-                        <FontIcon customClassName="buttonGroup-bottom-button" iconName="a-zanting2"
-                          @iconClick="studyMediaRef.playAudio" :iconStyle="{ fontSize: '10px' }"
-                          v-if="studyMediaRef.isPlay" />
-                        <FontIcon customClassName="buttonGroup-bottom-button" iconName="a-bofang2"
-                          @iconClick="studyMediaRef.playAudio" :iconStyle="{ fontSize: '10px' }" v-else />
-                        <OnClickOutside @trigger="studyMediaRef.audioHuds = false">
+                        <FontIcon
+                          customClassName="buttonGroup-bottom-button"
+                          iconName="a-zanting2"
+                          @iconClick="studyMediaRef.playAudio"
+                          :iconStyle="{ fontSize: '10px' }"
+                          v-if="studyMediaRef.isPlay"
+                        />
+                        <FontIcon
+                          customClassName="buttonGroup-bottom-button"
+                          iconName="a-bofang2"
+                          @iconClick="studyMediaRef.playAudio"
+                          :iconStyle="{ fontSize: '10px' }"
+                          v-else
+                        />
+                        <OnClickOutside
+                          @trigger="studyMediaRef.audioHuds = false"
+                        >
                           <div class="buttonGroup-bottom-volume">
-                            <div class="buttonGroup-bottom-volume-progress" v-show="studyMediaRef.audioHuds">
-                              <el-slider vertical height="100px" class="buttonGroup-bottom-volume-bar"
-                                v-model="studyMediaRef.audioVolume" :show-tooltip="false"
-                                @change="studyMediaRef.handleAudioVolume" />
+                            <div
+                              class="buttonGroup-bottom-volume-progress"
+                              v-show="studyMediaRef.audioHuds"
+                            >
+                              <el-slider
+                                vertical
+                                height="100px"
+                                class="buttonGroup-bottom-volume-bar"
+                                v-model="studyMediaRef.audioVolume"
+                                :show-tooltip="false"
+                                @change="studyMediaRef.handleAudioVolume"
+                              />
                             </div>
 
-                            <FontIcon v-if="studyMediaRef.audioVolume <= 0" customClassName="buttonGroup-bottom-button"
-                              iconName="jingyin" :iconStyle="{
+                            <FontIcon
+                              v-if="studyMediaRef.audioVolume <= 0"
+                              customClassName="buttonGroup-bottom-button"
+                              iconName="jingyin"
+                              :iconStyle="{
                                 fontSize: '10px',
                                 color: '#888',
-                              }" @click.stop="
-  studyMediaRef.audioHuds =
-  !studyMediaRef.audioHuds
-  " />
-                            <FontIcon v-if="studyMediaRef.audioVolume > 0" customClassName="buttonGroup-bottom-button"
-                              iconName="shengyin" :iconStyle="{
+                              }"
+                              @click.stop="
+                                studyMediaRef.audioHuds =
+                                  !studyMediaRef.audioHuds
+                              "
+                            />
+                            <FontIcon
+                              v-if="studyMediaRef.audioVolume > 0"
+                              customClassName="buttonGroup-bottom-button"
+                              iconName="shengyin"
+                              :iconStyle="{
                                 fontSize: '10px',
                                 color: '#333',
-                              }" @click.stop="
-  studyMediaRef.audioHuds =
-  !studyMediaRef.audioHuds
-  " />
+                              }"
+                              @click.stop="
+                                studyMediaRef.audioHuds =
+                                  !studyMediaRef.audioHuds
+                              "
+                            />
                           </div>
                         </OnClickOutside>
                         <div class="buttonGroup-bottom-container">
-                          <el-slider class="buttonGroup-bottom-slider" v-model="studyMediaRef.currentProgress"
-                            :show-tooltip="false" @change="studyMediaRef.handleProgressChange" />
+                          <el-slider
+                            class="buttonGroup-bottom-slider"
+                            v-model="studyMediaRef.currentProgress"
+                            :show-tooltip="false"
+                            @change="studyMediaRef.handleProgressChange"
+                          />
                           <div class="buttonGroup-bottom-time">
                             <span style="margin-right: 2px">{{
                               studyMediaRef.audioStart
@@ -631,8 +1074,18 @@ setMusicSrc('/music/inout.mp3');
           </template>
         </div>
       </div>
-      <Keyword :keyword="keyword" :keywordKey="keywordKey" @setKeyword="keyword = ''"
-        :mediaName="mediaList[mediaIndex]?.name" :type="studyTab === 'cloud' ? 'outer' : 'inner'" />
+      <Keyword
+        :keyword="keyword"
+        :keywordKey="keywordKey"
+        @setKeyword="keyword = ''"
+        :mediaName="mediaList[mediaIndex]?.name"
+        :type="studyTab === 'cloud' ? 'outer' : 'inner'"
+      />
+      <ErrorWord
+        :errorVisible="errorVisible"
+        :errorKey="errorKey"
+        :type="studyTab"
+      />
       <!-- <div class=""></div> -->
     </div>
     <div class="study-note-tree" v-if="noteVisible">
@@ -654,14 +1107,14 @@ setMusicSrc('/music/inout.mp3');
 </template>
 <style scoped lang="scss">
 .study {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   align-content: flex-start;
 
   @include flex(center, center, wrap);
 
   .study-container {
-    width: 100vw;
+    width: 100%;
     height: 100%;
     position: relative;
     z-index: 1;
@@ -678,7 +1131,7 @@ setMusicSrc('/music/inout.mp3');
 
       .study-tab {
         width: 100%;
-        height: 70px;
+        height: 100%;
         @include flex(flex-start, center, null);
 
         .study-tab-item {
@@ -701,7 +1154,7 @@ setMusicSrc('/music/inout.mp3');
 
       .study-box {
         width: 100%;
-        height: calc(100vh - 125px);
+        height: calc(100% - 30px);
         font-family: "Kaiti SC", "STKaiti", "Arial", sans-serif;
         padding: 10px 15px;
         // text-indent: 2em;
@@ -719,6 +1172,18 @@ setMusicSrc('/music/inout.mp3');
           // word-wrap: break-word;
           // word-break: normal;
           @include flex(flex-start, center, wrap);
+
+          .study-original-mask {
+            width: 100%;
+            min-height: 100%;
+            position: absolute;
+            z-index: 1;
+            left: 0px;
+            top: 0px;
+            text-indent: 2em;
+            background-color: #f5f5f5;
+            // @include flex(flex-start, center, wrap);
+          }
 
           // &:hover {
           //   color: $commonColor;
@@ -752,7 +1217,7 @@ setMusicSrc('/music/inout.mp3');
         .study-video-content,
         .study-audio-content {
           width: 100%;
-          height: 200px;
+          height: 190px;
           padding: 0px 15px;
           box-sizing: border-box;
           @include flex(space-between, center, null);
@@ -797,12 +1262,12 @@ setMusicSrc('/music/inout.mp3');
               padding: 10px;
               @include flex(flex-start, center, wrap);
 
-              >span {
+              span {
                 padding: 0px 8px;
-                cursor: pointer;
 
                 // @include p-number(0px, 5px);
-                &:hover {
+                &:not(.text-point):hover {
+                  cursor: pointer;
                   color: $commonColor;
                 }
               }
@@ -954,11 +1419,11 @@ setMusicSrc('/music/inout.mp3');
             box-sizing: border-box;
             word-break: break-all;
 
-            >span {
-              cursor: pointer;
-
+            span {
               // @include p-number(0px, 5px);
-              &:hover {
+              &:not(.text-point):hover {
+                cursor: pointer;
+                font-weight: 900;
                 color: $commonColor;
               }
             }
@@ -968,7 +1433,7 @@ setMusicSrc('/music/inout.mp3');
 
       .study-cloud {
         width: 100%;
-        height: calc(100vh - 105px);
+        height: calc(100% - 35px);
       }
     }
   }
@@ -982,8 +1447,8 @@ setMusicSrc('/music/inout.mp3');
   }
 
   .study-note-tree {
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     position: fixed;
     z-index: 3;
     top: 0px;
