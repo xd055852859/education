@@ -12,7 +12,7 @@ const { musicSrc, musicNum, deviceWidth, deviceHeight } = storeToRefs(
   appStore.commonStore
 );
 const { setToken, getUserInfo } = appStore.authStore;
-const { setDeviceWidth } = appStore.commonStore;
+const { setDeviceWidth, setDeviceType } = appStore.commonStore;
 const musicRef = ref<any>(null);
 onMounted(() => {
   let url = window.location.href;
@@ -28,8 +28,10 @@ onMounted(() => {
   );
   if (is_mobile()) {
     orientationPhone();
+    setDeviceType("phone");
   } else {
     orientationDevice(deviceWidth.value < deviceHeight.value);
+    setDeviceType("pc");
   }
 
   // // 检测设备方向
@@ -58,7 +60,9 @@ onMounted(() => {
       if (is_mobile()) {
         orientationPhone();
       } else {
-        orientationDevice(deviceWidth.value < deviceHeight.value);
+        orientationDevice(
+          deviceWidth.value < deviceHeight.value && deviceWidth.value < 720
+        );
       }
     }, 100)
   );

@@ -45,8 +45,8 @@ function calculateDuration() {
       duration.value = videoRef.value.duration; // 计算音频时长
       durationTime.value = transTime(videoRef.value.duration); //换算成时间格式
       // nextTick(() => {
-        videoRef.value.play();
-        isPlay.value = true;
+      videoRef.value.play();
+      isPlay.value = true;
       // });
     };
   }
@@ -73,7 +73,7 @@ const playVideo = () => {
 // 根据当前播放时间，实时更新进度条
 const updateProgress = (e) => {
   var value = e.target.currentTime / e.target.duration;
-  if (videoRef.value.play) {
+  if (videoRef.value?.play) {
     currentProgress.value = value * 100;
     videoStart.value = transTime(videoRef.value.currentTime);
     if (reloadState.value) {
@@ -91,6 +91,7 @@ const handleProgressChange = (val) => {
   }
   // 更新音频的当前播放时间
   handleTimeChange(duration.value * (val / 100), "", true);
+  emits("videoTimeupdate",duration.value * (val / 100));
 };
 const handleTimeChange = (time, type?: string, play?: boolean) => {
   if (type) {
@@ -149,6 +150,8 @@ defineExpose({
 </script>
 <template>
   <div class="video-content">
+    <!--       x5-video-player-fullscreen="true"
+      x5-video-orientation="portraint" -->
     <video
       @timeupdate="updateProgress"
       :controls="false"
@@ -158,12 +161,18 @@ defineExpose({
       @click="playVideo"
       :loop="false"
       :volume="0.5"
+      preload="metadata"
+      x5-video-player-type="h5"
+
+      playsinline
+      webkit-playsinline="true"
+      x5-playsinline="true"
     >
       <source :src="src" type="video/*" />
       您的浏览器不支持视频播放
     </video>
     <div v-if="!isPlay" class="play-button" @click="playVideo">
-      <img src="/common/playBig.svg" alt="" />
+      <img src="/common/playBig.png" alt="" />
     </div>
     <div
       class="video-box"
@@ -203,12 +212,12 @@ defineExpose({
       <div class="volume">
         <div class="volume-progress" v-show="videoHuds">
           <el-slider
-            vertical
-            height="100px"
+            height="30px"
             class="volume-bar"
             v-model="videoVolume"
             :show-tooltip="false"
             @change="handleVideoVolume"
+            size="large"
           />
         </div>
 
@@ -280,7 +289,6 @@ defineExpose({
     z-index: 2;
     top: calc(50% - 205px);
     left: calc(50% - 130px);
-
     img {
       width: 100%;
       height: 100%;
@@ -345,13 +353,14 @@ defineExpose({
   .volume {
     position: relative;
     margin-right: 15px;
-
+    z-index: 10;
     .volume-progress {
-      width: 32px;
-      height: 140px;
+      width: 140px;
+      height: 32px;
       position: absolute;
-      top: -142px;
-      right: -4px;
+      z-index: 10;
+      top: -45px;
+      right: 0px;
     }
 
     .volume-bar {
@@ -371,9 +380,12 @@ defineExpose({
 .video-slider,
 .volume-bar {
   .el-slider__button {
-    width: 16px;
-    height: 16px;
-    margin-bottom: 3px;
+    /* prettier-ignore */
+    width: 16Px;
+    /* prettier-ignore */
+    height: 16Px;
+    /* prettier-ignore */
+    margin-bottom: 10Px;
   }
 
   .el-slider__bar {
@@ -383,14 +395,18 @@ defineExpose({
 
 .buttonGroup-bottom-slider {
   .el-slider__button-wrapper {
-    width: 25px !important;
+    /* prettier-ignore */
+    width: 25Px !important;
 
     @include flex(center, center, null);
 
     .el-slider__button {
-      width: 16px;
-      height: 16px;
-      margin-bottom: -3px;
+      /* prettier-ignore */
+      width: 16Px;
+      /* prettier-ignore */
+      height: 16Px;
+      /* prettier-ignore */
+      margin-bottom: -3Px;
     }
   }
 }

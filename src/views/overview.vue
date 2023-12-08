@@ -13,7 +13,7 @@ import router from "@/router";
 import { ElMessage } from "element-plus";
 import { is_mobile } from "@/services/util";
 const dayjs: any = inject("dayjs");
-const { user } = storeToRefs(appStore.authStore);
+const { deviceType } = storeToRefs(appStore.commonStore);
 const { agentList, agentInfo, agentKey } = storeToRefs(appStore.agentStore);
 const { setLessonKey } = appStore.lessonStore;
 const { getAgentList, setAgentKey } = appStore.agentStore;
@@ -134,8 +134,11 @@ watchEffect(() => {
     <div class="overview-header">
       <div class="dp--center overview-user">
         <div
-          @mouseenter="onceVisible ? (userVisible = true) : null"
+          @mouseenter="
+            onceVisible && deviceType === 'pc' ? (userVisible = true) : null
+          "
           @mouseleave="onceVisible = true"
+          @click="deviceType === 'phone' ? (userVisible = true) : null"
         >
           <FontIcon
             iconName="a-shensuocaidan1x"
@@ -179,7 +182,7 @@ watchEffect(() => {
                   :trigger="is_mobile() ? 'click' : 'hover'"
                   :teleported="!is_mobile()"
                 >
-                  <div class="data-top-title  icon-point dp-space-center">
+                  <div class="data-top-title icon-point dp-space-center">
                     你好, {{ agentInfo?.name }}
                     <FontIcon
                       iconName="zhankai"
@@ -324,7 +327,7 @@ watchEffect(() => {
                     >
                       <el-dropdown
                         :trigger="is_mobile() ? 'click' : 'hover'"
-                        :teleported="!is_mobile()"
+                        :teleported="is_mobile()"
                         :hide-on-click="false"
                       >
                         <div class="icon-point dp--center">
@@ -390,7 +393,7 @@ watchEffect(() => {
                     >
                       <el-dropdown
                         :trigger="is_mobile() ? 'click' : 'hover'"
-                        :teleported="!is_mobile()"
+                        :teleported="is_mobile()"
                         :hide-on-click="false"
                       >
                         <div class="icon-point dp--center">
@@ -421,8 +424,9 @@ watchEffect(() => {
     v-model="userVisible"
     title="用户"
     direction="ltr"
-    size="16%"
+    size="20%"
     :with-header="false"
+    :append-to-body="true"
   >
     <userCenter />
   </el-drawer>
@@ -627,8 +631,16 @@ watchEffect(() => {
   }
 }
 </style>
-<style>
+<style lang="scss">
 .agent-item {
   width: 400px;
+}
+.data-top {
+  .el-dropdown__popper {
+    top: 40px !important;
+    left: 0px !important;
+    right: auto !important;
+    bottom: auto !important;
+  }
 }
 </style>

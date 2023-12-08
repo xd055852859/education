@@ -249,9 +249,9 @@ watchEffect(() => {
 
       .preview-left-audio {
         width: 100%;
-        height: calc(100% - 52px);
+        height: calc(100% - 152px);
         position: absolute;
-        z-index: 5;
+        z-index: 2;
         left: 0px;
         top: 0px;
         overflow: hidden;

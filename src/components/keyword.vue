@@ -9,6 +9,8 @@ import _ from "lodash";
 import { storeToRefs } from "pinia";
 import KeywordItem from "./keywordItem.vue";
 import FontIcon from "./fontIcon.vue";
+import { is_mobile } from "@/services/util";
+const { deviceType } = storeToRefs(appStore.commonStore);
 const dayjs: any = inject("dayjs");
 const { lessonKey, lessonInfo } = storeToRefs(appStore.lessonStore);
 const props = defineProps<{
@@ -155,7 +157,7 @@ const saveNote = async (type?: string) => {
         item.keywords[keywordIndex].note = note.value;
       }
     });
-    emits("reloadData", props.keywordKey, note.value)
+    emits("reloadData", props.keywordKey, note.value);
   }
 };
 const openTuLink = () => {
@@ -200,12 +202,21 @@ watch(
 );
 </script>
 <template>
-  <div class="data-right" v-if="keyword">
+  <div
+    class="data-right"
+    v-if="keyword"
+    :style="deviceType === 'phone' ? { width: '40%' } : {}"
+  >
     <div class="data-right-title dp-space-center">
       {{ keyword }}
       <div class="dp-center-center">
         <!-- .study-audio-content  -->
-        <el-dropdown trigger="click" :hide-on-click="false" ref="dropdownRef" :teleported="false">
+        <el-dropdown
+          trigger="click"
+          :hide-on-click="false"
+          ref="dropdownRef"
+          :teleported="!is_mobile()"
+        >
           <div class="icon-point dp--center">
             <el-icon>
               <MoreFilled />
@@ -213,19 +224,31 @@ watch(
           </div>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item v-for="(item, index) in keywordTabs" :key="`tab${item._key}`">
+              <el-dropdown-item
+                v-for="(item, index) in keywordTabs"
+                :key="`tab${item._key}`"
+              >
                 <div class="dp-space-center data-tab-item" style="width: 120px">
-                  <el-checkbox v-model="checkTab[index]" :label="item.name" @change="(value) => {
-                    updateTab(item._key, value, index);
-                  }
-                    " />
+                  <el-checkbox
+                    v-model="checkTab[index]"
+                    :label="item.name"
+                    @change="
+                      (value) => {
+                        updateTab(item._key, value, index);
+                      }
+                    "
+                  />
                   {{ item.type }}
                 </div>
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        <div class="icon-point dp--center" style="margin-left: 10px" @click="emits('setKeyword', '')">
+        <div
+          class="icon-point dp--center"
+          style="margin-left: 10px"
+          @click="emits('setKeyword', '')"
+        >
           <el-icon color="#999" size="18">
             <Close />
           </el-icon>
@@ -233,9 +256,12 @@ watch(
       </div>
     </div>
     <div class="data-right-content">
-      <el-tabs v-model="keywordTab" style="height: 100%;">
+      <el-tabs v-model="keywordTab" style="height: 100%">
         <el-tab-pane label="生词表" name="word" v-if="type === 'inner'">
-          <div class="data-right-iframe" style="overflow-x: hidden; overflow-y: auto">
+          <div
+            class="data-right-iframe"
+            style="overflow-x: hidden; overflow-y: auto"
+          >
             <template v-if="keywordList.length > 0">
               <KeywordItem @changeList="changeList" :list="keywordList" />
             </template>
@@ -244,7 +270,12 @@ watch(
             </div>
           </div>
         </el-tab-pane>
-        <el-tab-pane v-for="item in chooseKeywordTabs" :key="item._key" :label="item.name" :name="item._key">
+        <el-tab-pane
+          v-for="item in chooseKeywordTabs"
+          :key="item._key"
+          :label="item.name"
+          :name="item._key"
+        >
           <div class="data-right-iframe">
             <IframeView :url="`${item.url}${keyword}`" />
           </div>
@@ -252,15 +283,29 @@ watch(
       </el-tabs>
     </div>
 
-    <div class="data-right-button" :style="noteVisible
-      ? { boxShadow: '0px 2px 9px 0px rgba(178, 178, 178, 0.5)' }
-      : {}
-      ">
-      <div class="dp-center-center icon-point" @click="noteVisible = false" v-if="noteVisible">
+    <div
+      class="data-right-button"
+      :style="
+        noteVisible
+          ? { boxShadow: '0px 2px 9px 0px rgba(178, 178, 178, 0.5)' }
+          : {}
+      "
+    >
+      <div
+        class="dp-center-center icon-point"
+        @click="noteVisible = false"
+        v-if="noteVisible"
+      >
         <FontIcon iconName="zhankai" :iconStyle="{ color: '#333' }" />
       </div>
       <div class="data-right-note" v-if="noteVisible">
-        <el-input v-model="note" :rows="6" type="textarea" placeholder="请输入备注" @change="saveNote()" />
+        <el-input
+          v-model="note"
+          :rows="6"
+          type="textarea"
+          placeholder="请输入备注"
+          @change="saveNote()"
+        />
         <!-- <el-button
         type="primary"
         round
@@ -271,11 +316,19 @@ watch(
       > -->
       </div>
       <div v-if="keywordKey">
-        <el-button type="primary" round class="left-button" @click="
-          noteVisible && note ? saveNote('save') : null;
-        noteVisible = !noteVisible;
-        ">{{ noteVisible ? "保存笔记" : "+学习笔记" }}</el-button>
-        <el-button class="right-button" link @click="openTuLink">反馈吐槽</el-button>
+        <el-button
+          type="primary"
+          round
+          class="left-button"
+          @click="
+            noteVisible && note ? saveNote('save') : null;
+            noteVisible = !noteVisible;
+          "
+          >{{ noteVisible ? "保存笔记" : "+学习笔记" }}</el-button
+        >
+        <el-button class="right-button" link @click="openTuLink"
+          >反馈吐槽</el-button
+        >
       </div>
     </div>
   </div>
@@ -310,7 +363,6 @@ watch(
     padding: 0px 15px;
     box-sizing: border-box;
 
-
     .data-right-iframe {
       width: 100%;
       height: 100%;
@@ -318,8 +370,6 @@ watch(
       box-sizing: border-box;
       // @include scroll();
     }
-
-
   }
 
   .data-right-button {
@@ -364,14 +414,24 @@ watch(
       }
     }
   }
-.data-tab-item{
-  .el-checkbox__label {font-size: 18px;}
-}
+  .data-tab-item {
+    .el-checkbox__label {
+      font-size: 18px;
+    }
+  }
   .data-right-note {
     .el-textarea__inner {
       background: #f9f9f9;
       border: 1px solid #e3e3e3;
       border-radius: 12px;
+    }
+  }
+  .data-right-title {
+    .el-dropdown__popper {
+      top: 40px !important;
+      left: -200px !important;
+      right: auto !important;
+      bottom: auto !important;
     }
   }
 }

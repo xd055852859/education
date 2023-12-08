@@ -37,7 +37,7 @@ function calculateDuration() {
       function () {
         isPlay.value = false;
         currentProgress.value = 0;
-        emits('loadNext');
+        emits("loadNext");
       },
       false
     );
@@ -91,9 +91,14 @@ const handleProgressChange = (val) => {
     return;
   }
   // 更新音频的当前播放时间
-  handleTimeChange(duration.value * (val / 100), '', 0, true);
+  handleTimeChange(duration.value * (val / 100), "", 0, true);
 };
-const handleTimeChange = (time, type?: string, index?: number, play?: boolean) => {
+const handleTimeChange = (
+  time,
+  type?: string,
+  index?: number,
+  play?: boolean
+) => {
   if (type && index !== -1) {
     reloadIndex.value = index as number;
   }
@@ -156,20 +161,47 @@ defineExpose({
 });
 </script>
 <template>
-  <audio @timeupdate="updateProgress" @ended="emits('endMedia')" controls ref="audioRef" style="display: none">
+  <audio
+    @timeupdate="updateProgress"
+    @ended="emits('endMedia')"
+    controls
+    ref="audioRef"
+    style="display: none"
+  >
     <source :src="src" type="audio/*" />
     您的浏览器不支持音频播放
   </audio>
   <div class="audio-box" v-if="audioType === 'normal'">
     <el-tooltip content="上一句">
-      <FontIcon customClassName="audio-button" iconName="shangyige" @iconClick="emits('changeAudioIndex', 'last')"
-        :iconStyle="{ fontSize: '14px', color: '#4D57FF' }" />
+      <FontIcon
+        customClassName="audio-button"
+        iconName="shangyige"
+        @iconClick="emits('changeAudioIndex', 'last')"
+        :iconStyle="{ fontSize: '14px', color: '#4D57FF' }"
+      />
     </el-tooltip>
-    <img class="audio-img" src="/common/play.svg" alt="" @click="playAudio" v-if="isPlay" />
-    <img class="audio-img" src="/common/pause.svg" alt="" @click="playAudio" v-else />
+    <img
+      class="audio-img"
+      src="/common/play.svg"
+      alt=""
+      @click="playAudio"
+      v-if="isPlay"
+    />
+    <img
+      class="audio-img"
+      src="/common/pause.svg"
+      alt=""
+      @click="playAudio"
+      v-else
+    />
     <el-tooltip content="下一句">
-      <FontIcon customClassName="audio-button" @click="playAudio" iconName="xiayige"
-        @iconClick="emits('changeAudioIndex', 'next')" :iconStyle="{ fontSize: '14px', color: '#4D57FF' }" />
+      <FontIcon
+        customClassName="audio-button"
+        @click="playAudio"
+        iconName="xiayige"
+        @iconClick="emits('changeAudioIndex', 'next')"
+        :iconStyle="{ fontSize: '14px', color: '#4D57FF' }"
+      />
     </el-tooltip>
     <div class="audio-container">
       <div class="audio-left">
@@ -184,29 +216,55 @@ defineExpose({
             <span style="margin-left: 10px">{{ durationTime }}</span>
           </div>
         </div>
-        <el-slider class="audio-slider" v-model="currentProgress" :show-tooltip="false" @change="handleProgressChange" />
+        <el-slider
+          class="audio-slider"
+          v-model="currentProgress"
+          :show-tooltip="false"
+          @change="handleProgressChange"
+        />
       </div>
     </div>
     <el-tooltip content="循环">
-      <FontIcon customClassName="audio-button" iconName="zhongbo2" :iconStyle="{
-        fontSize: '22px',
-        color: reloadState ? '#4D57FF' : '#888',
-        animation: isPlay ? `fadenum ${reloadState ? 1.5 : 3}s infinite` : '',
-      }" @click.stop="
-  reloadState = !reloadState;
-reloadIndex = reloadState ? audioIndex : -1;
-" />
+      <FontIcon
+        customClassName="audio-button"
+        iconName="zhongbo2"
+        :iconStyle="{
+          fontSize: '22px',
+          color: reloadState ? '#4D57FF' : '#888',
+          animation: isPlay ? `fadenum ${reloadState ? 1.5 : 3}s infinite` : '',
+        }"
+        @click.stop="
+          reloadState = !reloadState;
+          reloadIndex = reloadState ? audioIndex : -1;
+        "
+      />
     </el-tooltip>
     <div class="volume">
       <div class="volume-progress" v-show="audioHuds">
-        <el-slider vertical height="100px" class="volume-bar" v-model="audioVolume" :show-tooltip="false"
-          @change="handleAudioVolume" />
+        <el-slider
+          vertical
+          height="100px"
+          class="volume-bar"
+          v-model="audioVolume"
+          :show-tooltip="false"
+          @change="handleAudioVolume"
+        />
       </div>
 
-      <FontIcon v-if="audioVolume <= 0" customClassName="audio-button" iconName="jingyin"
-        :iconStyle="{ fontSize: '14px', color: '#888' }" @click.stop="audioHuds = !audioHuds" />
-      <FontIcon v-if="audioVolume > 0" customClassName="audio-button" iconName="shengyin"
-        :iconStyle="{ fontSize: '14px', color: '#4D57FF' }" @click.stop="audioHuds = !audioHuds" />
+      <FontIcon
+        v-if="audioVolume <= 0"
+        customClassName="audio-button"
+        iconName="jingyin"
+        :iconStyle="{ fontSize: '14px', color: '#888' }"
+        @click.stop="audioHuds = !audioHuds"
+      />
+      <FontIcon
+        v-if="audioVolume > 0"
+        customClassName="audio-button"
+        iconName="shengyin"
+        :iconStyle="{ fontSize: '14px', color: '#4D57FF' }"
+        @click.stop="audioHuds = !audioHuds"
+      />
     </div>
   </div>
   <slot name="custom" v-else></slot>
@@ -284,11 +342,12 @@ reloadIndex = reloadState ? audioIndex : -1;
 .volume {
   position: relative;
   margin-left: 15px;
-
+  z-index: 10;
   .volume-progress {
     width: 32px;
     height: 140px;
     position: absolute;
+    z-index: 10;
     top: -142px;
     right: -4px;
   }
@@ -309,8 +368,11 @@ reloadIndex = reloadState ? audioIndex : -1;
 .audio-slider,
 .volume-bar {
   .el-slider__button {
+    /* prettier-ignore */
     width: 16Px;
+    /* prettier-ignore */
     height: 16Px;
+    /* prettier-ignore */
     margin-bottom: 5Px;
   }
 
@@ -321,14 +383,18 @@ reloadIndex = reloadState ? audioIndex : -1;
 
 .buttonGroup-bottom-slider {
   .el-slider__button-wrapper {
-    width: 25px !important;
+    /* prettier-ignore */
+    width: 25Px !important;
 
     @include flex(center, center, null);
 
     .el-slider__button {
-      width: 16px;
-      height: 16px;
-      margin-bottom: -3px;
+      /* prettier-ignore */
+      width: 16Px;
+      /* prettier-ignore */
+      height: 16Px;
+      /* prettier-ignore */
+      margin-bottom: -3Px;
     }
   }
 }

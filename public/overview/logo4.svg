@@ -1,26 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="34px" height="35px" viewBox="0 0 34 35" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>掌</title>
+<svg width="17px" height="17px" viewBox="0 0 17 17" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>gaoding-黄色</title>
     <defs>
-        <linearGradient x1="70.2220372%" y1="26.7915707%" x2="28.6688552%" y2="75.3850081%" id="linearGradient-1">
+        <linearGradient x1="79.765623%" y1="26.7915707%" x2="18.6018373%" y2="75.3850081%" id="linearGradient-1">
+            <stop stop-color="#EFC73A" offset="0%"></stop>
+            <stop stop-color="#FFA73E" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="80.8578492%" y1="31.2681315%" x2="17.4497063%" y2="70.4886176%" id="linearGradient-2">
             <stop stop-color="#EFC73A" offset="0%"></stop>
             <stop stop-color="#FFA73E" offset="100%"></stop>
         </linearGradient>
     </defs>
     <g id="场景英语web端20230929✅" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g id="首页-定稿-定稿" transform="translate(-1329.000000, -336.000000)">
-            <g id="编组-5" transform="translate(420.000000, 134.000000)">
-                <g id="编组-8" transform="translate(347.399784, 129.000000)">
-                    <g id="编组-11备份-2" transform="translate(561.600216, 0.000000)">
-                        <g id="熟词" transform="translate(0.000000, 73.000000)">
-                            <g transform="translate(2.833333, 0.000000)">
-                                <path d="M5,0 L23.3333333,0 C26.0947571,0 28.3333333,2.30511296 28.3333333,5.14861389 L28.3333333,33.2830985 C28.3333333,33.9242879 27.9859323,34.5119151 27.4329715,34.806723 C26.8800107,35.101531 26.2135715,35.0543459 25.705,34.6843796 L16.0941667,27.6959943 C14.9418216,26.8578663 13.4018645,26.8575226 12.2491667,27.6951362 L2.6275,34.6860958 C2.11882251,35.0556587 1.45252854,35.1024918 0.89980018,34.8075338 C0.347071816,34.5125758 0,33.9250025 0,33.2839566 L0,5.14861389 C0,2.30511296 2.23857625,0 5,0 Z" id="路径" fill="url(#linearGradient-1)"></path>
-                                <text id="掌" font-family="PingFangSC-Medium, PingFang SC" font-size="16" font-weight="400" fill="#FFFFFF">
-                                    <tspan x="6" y="20">掌</tspan>
-                                </text>
-                            </g>
-                        </g>
-                    </g>
+        <g id="关注点" transform="translate(-657.000000, -50.000000)">
+            <g id="gaoding-2备份-2" transform="translate(657.000000, 50.000000)">
+                <g id="gaoding" transform="translate(0.000000, 0.000000)">
+                    <path d="M8.34821428,0 C10.508631,0 12.4707143,0.824585858 13.9490847,2.18318922 L12.8178094,3.22536809 C11.6230549,2.17675169 10.0631376,1.54545454 8.34821428,1.54545454 C4.55357142,1.54545454 1.51785714,4.63636363 1.51785714,8.5 C1.51785714,12.3636364 4.55357142,15.4545455 8.34821428,15.4545455 C12.1428571,15.4545455 15.1785714,12.3636364 15.1785714,8.5 C15.1785714,7.85020661 15.0927059,7.22226991 14.9318055,6.62721759 L16.0546259,5.2114681 C16.4682697,6.22178724 16.6964286,7.33244784 16.6964286,8.5 C16.6964286,13.2136364 12.9776786,17 8.34821428,17 C3.71874999,17 7.70938868e-13,13.2136364 7.70938868e-13,8.5 C7.70938868e-13,3.78636363 3.71874999,0 8.34821428,0 Z" id="形状结合" fill="url(#linearGradient-1)"></path>
+                    <polygon id="路径" fill="url(#linearGradient-2)" points="4.55357142 6.18181818 3.79464286 7.72727272 9.10714286 13.1363636 16.6964286 3.09090909 15.9375 1.54545454 8.34821428 8.5"></polygon>
                 </g>
             </g>
         </g>

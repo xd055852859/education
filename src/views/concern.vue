@@ -93,16 +93,35 @@ const getData = async () => {
   }
 };
 
-const archiveKeyword = async (e, key, index, type) => {
-  let dataRes = (await api.request.patch("study/keyword/archive", {
-    keywordKey: key,
-    isArchived: type === "care",
-  })) as ResultProps;
-  if (dataRes.msg === "OK") {
-    // ElMessage.success("归档成功");
-    ElMessage.success(type === "care" ? "标记熟词成功" : "标记生词成功");
-    addNum(type === "care" ? -1 : 1);
-    keywordList.value.splice(index, 1);
+const archiveKeyword = async (e, item, index, type, toType) => {
+  if (type !== "master") {
+    let dataRes = (await api.request.patch("study/keyword/archive", {
+      keywordKey: item._key,
+      isArchived: type === "care",
+    })) as ResultProps;
+    if (dataRes.msg === "OK") {
+      // ElMessage.success("归档成功");
+      ElMessage.success(type === "care" ? "标记熟词成功" : "标记生词成功");
+      addNum(type === "care" ? -1 : 1);
+      keywordList.value.splice(index, 1);
+    }
+  } else {
+    let dataRes = (await api.request.patch("study/keyword/status", {
+      agentKey: agentKey.value,
+      keywordKey: item._key,
+      status: 1,
+      isArchived: type === "care",
+    })) as ResultProps;
+    if (dataRes.msg === "OK") {
+      ElMessage.success(type === "care" ? "转入熟词成功" : "转入生词成功");
+      masterNum.value = masterNum.value - 1;
+      if (toType === "care") {
+        archivedNum.value = archivedNum.value + 1;
+      } else {
+        keywordNum.value = keywordNum.value + 1;
+      }
+      keywordList.value.splice(index, 1);
+    }
   }
   // if (!is_mobile()) {
   //   let uncareDom = document.getElementById(type);
@@ -146,25 +165,16 @@ const deleteKeyword = async (item, index) => {
   let dataRes = (await api.request.patch("study/keyword/status", {
     agentKey: agentKey.value,
     keywordKey: item._key,
-    status: keywordTab.value === "master" ? 1 : 0,
+    status: 0,
   })) as ResultProps;
   if (dataRes.msg === "OK") {
-    ElMessage.success(
-      keywordTab.value === "master" ? "取消超熟词成功" : "标记超熟词成功"
-    );
+    ElMessage.success("搞定!");
     if (keywordTab.value === "care") {
       keywordNum.value = keywordNum.value - 1;
       masterNum.value = masterNum.value + 1;
     } else if (keywordTab.value === "uncare") {
       archivedNum.value = archivedNum.value - 1;
       masterNum.value = masterNum.value + 1;
-    } else {
-      masterNum.value = masterNum.value - 1;
-      if (item.isArchived) {
-        archivedNum.value = archivedNum.value + 1;
-      } else {
-        keywordNum.value = keywordNum.value + 1;
-      }
     }
     keywordList.value.splice(index, 1);
   }
@@ -284,39 +294,75 @@ watchEffect(() => {
             "
           >
             <div class="concernItem-box-title">
+              {{ item.keyword }}
               <div class="dp--center">
-                {{ item.keyword }}
                 <div
                   class="concernItem-box-img"
+                  v-if="keywordTab !== 'care'"
+                  @click.stop="archiveKeyword($event, item, index, keywordTab,'uncare')"
+                  style="
+                    background: linear-gradient(
+                      233deg,
+                      #56b9ff 22%,
+                      #5478fa 79%
+                    );
+                  "
+                >
+                  <FontIcon
+                    iconName="jiantou1"
+                    :iconStyle="{
+                      marginRight: '5px',
+                      fontSize: '8px',
+                      color: '#fff',
+                    }"
+                  />
+                  生词
+                </div>
+                <div
+                  class="concernItem-box-img"
+                  v-if="keywordTab !== 'uncare'"
+                  @click.stop="archiveKeyword($event, item, index, keywordTab,'care')"
+                  style="
+                    margin-left: 10px;
+                    background: linear-gradient(
+                      233deg,
+                      #ffa48d 22%,
+                      #ff5660 79%
+                    );
+                  "
+                >
+                  <FontIcon
+                    iconName="jiantou1"
+                    :iconStyle="{
+                      marginRight: '5px',
+                      fontSize: '8px',
+                      color: '#fff',
+                    }"
+                  />
+                  熟词
+                </div>
+                <div
+                  class="concernItem-box-img"
+                  style="
+                    margin-left: 10px;
+                    background: linear-gradient(
+                      233deg,
+                      #efc73a 22%,
+                      #ffa73e 79%
+                    );
+                  "
                   v-if="keywordTab === 'uncare'"
-                  @click.stop="
-                    archiveKeyword($event, item._key, index, keywordTab)
-                  "
-                >
-                  <img :src="`/overview/logoadd1.svg`" alt="" />
-                </div>
-                <div
-                  class="concernItem-box-img"
-                  v-if="keywordTab === 'care'"
-                  @click.stop="
-                    archiveKeyword($event, item._key, index, keywordTab)
-                  "
-                >
-                  <img :src="`/overview/logoadd2.svg`" alt="" />
-                </div>
-                <div
-                  class="concernItem-box-img icon-point"
-                  style="margin-left: 10px"
                   @click.stop="deleteKeyword(item, index)"
                 >
-                  <img
-                    :src="
-                      keywordTab === 'master'
-                        ? '/overview/logo4.svg'
-                        : '/overview/logoadd4.svg'
-                    "
-                    alt=""
+                  <FontIcon
+                    iconName="gaoding"
+                    :iconStyle="{
+                      marginRight: '5px',
+                      fontSize: '14px',
+                      color: '#fff',
+                    }"
                   />
+                  搞定
                 </div>
               </div>
             </div>
@@ -396,7 +442,6 @@ watchEffect(() => {
     @include flex(space-between, center, null);
 
     .keyword-left {
-      min-width: 1120px;
       flex: 1;
       height: 100%;
       position: relative;
@@ -472,17 +517,13 @@ watchEffect(() => {
             @include flex(space-between, center, null);
 
             .concernItem-box-img {
-              width: 26px;
-              height: 26px;
-              margin-left: 16px;
-              overflow: hidden;
+              width: 85px;
+              height: 35px;
+              border-radius: 4px;
+              font-size: 14px;
+              color: #ffffff;
               cursor: pointer;
-
-              img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-              }
+              @include flex(center, center, null);
             }
 
             .concernItem-box-icon {

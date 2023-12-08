@@ -16,7 +16,8 @@ import WordChart from "@/components/chart/wordChart.vue";
 import VideoPlayer from "@/components/videoPlayer.vue";
 import { is_mobile, textPoint } from "@/services/util";
 const { token } = storeToRefs(appStore.authStore);
-const { agentKey } = storeToRefs(appStore.agentStore);
+const { agentKey, agentInfo } = storeToRefs(appStore.agentStore);
+const { deviceType } = storeToRefs(appStore.commonStore);
 const { lessonKey, lessonInfo } = storeToRefs(appStore.lessonStore);
 const { setLessonKey } = appStore.lessonStore;
 const { setMusicSrc } = appStore.commonStore;
@@ -32,6 +33,7 @@ const mediaSrc = ref<string>("");
 const audioSrc = ref<string>("");
 const mediaListIndex = ref<number>(-1);
 const captionsState = ref<boolean>(false);
+const currentTime = ref<number>(0);
 const lastTime = ref<number>(0);
 const mediaIndex = ref<number>(-1);
 const sentenceKey = ref<string>("");
@@ -51,11 +53,19 @@ const biaodian =
   '[=,.?!@#$%^&*()_+:"<>/\[\]\\`~——，。、《》？；’：“【】、{}|·！￥…（）-]';
 const errorVisible = ref<boolean>(false);
 const errorKey = ref<string>("");
+
 onMounted(() => {
   setLessonKey(props.lessonKey);
   getMedia();
 });
-onUnmounted(() => {
+onBeforeUnmount(() => {
+  if (studyMediaRef.value && lessonInfo.value.mediaType === "video") {
+    api.request.post("caption/playLog", {
+      captionKey: captionObj.value._key,
+      agentKey: agentKey.value,
+      time: parseInt(currentTime.value + ""),
+    });
+  }
   if (studyInterval.value) {
     clearInterval(studyInterval.value);
   }
@@ -121,6 +131,12 @@ const getCaption = async (key) => {
         });
       }
     });
+    if (studyMediaRef.value && lessonInfo.value.mediaType === "video") {
+      sentenceKey.value = mediaList.value[mediaListIndex.value].captionKey;
+      currentTime.value = mediaList.value[mediaListIndex.value].time;
+      console.log(currentTime.value);
+      clickMedia(currentTime.value);
+    }
     console.log(captionsList.value);
   }
 };
@@ -138,6 +154,7 @@ const openText = async (text, callback) => {
   }
 };
 const videoTimeupdate = (time) => {
+  currentTime.value = time * 1000;
   if (lastTime.value !== parseInt(time)) {
     let currentTime = time * 1000;
     captionsState.value = false;
@@ -201,8 +218,8 @@ const changeMediaIndex = (type) => {
         ? mediaIndex.value
         : mediaIndex.value + 1;
   }
-  console.log(mediaIndex.value);
   sentenceKey.value = captionsList.value[mediaIndex.value]._key;
+  currentTime.value = captionsList.value[mediaIndex.value].startTime;
   clickMedia(captionsList.value[mediaIndex.value].startTime);
 };
 
@@ -309,8 +326,6 @@ watch([mediaListIndex, lessonInfo], ([newIndex, newInfo]) => {
     if (videoRef.value) {
       videoRef.value.pause();
     }
-    console.log(newIndex);
-    console.log(mediaList.value[newIndex]);
     mediaSrc.value = mediaList.value[newIndex].url;
     if (newInfo.mediaType !== "pdf") {
       getCaption(mediaList.value[newIndex]._key);
@@ -331,6 +346,17 @@ watch([mediaListIndex, lessonInfo], ([newIndex, newInfo]) => {
     }
     //1分钟一次
     studyInterval.value = setInterval(() => {
+      if (
+        studyTab.value === "video" &&
+        studyMediaRef.value &&
+        captionObj.value
+      ) {
+        api.request.post("caption/playLog", {
+          captionKey: captionObj.value._key,
+          agentKey: agentKey.value,
+          time: parseInt(currentTime.value + ""),
+        });
+      }
       api.request.post("study/log", {
         agentKey: agentKey.value,
         mediaKey: mediaList.value[newIndex]._key,
@@ -338,17 +364,35 @@ watch([mediaListIndex, lessonInfo], ([newIndex, newInfo]) => {
     }, 60000);
   }
 });
-watch(studyTab, () => {
-  sentenceKey.value = "";
+watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
   keyIndex.value = -1;
   keyword.value = "";
   changeIndex.value = -1;
   errorKey.value = "";
   errorVisible.value = false;
+  if (newRef && lessonInfo.value.mediaType === "video" && newTab === "video") {
+    console.log(currentTime.value);
+    clickMedia(currentTime.value);
+  }
+  if (newTab !== "video" && oldTab === "video") {
+    api.request.post("caption/playLog", {
+      captionKey: captionObj.value._key,
+      agentKey: agentKey.value,
+      time: parseInt(currentTime.value + ""),
+    });
+  }
+  // else {
+  //   sentenceKey.value = "";
+  // }
 });
 </script>
 <template>
-  <div class="study" v-if="lessonInfo" @click="changeIndex = -1">
+  <div
+    class="study"
+    v-if="lessonInfo"
+    @click="changeIndex = -1"
+    :style="studyTab === 'video' ? { background: '#000' } : {}"
+  >
     <!-- class="study-audio" -->
     <!-- <video autoPlay controls ref="audioRef">
       <source :src="audioSrc" type="audio/mpeg" />
@@ -362,15 +406,26 @@ watch(studyTab, () => {
     ></audio>
     <div class="study-container">
       <div class="study-left">
-        <Header :title="mediaList[mediaListIndex]?.name" :backPath="'/home'">
+        <Header
+          :title="''"
+          :backPath="'/home'"
+          :color="studyTab === 'video' ? '#fff' : '#333'"
+        >
           <template #icon>
             <el-dropdown
               max-height="300px"
               :trigger="is_mobile() ? 'click' : 'hover'"
               :teleported="!is_mobile()"
             >
-              <div class="icon-point" style="margin-right: 8px">
-                <FontIcon iconName="liebiao" />
+              <div class="icon-point dp--center">
+                <FontIcon
+                  iconName="liebiao"
+                  style="margin-right: 8px"
+                  :style="studyTab === 'video' ? { color: '#fff' } : {}"
+                />
+                <div :style="studyTab === 'video' ? { color: '#fff' } : {}">
+                  {{ mediaList[mediaListIndex]?.name }}
+                </div>
               </div>
               <template #dropdown>
                 <el-dropdown-menu>
@@ -401,6 +456,7 @@ watch(studyTab, () => {
                 class="study-tab-item"
                 :class="{ 'study-tab-choose': studyTab === 'video' }"
                 @click="studyTab = 'video'"
+                :style="studyTab === 'video' ? { color: '#fff' } : {}"
                 v-if="lessonInfo.mediaType === 'video'"
               >
                 视频
@@ -409,6 +465,7 @@ watch(studyTab, () => {
                 class="study-tab-item"
                 :class="{ 'study-tab-choose': studyTab === 'audio' }"
                 @click="studyTab = 'audio'"
+                :style="studyTab === 'video' ? { color: '#fff' } : {}"
                 v-if="lessonInfo.mediaType === 'audio'"
               >
                 音频
@@ -416,6 +473,7 @@ watch(studyTab, () => {
               <div
                 class="study-tab-item"
                 :class="{ 'study-tab-choose': studyTab === 'original' }"
+                :style="studyTab === 'video' ? { color: '#fff' } : {}"
                 @click="studyTab = 'original'"
               >
                 原文
@@ -423,6 +481,7 @@ watch(studyTab, () => {
               <div
                 class="study-tab-item"
                 :class="{ 'study-tab-choose': studyTab === 'translation' }"
+                :style="studyTab === 'video' ? { color: '#fff' } : {}"
                 @click="studyTab = 'translation'"
               >
                 译文
@@ -430,6 +489,7 @@ watch(studyTab, () => {
               <div
                 class="study-tab-item"
                 :class="{ 'study-tab-choose': studyTab === 'cloud' }"
+                :style="studyTab === 'video' ? { color: '#fff' } : {}"
                 @click="studyTab = 'cloud'"
               >
                 词频
@@ -504,40 +564,17 @@ watch(studyTab, () => {
             <div
               v-for="(item, index) in articleList"
               :key="`translation${index}`"
-              class="text-item icon-point"
-              :style="// changeIndex === index
-              //   ? { backgroundColor: '#F5F5F5' }
-              // :
-              { textIndent: '2em' }"
+              class="text-item"
+              style="max-height: 99999px; text-indent: 2em"
             >
-              <!-- <template v-if="changeIndex === index">
-                <div style="width: 2em"></div>
-                <span
-                  v-for="(textItem, textIndex) in item.original"
-                  :key="`originalText${textIndex}`"
-                  :class="{ 'text-point': !/\b\w+\b/g.test(textItem) }"
-                  @click.stop="
-                    /\b\w+\b/g.test(textItem)
-                      ? chooseWord(textItem, textIndex, 'section', item._key)
-                      : ''
-                  "
-                  :style="
-                    keyword === textItem && /\b\w+\b/g.test(textItem)
-                      ? {
-                          color: '#4D57FF',
-                        }
-                      : {}
-                  "
-                  >{{ textItem }}</span
-                >
-              </template>
-              <template v-else> -->
               {{ item.translation }}
-              <!-- </template> -->
             </div>
           </template>
           <template v-if="studyTab === 'video'">
-            <div class="study-video">
+            <div
+              class="study-video"
+              :style="studyTab === 'video' ? { color: '#fff' } : {}"
+            >
               <VideoPlayer
                 :src="mediaSrc"
                 :title="lessonInfo.name"
@@ -586,7 +623,10 @@ watch(studyTab, () => {
                            
                           </div>
                         </div> -->
-                        <div class="study-original">
+                        <div
+                          class="study-original"
+                          :style="studyTab === 'video' ? { color: '#fff' } : {}"
+                        >
                           <template v-if="lessonInfo.language === 'en'">
                             <span
                               v-for="(item, index) in captionObj.original"
@@ -653,10 +693,22 @@ watch(studyTab, () => {
                             </div>
                           </template>
                         </div>
+                        <div
+                          v-if="agentInfo?.config?.showTranslation"
+                          class="study-translation"
+                          :style="studyTab === 'video' ? { color: '#fff' } : {}"
+                        >
+                          {{ captionObj.translation }}
+                        </div>
                       </template>
                     </div>
                     <div class="study-video-buttonGroup">
-                      <div class="buttonGroup-top">
+                      <div
+                        class="buttonGroup-top"
+                        :style="
+                          studyTab === 'video' ? { background: '#171717 ' } : {}
+                        "
+                      >
                         <div
                           class="buttonGroup-top-text"
                           @click="changeMediaIndex('last')"
@@ -678,8 +730,8 @@ watch(studyTab, () => {
                           :style="{
                             animation: studyMediaRef.isPlay
                               ? `fadenum ${
-                                  studyMediaRef.reloadState ? 1.5 : 3
-                                }s infinite`
+                                  studyMediaRef.reloadState ? 1.5 : 8
+                                }s linear infinite`
                               : '',
                           }"
                         >
@@ -703,7 +755,14 @@ watch(studyTab, () => {
                       <div
                         class="buttonGroup-center"
                         :style="{
-                          color: studyMediaRef.reloadState ? '#4d57ff' : '#666',
+                          color:
+                            studyTab === 'video'
+                              ? '#fff'
+                              : studyMediaRef.reloadState
+                              ? '#4d57ff'
+                              : '#666',
+                          background:
+                            studyTab === 'video' ? '#171717' : '#e2e2e2',
                         }"
                       >
                         <template
@@ -720,7 +779,12 @@ watch(studyTab, () => {
                           } 句)`
                         }}</template>
                       </div>
-                      <div class="buttonGroup-bottom">
+                      <div
+                        class="buttonGroup-bottom"
+                        :style="
+                          studyTab === 'video' ? { background: '#171717' } : {}
+                        "
+                      >
                         <FontIcon
                           customClassName="buttonGroup-bottom-button"
                           iconName="a-zanting2"
@@ -772,7 +836,8 @@ watch(studyTab, () => {
                               iconName="shengyin"
                               :iconStyle="{
                                 fontSize: '10px',
-                                color: '#333',
+
+                                color: studyTab === 'video' ? '#fff' : '#333',
                               }"
                               @click.stop="
                                 studyMediaRef.videoHuds =
@@ -808,8 +873,14 @@ watch(studyTab, () => {
           <template v-if="studyTab === 'audio'">
             <div
               class="study-caption study-audio-caption"
-              @mouseenter="studyMediaRef.reloadMedia(true)"
-              @mouseleave="studyMediaRef.reloadMedia(false)"
+              @mouseenter="
+                deviceType !== 'phone' ? studyMediaRef.reloadMedia(true) : false
+              "
+              @mouseleave="
+                deviceType !== 'phone'
+                  ? studyMediaRef.reloadMedia(false)
+                  : false
+              "
             >
               <div
                 v-for="(item, index) in captionsList"
@@ -1121,7 +1192,6 @@ watch(studyTab, () => {
     @include flex(space-between, center, null);
 
     .study-left {
-      min-width: 1120px;
       flex: 1;
       height: 100%;
       position: relative;
@@ -1132,15 +1202,15 @@ watch(studyTab, () => {
       .study-tab {
         width: 100%;
         height: 100%;
-        @include flex(flex-start, center, null);
+        @include flex(flex-end, center, null);
 
         .study-tab-item {
-          width: 180px;
+          width: 150px;
           height: 70px;
           font-size: 18px;
           color: #919191;
           line-height: 80px;
-          text-align: center;
+          text-align: right;
           cursor: pointer;
         }
 
@@ -1155,9 +1225,9 @@ watch(studyTab, () => {
       .study-box {
         width: 100%;
         height: calc(100% - 30px);
-        font-family: "Kaiti SC", "STKaiti", "Arial", sans-serif;
         padding: 10px 15px;
         // text-indent: 2em;
+        font-family: "Kaiti SC", "STKaiti", "Arial", sans-serif;
         box-sizing: border-box;
         @include scroll();
 
@@ -1169,6 +1239,8 @@ watch(studyTab, () => {
           margin-bottom: 10px;
           position: relative;
           z-index: 1;
+          -webkit-text-size-adjust: none;
+          text-size-adjust: none;
           // word-wrap: break-word;
           // word-break: normal;
           @include flex(flex-start, center, wrap);
@@ -1226,7 +1298,7 @@ watch(studyTab, () => {
             width: calc(100% - 310px);
             height: 100%;
             @include scroll();
-            @include flex(center, center, wrap);
+            @include flex(flex-start, center, wrap);
             position: relative;
             z-index: 1;
 
@@ -1253,11 +1325,11 @@ watch(studyTab, () => {
             }
 
             .study-original {
-              font-size: 45px;
+              font-size: 40px;
               // font-family: PingFang SC, PingFang SC-Semibold;
               font-weight: Semibold;
               color: #000000;
-              line-height: 69px;
+              line-height: 55px;
               letter-spacing: 1.3px;
               padding: 10px;
               @include flex(flex-start, center, wrap);
@@ -1271,6 +1343,13 @@ watch(studyTab, () => {
                   color: $commonColor;
                 }
               }
+            }
+            .study-translation {
+              font-size: 30px;
+              line-height: 40px;
+              padding: 10px;
+              box-sizing: border-box;
+              word-break: break-all;
             }
           }
 
@@ -1309,10 +1388,11 @@ watch(studyTab, () => {
                 height: 75px;
                 overflow: hidden;
                 cursor: pointer;
-
+                transform-origin: 50% 50%;
+                @include flex(center, center, null);
                 img {
-                  width: 100%;
-                  height: 100%;
+                  width: 70px;
+                  height: 70px;
                   object-fit: cover;
                 }
               }
@@ -1428,6 +1508,13 @@ watch(studyTab, () => {
               }
             }
           }
+          .study-translation {
+            font-size: 22px;
+            line-height: 40px;
+            padding: 10px;
+            box-sizing: border-box;
+            word-break: break-all;
+          }
         }
       }
 
@@ -1463,7 +1550,7 @@ watch(studyTab, () => {
   }
 }
 </style>
-<style>
+<style lang="scss">
 .buttonGroup-bottom-slider,
 .buttonGroup-bottom-volume-bar {
   .el-slider__button {
@@ -1505,6 +1592,14 @@ watch(studyTab, () => {
 @keyframes fadenum {
   100% {
     transform: rotate(360deg);
+  }
+}
+.header {
+  .el-dropdown__popper {
+    top: 40px !important;
+    left: 0px !important;
+    right: auto !important;
+    bottom: auto !important;
   }
 }
 </style>

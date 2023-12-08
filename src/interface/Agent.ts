@@ -17,6 +17,7 @@ export interface AgentInfo {
   icon: string;
   contact: string;
   email: string;
+  config: any;
 }
 
 export interface AgentMember {

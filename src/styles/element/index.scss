@@ -24,3 +24,16 @@
 .el-dialog__body {
   padding: 0px !important;
 }
+.el-dialog__header {
+  height: 80px;
+  padding: 0px 15px !important;
+  margin-bottom: 10px !important;
+  line-height: 80px;
+  @include flex(space-between, center, null);
+}
+.el-dialog__footer{
+  height: 120px;
+  padding: 0px 15px !important;
+  margin-bottom: 10px !important;
+  @include flex(flex-end, center, null);
+}

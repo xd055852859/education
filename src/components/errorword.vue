@@ -9,9 +9,8 @@ import _ from "lodash";
 import { storeToRefs } from "pinia";
 import KeywordItem from "./keywordItem.vue";
 import FontIcon from "./fontIcon.vue";
-import { memoryUsage } from "process";
 const dayjs: any = inject("dayjs");
-const { lessonKey, lessonInfo } = storeToRefs(appStore.lessonStore);
+const { deviceType } = storeToRefs(appStore.commonStore);
 const props = defineProps<{
   errorVisible: boolean;
   errorKey: string;
@@ -63,7 +62,11 @@ watchEffect(() => {
 });
 </script>
 <template>
-  <div class="data-right" v-if="errorVisible">
+  <div
+    class="data-right"
+    v-if="errorVisible"
+    :style="deviceType === 'phone' ? { width: '40%' } : {}"
+  >
     <div class="data-right-title dp-space-center">正文</div>
     <div class="data-right-content">
       <div>{{ original }}</div>

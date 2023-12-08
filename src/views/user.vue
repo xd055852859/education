@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import 'vue-cropper/dist/index.css'
+import "vue-cropper/dist/index.css";
 import { VueCropper } from "vue-cropper";
 import appStore from "@/store";
 import { storeToRefs } from "pinia";
@@ -19,13 +19,17 @@ import { ResultProps } from "@/interface/Common";
 import router from "@/router";
 import IframeView from "@/components/iframeView.vue";
 const { user } = storeToRefs(appStore.authStore);
-const { agentList, agentKey } = storeToRefs(appStore.agentStore);
-const { deviceWidth, deviceHeight } = storeToRefs(appStore.commonStore);
+const { agentList, agentKey, agentInfo } = storeToRefs(appStore.agentStore);
+const { deviceWidth, deviceHeight, deviceType } = storeToRefs(
+  appStore.commonStore
+);
 const { setToken } = appStore.authStore;
-const { setAgentList, getAgentList, setAgentKey } = appStore.agentStore;
+const { setAgentList, getAgentList, setAgentKey, setAgentInfo } =
+  appStore.agentStore;
 interface RuleForm {
   userAvatar: string;
   userName: string;
+  showTranslation: boolean;
 }
 
 const { setUserInfo } = appStore.authStore;
@@ -39,14 +43,16 @@ const shareUrl = ref<string>("");
 const score = ref<number>(0);
 const content = ref<string>("");
 const userType = ref<string>("user");
+const config = ref<any>({});
 const targetAgentKey = ref<string>("");
 const colors = ref<any>({ 4: "#99A9BF", 8: "#b3e19d", 10: "#FF9900" });
-const urlBase64 = ref<any>(null)
-const cropperRef = ref<any>(null)
+const urlBase64 = ref<any>(null);
+const cropperRef = ref<any>(null);
 const ruleFormRef = ref<FormInstance>();
 const ruleForm = reactive<RuleForm>({
   userAvatar: "",
   userName: "",
+  showTranslation: false,
 });
 const rules = reactive<FormRules<RuleForm>>({
   userName: [
@@ -62,22 +68,21 @@ const uploadImage = async (file, type) => {
   if (file) {
     urlBase64.value = await fileToBase64(file);
     cropperVisible.value = true;
-    console.log(urlBase64.value)
+    console.log(urlBase64.value);
   }
 };
 const saveImg = () => {
   let mimeType = ["image/*"];
-  cropperRef.value.getCropData(data => {
+  cropperRef.value.getCropData((data) => {
     // do something
-    console.log(data)
+    console.log(data);
     let file = base64ToFile(data);
     uploadFile(file, mimeType, async (url) => {
       ruleForm.userAvatar = url;
       cropperVisible.value = false;
     });
-  })
-
-}
+  });
+};
 const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
   await formEl.validate(async (valid, fields) => {
@@ -101,10 +106,15 @@ const submitForm = async (formEl: FormInstance | undefined) => {
         }
       } else if (userType.value === "agent") {
         if (targetAgentKey.value) {
+          config.value = {
+            ...config.value,
+            showTranslation: ruleForm.showTranslation,
+          };
           let userRes = (await api.request.patch("agent", {
             agentKey: targetAgentKey.value,
             name: ruleForm.userName,
             icon: ruleForm.userAvatar,
+            config: config.value,
           })) as ResultProps;
           if (userRes.msg === "OK") {
             //@ts-ignore
@@ -119,8 +129,15 @@ const submitForm = async (formEl: FormInstance | undefined) => {
                 ...list[index],
                 name: ruleForm.userName,
                 icon: ruleForm.userAvatar,
+                config: config.value,
               };
               setAgentList(list);
+              setAgentInfo({
+                ...agentInfo.value,
+                name: ruleForm.userName,
+                icon: ruleForm.userAvatar,
+                config: config.value,
+              });
             }
             clearUser();
           }
@@ -128,6 +145,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
           let userRes = (await api.request.post("agent", {
             name: ruleForm.userName,
             icon: ruleForm.userAvatar,
+            config: {},
           })) as ResultProps;
           if (userRes.msg === "OK") {
             ElMessage.success("新增角色成功");
@@ -167,11 +185,17 @@ const setAgent = (agentItem) => {
   userType.value = "agent";
   if (agentItem) {
     targetAgentKey.value = agentItem._key;
+    config.value = agentItem.config;
     ruleForm.userAvatar = agentItem.icon;
     ruleForm.userName = agentItem.name;
+    ruleForm.showTranslation = agentItem.config?.showTranslation
+      ? agentItem.config?.showTranslation
+      : false;
   } else {
     ruleForm.userAvatar = "";
     ruleForm.userName = "";
+    ruleForm.showTranslation = false;
+    config.value = {};
   }
 };
 const deleteAgent = async (key, index) => {
@@ -199,14 +223,15 @@ const saveSuggestion = async () => {
     ElMessage.success("保存评价成功");
     suggestionVisible.value = false;
     score.value = 0;
-    content.value = ""
+    content.value = "";
   }
 };
 const toUrl = () => {
   window.open(
     "https://notecute.com/#/post?key=1499044542&view=table&hideHead=1&publicShare=1&isWebview=1",
     "new",
-    `width=650, height=500, resizable=false, toolbar=no, menubar=no, location=no, status=no, top=${(deviceHeight.value - 500) / 2
+    `width=650, height=500, resizable=false, toolbar=no, menubar=no, location=no, status=no, top=${
+      (deviceHeight.value - 500) / 2
     }, left=${(deviceWidth.value - 650) / 2}`
   );
 };
@@ -256,7 +281,11 @@ const shareHtml = () => {
   <div class="user">
     <div class="user-name">
       <div class="user-name-avatar" @click="setUser">
-        <Avatar :src="user?.userAvatar" :alt="user?.userName" :style="{ width: '0.41rem', height: '0.41rem' }" />
+        <Avatar
+          :src="user?.userAvatar"
+          :alt="user?.userName"
+          :style="{ width: '0.41rem', height: '0.41rem' }"
+        />
       </div>
       <div class="user-name-title single-to-long">{{ user?.userName }}</div>
     </div>
@@ -284,9 +313,24 @@ const shareHtml = () => {
       </div>
     </div>
 
-    <el-dialog v-model="cropperVisible" title="裁剪图片" width="600px">
-      <div style="width:100%;height:450px">
-        <VueCropper ref="cropperRef" :img="urlBase64" autoCrop="true" centerBox="true" />
+    <el-dialog
+      v-model="cropperVisible"
+      title="裁剪图片"
+      :width="deviceType === 'phone' ? '300px' : '600px'"
+      :top="deviceType === 'phone' ? '5%' : '15vh'"
+    >
+      <div
+        :style="{
+          width: '100%',
+          height: deviceType === 'phone' ? '200px' : '450px',
+        }"
+      >
+        <VueCropper
+          ref="cropperRef"
+          :img="urlBase64"
+          autoCrop="true"
+          centerBox="true"
+        />
       </div>
       <template #footer>
         <span class="dialog-footer">
@@ -295,25 +339,71 @@ const shareHtml = () => {
         </span>
       </template>
     </el-dialog>
-    <el-dialog v-model="userVisible" :title="userType === 'user' ? '用户设置' : '角色设置'" width="450px">
-      <div class="user-set dp-center-center">
-        <el-form ref="ruleFormRef" :model="ruleForm" :rules="rules" label-width="70px" status-icon label-position="left"
-          require-asterisk-position="right" style="width: calc(100% - 40px)">
-          <el-form-item label="头像" prop="logo" style="margin-top: 45px; margin-bottom: 45px">
+    <el-dialog
+      v-model="userVisible"
+      :title="userType === 'user' ? '用户设置' : '角色设置'"
+      :width="deviceType === 'phone' ? '300px' : '450px'"
+      :top="deviceType === 'phone' ? '5%' : '15vh'"
+    >
+      <div
+        class="user-set dp-center-center"
+        :style="{ height: deviceType === 'phone' ? '200px' : '300px' }"
+      >
+        <el-form
+          ref="ruleFormRef"
+          :model="ruleForm"
+          :rules="rules"
+          label-width="80px"
+          status-icon
+          label-position="left"
+          require-asterisk-position="right"
+          style="width: calc(100% - 40px)"
+        >
+          <el-form-item
+            label="头像"
+            prop="logo"
+            style="margin-top: 45px; margin-bottom: 45px"
+          >
             <div class="upload-button upload-img-button logo-box">
-              <img :src="ruleForm.userAvatar" alt="" :style="{ width: '100%', height: '100%' }" class="upload-cover"
-                v-if="ruleForm.userAvatar" />
+              <img
+                :src="ruleForm.userAvatar"
+                alt=""
+                :style="{ width: '100%', height: '100%' }"
+                class="upload-cover"
+                v-if="ruleForm.userAvatar"
+              />
               <el-icon :size="50" color="#ebebeb" v-else>
                 <Plus />
               </el-icon>
-              <input type="file" accept="image/*" @change="
-                //@ts-ignore
-                uploadImage($event.target.files[0], 'userAvatar')
-                " class="upload-img" />
+              <input
+                type="file"
+                accept="image/*"
+                @change="
+                  //@ts-ignore
+                  uploadImage($event.target.files[0], 'userAvatar')
+                "
+                class="upload-img"
+              />
             </div>
           </el-form-item>
-          <el-form-item label="名称" prop="userName" required style="margin-bottom: 45px">
-            <el-input v-model="ruleForm.userName" placeholder="请输入用户名称" />
+          <el-form-item
+            label="名称"
+            prop="userName"
+            required
+            style="margin-bottom: 45px"
+          >
+            <el-input
+              v-model="ruleForm.userName"
+              placeholder="请输入用户名称"
+            />
+          </el-form-item>
+          <el-form-item
+            label="译文字幕"
+            prop="showTranslation"
+            style="margin-bottom: 45px"
+            v-if="userType === 'agent'"
+          >
+            <el-switch v-model="ruleForm.showTranslation" />
           </el-form-item>
         </el-form>
       </div>
@@ -321,40 +411,70 @@ const shareHtml = () => {
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="userVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitForm(ruleFormRef)">确认</el-button>
+          <el-button type="primary" @click="submitForm(ruleFormRef)"
+            >确认</el-button
+          >
         </span>
       </template>
     </el-dialog>
-    <el-dialog v-model="agentVisible" width="450px">
+    <el-dialog
+      v-model="agentVisible"
+      :width="deviceType === 'phone' ? '300px' : '450px'"
+      :top="deviceType === 'phone' ? '5%' : '15vh'"
+    >
       <template #header="{ close, titleId, titleClass }">
         <div class="agent-header dp-space-center">
           <div :id="titleId" :class="titleClass">角色管理</div>
           <div class="dp--center" style="justify-content: flex-end">
-            <el-button type="primary" @click="setAgent" style="margin-right: 10px">新增角色</el-button>
+            <el-button
+              type="primary"
+              @click="setAgent"
+              style="margin-left: 10px"
+              >新增角色</el-button
+            >
           </div>
         </div>
       </template>
-      <div class="agent-container">
-        <div class="agent-item select-third-item icon-point" v-for="(item, index) in agentList" :key="`agent${item._key}`"
-          @click="setAgentKey(item._key)" :style="item._key === agentKey ? { background: '#ebebeb' } : ''">
+      <div
+        class="agent-container"
+        :style="{ height: deviceType === 'phone' ? '250px' : '500px' }"
+      >
+        <div
+          class="agent-item select-third-item icon-point"
+          v-for="(item, index) in agentList"
+          :key="`agent${item._key}`"
+          @click="setAgentKey(item._key)"
+          :style="item._key === agentKey ? { background: '#ebebeb' } : ''"
+        >
           <div class="select-item-logo">
-            <Avatar :src="item.icon" :alt="item.name" :style="{ width: '0.28rem', height: '0.28rem' }" />
+            <Avatar
+              :src="item.icon"
+              :alt="item.name"
+              :style="{ width: '0.28rem', height: '0.28rem' }"
+            />
           </div>
           <div class="select-item-name single-to-long">{{ item.name }}</div>
           <div class="select-icon-hover">
-            <div class="select-item-icon icon-point" @click="
-              $event.stopPropagation();
-            setAgent(item);
-            " v-if="index > 0">
-              <el-icon>
+            <div
+              class="select-item-icon icon-point"
+              @click="
+                $event.stopPropagation();
+                setAgent(item);
+              "
+            >
+              <el-icon size="16">
                 <Edit />
               </el-icon>
             </div>
-            <div class="select-item-icon icon-point" @click="
-              $event.stopPropagation();
-            deleteAgent(item._key, index);
-            " v-if="index > 0">
-              <el-icon>
+            <div
+              class="select-item-icon icon-point"
+              @click="
+                $event.stopPropagation();
+                deleteAgent(item._key, index);
+              "
+              v-if="index > 0"
+            >
+              <el-icon size="16">
                 <Delete />
               </el-icon>
             </div>
@@ -362,12 +482,27 @@ const shareHtml = () => {
         </div>
       </div>
     </el-dialog>
-    <el-dialog v-model="suggestionVisible" width="450px" title="使用评价" :destroy-on-close="true"
-      @close="score = 0; content = ''">
+    <el-dialog
+      v-model="suggestionVisible"
+      :width="deviceType === 'phone' ? '300px' : '450px'"
+      title="使用评价"
+      :destroy-on-close="true"
+      @close="
+        score = 0;
+        content = '';
+      "
+      :top="deviceType === 'phone' ? '5%' : '15vh'"
+    >
       <div class="suggestion-box">
         <el-rate v-model="score" :colors="colors" :max="10" size="large" />
         <div class="suggestion-title">建议</div>
-        <el-input v-model="content" rows="5" type="textarea" placeholder="请输入建议" size="large" />
+        <el-input
+          v-model="content"
+          rows="5"
+          type="textarea"
+          placeholder="请输入建议"
+          size="large"
+        />
       </div>
       <template #footer>
         <div class="dialog-footer">
@@ -375,14 +510,34 @@ const shareHtml = () => {
         </div>
       </template>
     </el-dialog>
-    <el-dialog v-model="urlVisible" title="用户协议" :width="'70%'" class="url-box">
-      <div style="width:100%;height:500px">
-        <IframeView url="https://notecute.com/#/post?key=1499044542&view=digest&hideHead=1&publicShare=1&isWebview=1" />
+    <el-dialog
+      v-model="urlVisible"
+      title="用户协议"
+      :width="deviceType === 'phone' ? '450px' : '650px'"
+      class="url-box"
+      :top="deviceType === 'phone' ? '5%' : '15vh'"
+    >
+      <div
+        style="width: 100%"
+        :style="{ height: deviceType === 'phone' ? '250px' : '500px' }"
+      >
+        <IframeView
+          url="https://notecute.com/#/post?key=1499044542&view=digest&hideHead=1&publicShare=1&isWebview=1"
+        />
       </div>
-
     </el-dialog>
-    <el-dialog v-model="shareVisible" title="分享" :width="'450px'">
-      <Share :url="shareUrl" />
+    <el-dialog
+      v-model="shareVisible"
+      title="分享"
+      :width="deviceType === 'phone' ? '300px' : '450px'"
+      :top="deviceType === 'phone' ? '5%' : '15vh'"
+    >
+      <div
+        style="width: 100%"
+        :style="{ height: deviceType === 'phone' ? '250px' : '500px' }"
+      >
+        <Share :url="shareUrl" />
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -422,7 +577,7 @@ const shareHtml = () => {
       @include p-number(0px, 27px);
       @include flex(flex-start, center, null);
 
-      >img {
+      > img {
         width: 25px;
         height: 25px;
         margin-right: 15px;
@@ -455,7 +610,7 @@ const shareHtml = () => {
 
 .agent-container {
   width: 100%;
-  height: 300px;
+  height: 350px;
 
   @include p-number(10px, 10px);
   @include scroll();
@@ -483,14 +638,14 @@ const shareHtml = () => {
 .url-box {
   .el-dialog__header {
     height: 50px;
-    padding-top: 0Px;
-    padding-bottom: 0Px;
+    padding-top: 0px;
+    padding-bottom: 0px;
     margin-right: 0px;
-    background-color: #F7F7F7;
+    background-color: #f7f7f7;
     @include flex(space-between, center, null);
 
     .el-dialog__title {
-      font-size: 16Px;
+      font-size: 16px;
     }
   }
 

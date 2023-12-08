@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import appStore from "@/store";
 import { useClipboard } from "@vueuse/core";
 import { ElMessage } from "element-plus";
+import { storeToRefs } from "pinia";
 import QrcodeVue from "qrcode.vue";
 // const { toClipboard } = useClipboard();
-
+const { deviceType } = storeToRefs(appStore.commonStore);
 const props = defineProps<{
   url: string;
 }>();
@@ -34,34 +36,40 @@ const sharePano = () => {
   <div class="code-container">
     <div class="code-url">
       <div class="code-input single-to-long">{{ url }}</div>
-      <el-button @click="sharePano" type="primary" style="width:100px">复制</el-button>
+      <el-button @click="sharePano" type="primary" style="width: 100px"
+        >复制</el-button
+      >
     </div>
     <div class="code-box">
-      <qrcode-vue :value="url" :size="200" level="H" />
+      <qrcode-vue
+        :value="url"
+        :size="deviceType === 'phone' ? 150 : 200"
+        level="H"
+      />
     </div>
   </div>
 </template>
 <style scoped lang="scss">
 .code-container {
   width: 100%;
-  height: 400Px;
-  @include p-number(0px, 25Px);
+  height: 400px;
+  @include p-number(0px, 25px);
   .code-url {
     width: 100%;
-    height: 90Px;
+    height: 90px;
     @include flex(space-between, center, null);
-    margin-bottom: 70Px;
+    margin-bottom: 70px;
     .code-input {
       flex: 1;
       border: 1px solid #efefef;
-      padding: 8Px;
-      border-radius: 8Px;
-      margin-right:20Px;
+      padding: 8px;
+      border-radius: 8px;
+      margin-right: 20px;
     }
   }
   .code-box {
     width: 100%;
-    height: 150Px;
+    // height: 150px;
     @include flex(center, center, null);
   }
 }
