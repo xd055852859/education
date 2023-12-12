@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="305px" height="46px" viewBox="0 0 305 46" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>默认</title>
+    <g id="场景英语web端20230929✅" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="图标" transform="translate(-1472.000000, -221.000000)" fill="#FFFFFF">
+            <g id="默认" transform="translate(1472.000000, 221.000000)">
+                <g id="矩形粉色-2" transform="translate(6.000000, 0.000000)">
+                    <polygon id="矩形粉色" points="-2.77184277e-13 0 284.290102 0 299 23.0249566 284.290102 46 -2.77184277e-13 46 13 23.2123993"></polygon>
+                </g>
+                <polygon id="透明箭头-白色" points="0 0 6 0 21 23.0361156 6 46 0 46 15 23.1541631"></polygon>
+                <polygon id="透明箭头-白色" points="284 0 290 0 305 23.0361156 290 46 284 46 299 23.1541631"></polygon>
+            </g>
+        </g>
+    </g>
+</svg>

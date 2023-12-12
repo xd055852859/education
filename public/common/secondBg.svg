@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="309px" height="144px" viewBox="0 0 309 144" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>粉色-两头白色箭头</title>
+    <g id="场景英语web端20230929✅" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="图标" transform="translate(-1472.000000, -18.000000)">
+            <g id="粉色-两头白色箭头" transform="translate(1472.000000, 18.000000)">
+                <polygon id="矩形2" fill="#FFE4E5" points="6 0 279 0 309 72.078125 279 144 6 144 36 72.078125"></polygon>
+                <polygon id="透明箭头-白色" fill="#FFFFFF" points="0 0 6 0 36 72.1130575 6 144 0 144 30 72.4825976"></polygon>
+                <polygon id="透明箭头-白色备份" fill="#FFFFFF" points="273 0 279 0 309 72.1130575 279 144 273 144 303 72.4825976"></polygon>
+            </g>
+        </g>
+    </g>
+</svg>

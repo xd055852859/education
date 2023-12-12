@@ -101,8 +101,8 @@ const archiveKeyword = async (e, item, index, type, toType) => {
     })) as ResultProps;
     if (dataRes.msg === "OK") {
       // ElMessage.success("归档成功");
-      ElMessage.success(type === "care" ? "标记熟词成功" : "标记生词成功");
-      addNum(type === "care" ? -1 : 1);
+      ElMessage.success(type === "uncare" ? "标记熟词成功" : "标记生词成功");
+      addNum(type === "uncare" ? -1 : 1);
       keywordList.value.splice(index, 1);
     }
   } else {
@@ -110,10 +110,10 @@ const archiveKeyword = async (e, item, index, type, toType) => {
       agentKey: agentKey.value,
       keywordKey: item._key,
       status: 1,
-      isArchived: type === "care",
+      isArchived: toType === "care",
     })) as ResultProps;
     if (dataRes.msg === "OK") {
-      ElMessage.success(type === "care" ? "转入熟词成功" : "转入生词成功");
+      ElMessage.success(toType === "care" ? "转入熟词成功" : "转入生词成功");
       masterNum.value = masterNum.value - 1;
       if (toType === "care") {
         archivedNum.value = archivedNum.value + 1;
@@ -169,10 +169,10 @@ const deleteKeyword = async (item, index) => {
   })) as ResultProps;
   if (dataRes.msg === "OK") {
     ElMessage.success("搞定!");
-    if (keywordTab.value === "care") {
+    if (keywordTab.value === "uncare") {
       keywordNum.value = keywordNum.value - 1;
       masterNum.value = masterNum.value + 1;
-    } else if (keywordTab.value === "uncare") {
+    } else if (keywordTab.value === "care") {
       archivedNum.value = archivedNum.value - 1;
       masterNum.value = masterNum.value + 1;
     }
@@ -229,13 +229,17 @@ watchEffect(() => {
         <div class="keyword-tab">
           <div
             class="keyword-tab-item"
-            :class="{ 'keyword-tab-choose': keywordTab === 'care' }"
-            @click="keywordTab = 'care'"
+            :class="{
+              'keyword-tab-choose': keywordTab === 'uncare',
+              'keyword-tab-first': keywordTab === 'uncare',
+            }"
+            style="padding-right: 16%"
+            @click="keywordTab = 'uncare'"
             id="uncare"
           >
             <img
               :src="
-                keywordTab === 'care'
+                keywordTab === 'uncare'
                   ? '/overview/logo1.svg'
                   : '/overview/unlogo1.svg'
               "
@@ -243,28 +247,43 @@ watchEffect(() => {
               style="margin-right: 5px"
             />
 
-            {{ `生词(${keywordNum})` }}
+            {{ `生词库 (${keywordNum})` }}
           </div>
           <div
-            class="keyword-tab-item"
-            :class="{ 'keyword-tab-choose': keywordTab === 'uncare' }"
-            @click="keywordTab = 'uncare'"
+            class="keyword-tab-item keyword-tab-second"
+            :class="{ 'keyword-tab-choose': keywordTab === 'care' }"
+            :style="
+              keywordTab === 'care'
+                ? {
+                    backgroundImage: `url('/common/careBg.svg')`,
+                    color: '#ff5660',
+                  }
+                : {
+                    backgroundImage: `url('/common/uncareBg.svg')`,
+                    backgroundColor: 'transparent',
+                  }
+            "
+            @click="keywordTab = 'care'"
             id="care"
           >
             <img
               :src="
-                keywordTab === 'uncare'
+                keywordTab === 'care'
                   ? '/overview/logo2.svg'
                   : '/overview/unlogo2.svg'
               "
               alt=""
               style="margin-right: 5px"
             />
-            {{ `熟词(${archivedNum})` }}
+            {{ `熟词库 (${archivedNum})` }}
           </div>
           <div
             class="keyword-tab-item"
-            :class="{ 'keyword-tab-choose': keywordTab === 'master' }"
+            :class="{
+              'keyword-tab-choose': keywordTab === 'master',
+              'keyword-tab-third': keywordTab === 'master',
+            }"
+            style="padding-left: 16%"
             @click="keywordTab = 'master'"
           >
             <img
@@ -298,9 +317,11 @@ watchEffect(() => {
               <div class="dp--center">
                 <div
                   class="concernItem-box-img"
-                  v-if="keywordTab !== 'care'"
+                  v-if="
+                    keywordTab === 'care' && !(expandState || item.expandState)
+                  "
                   @click.stop="
-                    archiveKeyword($event, item, index, keywordTab, 'uncare')
+                    archiveKeyword($event, item, index, keywordTab, 'care')
                   "
                   style="
                     background: linear-gradient(
@@ -322,7 +343,7 @@ watchEffect(() => {
                 </div>
                 <div
                   class="concernItem-box-img"
-                  v-if="keywordTab !== 'uncare'"
+                  v-if="keywordTab !== 'care'"
                   @click.stop="
                     archiveKeyword($event, item, index, keywordTab, 'care')
                   "
@@ -355,10 +376,10 @@ watchEffect(() => {
                       #ffa73e 79%
                     );
                   "
-                  v-if="keywordTab === 'uncare'"
+                  v-if="keywordTab === 'care'"
                   @click.stop="deleteKeyword(item, index)"
                 >
-                  <img src="/common/keyLogo.svg" alt="">
+                  <img src="/common/keyLogo.svg" alt="" />
                   搞定
                 </div>
               </div>
@@ -398,6 +419,15 @@ watchEffect(() => {
                 v-if="item.note"
                 v-html="`笔记：<br/>${item.note}`"
               ></div>
+              <div
+                class="concernItem-box-button"
+                v-if="keywordTab === 'care'"
+                @click.stop="
+                  archiveKeyword($event, item, index, keywordTab, 'uncare')
+                "
+              >
+                设为生词
+              </div>
             </template>
           </div>
         </div>
@@ -429,6 +459,7 @@ watchEffect(() => {
   align-content: flex-start;
   @include p-number(34px, 0px);
   @include flex(center, center, wrap);
+  background-color: #f9f9f9;
 
   .keyword-container {
     width: 100%;
@@ -446,30 +477,59 @@ watchEffect(() => {
 
       .keyword-tab {
         width: 100%;
-        height: 50px;
-        @include flex(flex-start, center, null);
+        height: 46px;
+        position: relative;
+        z-index: 1;
+        padding-left: 25px;
+        padding-right: 150px;
+        box-sizing: border-box;
+        margin-bottom: 20px;
+        @include flex(space-between, center, null);
 
         .keyword-tab-item {
-          width: 30%;
-          height: 50px;
+          width: 48%;
+          height: 46px;
           font-size: 16px;
           color: #919191;
-          line-height: 50px;
+          line-height: 46px;
           text-align: center;
+          box-sizing: border-box;
+          background-color: #fff;
           cursor: pointer;
           @include flex(center, center, null);
+          img {
+            width: 19px;
+            height: 19px;
+          }
         }
 
         .keyword-tab-choose {
           height: 45px;
-          font-size: 22px;
-          color: #000000;
-          font-weight: bold;
           line-height: 45px;
           img {
-            width: 40px;
-            height: 40px;
+            width: 25px;
+            height: 25px;
           }
+        }
+        .keyword-tab-first {
+          color: #5478fb;
+          background-color: #ebeefc;
+        }
+        .keyword-tab-second {
+          width: 33%;
+          position: absolute;
+          z-index: 2;
+          top: 0px;
+          left: 31%;
+          background-position: center center;
+          background-size: cover;
+          background-repeat: no-repeat;
+        }
+        .keyword-tab-third {
+          padding-left: 7%;
+          box-sizing: border-box;
+          color: #eb930c;
+          background-color: #ffecd2;
         }
         img {
           width: 25px;
@@ -500,7 +560,11 @@ watchEffect(() => {
           // border-radius: 12px;
           margin-bottom: 22px;
           box-shadow: 0px 2px 5px 0px rgba(178, 178, 178, 0.5);
-          @include p-number(14px, 28px);
+          position: relative;
+          z-index: 1;
+          padding: 14px 28px 28px 35px;
+          box-sizing: border-box;
+          // @include p-number(14px, 28px);
 
           .concernItem-box-title {
             width: 100%;
@@ -516,7 +580,7 @@ watchEffect(() => {
             .concernItem-box-img {
               width: 85px;
               height: 35px;
-              border-radius: 4px;
+              border-radius: 14px;
               font-size: 14px;
               color: #ffffff;
               cursor: pointer;
@@ -552,6 +616,7 @@ watchEffect(() => {
             font-size: 16px;
             color: #999999;
             line-height: 20px;
+            margin: 10px 0px;
           }
           .concernItem-box-content {
             font-size: 16px;
@@ -560,7 +625,14 @@ watchEffect(() => {
             color: #4d57ff;
             @include p-number(10px, 10px);
           }
-
+          .concernItem-box-button {
+            position: absolute;
+            z-index: 2;
+            right: 30px;
+            bottom: 15px;
+            font-size: 16px;
+            color: #999999;
+          }
           &:hover {
             box-shadow: 0px 2px 10px 0px rgba(78, 78, 78, 0.5);
           }

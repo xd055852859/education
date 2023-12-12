@@ -280,35 +280,33 @@ watchEffect(() => {
             </div>
             <div class="data-bottom">
               <div
-                class="data-container"
-                @click="$router.push('/home/concern/care')"
+                class="data-container first-data"
+                @click="$router.push('/home/concern/uncare')"
               >
                 <div class="data-title" style="color: #5478fb">
-                  {{ keywordCount }}<span>个</span>
+                  {{ keywordCount }}
                 </div>
                 <div class="data-subtitle">
                   <img src="/overview/logo1.svg" alt="" />生词
                 </div>
               </div>
               <div
-                class="data-container"
-                @click="$router.push('/home/concern/uncare')"
+                class="data-container second-data"
+                @click="$router.push('/home/concern/care')"
               >
                 <div class="data-title" style="color: #ff5660">
                   <div class="data-num">{{ noteNum }}</div>
-                  <span>个</span>
                 </div>
                 <div class="data-subtitle">
                   <img src="/overview/logo2.svg" alt="" />熟词
                 </div>
               </div>
               <div
-                class="data-container"
+                class="data-container third-data"
                 @click="$router.push('/home/concern/master')"
               >
                 <div class="data-title" style="color: #eb930c">
                   <div class="data-num">{{ masterNum }}</div>
-                  <span>个</span>
                 </div>
                 <div class="data-subtitle">
                   <img src="/overview/logo4.svg" alt="" />搞定
@@ -540,7 +538,7 @@ watchEffect(() => {
         }
 
         .data-box {
-          width: calc(100% - 375px);
+          width: calc(100% - 300px);
           @include flex(center, space-between, wrap);
 
           .data-top {
@@ -571,14 +569,19 @@ watchEffect(() => {
 
           .data-bottom {
             width: 100%;
-            height: 105px;
+            height: 144px;
+            position: relative;
+            z-index: 1;
             @include flex(space-between, center, null);
 
-            .data-container {
-              width: 33%;
+            .data-container,
+            .second-data {
+              width: 40%;
               height: 100%;
               cursor: pointer;
-              @include flex(flex-start, center, wrap);
+              align-content: center;
+
+              @include flex(space-between, center, wrap);
 
               .data-title {
                 width: 100%;
@@ -590,7 +593,7 @@ watchEffect(() => {
                 margin-bottom: 4px;
                 padding-left: 11px;
                 box-sizing: border-box;
-                @include flex(flex-start, center, null);
+                @include flex(center, center, null);
                 .data-num {
                   // animation: fadeIn 500ms ease-in-out infinite;
                 }
@@ -608,7 +611,7 @@ watchEffect(() => {
                 font-size: 25px;
                 color: #333333;
                 line-height: 36px;
-                @include flex(flex-start, center, null);
+                @include flex(center, center, null);
 
                 img {
                   width: 35px;
@@ -616,6 +619,27 @@ watchEffect(() => {
                   margin-right: 5.5px;
                 }
               }
+            }
+            .first-data {
+              padding-right: 7%;
+              box-sizing: border-box;
+              background-color: #ebeefc;
+            }
+            .second-data {
+              width: 40%;
+              position: absolute;
+              z-index: 2;
+              top: 0px;
+              left: 31%;
+              background-image: url("/common/secondBg.svg");
+              background-position: center center;
+              background-size: cover;
+              background-repeat: no-repeat;
+            }
+            .third-data {
+              padding-left: 7%;
+              box-sizing: border-box;
+              background-color: #ffecd2;
             }
           }
         }
