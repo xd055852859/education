@@ -93,14 +93,22 @@ const getArticleList = async (key) => {
   })) as ResultProps;
   if (articleRes.msg === "OK") {
     articleList.value = articleRes.data.map((item) => {
-      let text = item.original.match(/\b\w+\b/g);
-      item.original = item.original.match(
-        /\b\w+\b|[\x21-\x2f\x3a-\x40\x5b-\x60\x7B-\x7F]/g
-      );
-      if (text && text.length > 0) {
-        text = text.filter((item) => item.length > 2);
-        list.push(...text);
+      if (lessonInfo.value.language === "en") {
+        let text = item.original.match(/\b\w+\b/g);
+        item.original = item.original.match(
+          /\b\w+\b|[\x21-\x2f\x3a-\x40\x5b-\x60\x7B-\x7F]/g
+        );
+        if (text && text.length > 0) {
+          text = text.filter((item) => item.length > 2);
+          list.push(...text);
+        }
+      } else if (lessonInfo.value.language === "cn") {
+        openText(item.original.replace(/\n/g, ""), (data) => {
+          item.original = data;
+          list.push(...data.map((item) => !textPoint(item)));
+        });
       }
+      console.log(list);
       return item;
     });
     list.forEach((item) => {
@@ -132,8 +140,12 @@ const getCaption = async (key) => {
       }
     });
     if (studyMediaRef.value && lessonInfo.value.mediaType === "video") {
-      sentenceKey.value = mediaList.value[mediaListIndex.value].captionKey;
-      currentTime.value = mediaList.value[mediaListIndex.value].time;
+      sentenceKey.value = mediaList.value[mediaListIndex.value]?.captionKey
+        ? mediaList.value[mediaListIndex.value].captionKey
+        : "";
+      currentTime.value = mediaList.value[mediaListIndex.value]?.time
+        ? mediaList.value[mediaListIndex.value].time
+        : 0;
       console.log(currentTime.value);
       clickMedia(currentTime.value);
     }
@@ -405,7 +417,15 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
       class="study-read"
     ></audio>
     <div class="study-container">
-      <div class="study-left">
+      <div
+        class="study-left"
+        :class="{ 'study-left-keyword': keyword || errorVisible }"
+        :style="
+          deviceType === 'phone' && (keyword || errorVisible)
+            ? { width: '60%' }
+            : {}
+        "
+      >
         <Header
           :title="''"
           :backPath="'/home'"
@@ -475,6 +495,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                 :class="{ 'study-tab-choose': studyTab === 'original' }"
                 :style="studyTab === 'video' ? { color: '#fff' } : {}"
                 @click="studyTab = 'original'"
+                v-if="articleList.length > 0"
               >
                 原文
               </div>
@@ -483,6 +504,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                 :class="{ 'study-tab-choose': studyTab === 'translation' }"
                 :style="studyTab === 'video' ? { color: '#fff' } : {}"
                 @click="studyTab = 'translation'"
+                v-if="articleList.length > 0"
               >
                 译文
               </div>
@@ -566,6 +588,15 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
               :key="`translation${index}`"
               class="text-item"
               style="max-height: 99999px; text-indent: 2em"
+              @click.stop="
+                errorKey = item._key;
+                errorVisible = true;
+                keyword = '';
+                keywordKey = '';
+              "
+              :style="
+                errorKey === item._key ? { backgroundColor: '#F5F5F5' } : {}
+              "
             >
               {{ item.translation }}
             </div>
@@ -1018,7 +1049,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                           :style="{
                             animation: studyMediaRef.isPlay
                               ? `fadenum ${
-                                  studyMediaRef.reloadState ? 1.5 : 3
+                                  studyMediaRef.reloadState ? 1.5 : 8
                                 }s infinite`
                               : '',
                           }"
@@ -1192,7 +1223,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
     @include flex(space-between, center, null);
 
     .study-left {
-      flex: 1;
+      width: 100%;
       height: 100%;
       position: relative;
       z-index: 1;
@@ -1521,7 +1552,11 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
       .study-cloud {
         width: 100%;
         height: calc(100% - 35px);
+        box-sizing: border-box;
       }
+    }
+    .study-left-keyword {
+      width: calc(100% - 523px);
     }
   }
 

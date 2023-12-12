@@ -101,6 +101,13 @@ const submitForm = async (formEl: FormInstance | undefined) => {
           };
           ElMessage.success("编辑用户成功");
           userVisible.value = false;
+          if (agentInfo.value?.mainAgent) {
+            setAgentInfo({
+              ...agentInfo.value,
+              name: ruleForm.userName,
+              icon: ruleForm.userAvatar,
+            });
+          }
           setUserInfo(newUser);
           clearUser();
         }
@@ -152,7 +159,6 @@ const submitForm = async (formEl: FormInstance | undefined) => {
             let list = _.cloneDeep(agentList.value);
             list.push(userRes.data);
             setAgentList(list);
-
             userVisible.value = false;
             clearUser();
           }
@@ -630,6 +636,7 @@ const shareHtml = () => {
   @include p-number(10px, 25px);
 
   .suggestion-title {
+    font-size: 20px;
     margin: 10px 0px 25px 0px;
   }
 }
@@ -652,6 +659,11 @@ const shareHtml = () => {
   .el-dialog__headerbtn {
     height: 50px;
     top: 0px;
+  }
+}
+.suggestion-box {
+  .el-textarea__inner {
+    font-size: 18px;
   }
 }
 </style>

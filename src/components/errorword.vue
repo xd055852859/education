@@ -20,8 +20,9 @@ const { agentKey } = storeToRefs(appStore.agentStore);
 const memo = ref<string>("");
 const original = ref<string>("");
 const translation = ref<string>("");
+const noteVisible = ref<boolean>(false);
 const getData = async () => {
-  if (props.type === "original") {
+  if (props.type === "original"||props.type === "translation") {
     let dataRes = (await api.request.get("section/detail", {
       sectionKey: props.errorKey,
     })) as ResultProps;
@@ -53,6 +54,7 @@ const saveMemo = async () => {
   if (noteRes.msg === "OK") {
     ElMessage.success("保存纠错内容成功");
     memo.value = "";
+    noteVisible.value = true;
   }
 };
 watchEffect(() => {
@@ -74,11 +76,22 @@ watchEffect(() => {
       <div>{{ translation }}</div>
     </div>
 
-    <div class="data-right-button">
-      <!-- <div class="dp-center-center icon-point">
+    <div
+      class="data-right-button"
+      :style="
+        noteVisible
+          ? { boxShadow: '0px 2px 9px 0px rgba(178, 178, 178, 0.5)' }
+          : {}
+      "
+    >
+      <div
+        class="dp-center-center icon-point"
+        v-if="noteVisible"
+        @click="noteVisible = false"
+      >
         <FontIcon iconName="zhankai" :iconStyle="{ color: '#333' }" />
-      </div> -->
-      <div class="data-right-note">
+      </div>
+      <div class="data-right-note" v-if="noteVisible">
         <el-input
           v-model="memo"
           :rows="10"
@@ -95,8 +108,12 @@ watchEffect(() => {
       > -->
       </div>
       <div class="dp-center-center">
-        <el-button type="primary" round class="left-button" @click="saveMemo()"
-          >保存</el-button
+        <el-button
+          type="primary"
+          round
+          class="left-button"
+          @click="noteVisible ? saveMemo() : (noteVisible = true)"
+          >{{ noteVisible ? "保存" : "纠错" }}</el-button
         >
       </div>
     </div>
@@ -126,7 +143,7 @@ watchEffect(() => {
   }
   .data-right-content {
     width: 100%;
-    height: calc(100% - 430px);
+    height: calc(100% - 120px);
     margin: 10px 0px;
     padding: 10px 15px;
     box-sizing: border-box;
@@ -141,7 +158,7 @@ watchEffect(() => {
 
   .data-right-button {
     width: 100%;
-    padding: 0px 20px 30px 20px;
+    padding: 0px 50px 30px 50px;
     background-color: #fff;
     box-sizing: border-box;
     position: absolute;
@@ -156,6 +173,11 @@ watchEffect(() => {
 
     .left-button {
       width: 246px;
+      height: 38px;
+    }
+
+    .right-button {
+      width: 150px;
       height: 38px;
     }
   }

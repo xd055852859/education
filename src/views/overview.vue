@@ -66,9 +66,45 @@ const getNum = async () => {
   })) as ResultProps;
   if (numRes.msg === "OK") {
     studyTime.value = numRes.data.studyTime;
-    keywordCount.value = numRes.data.keywordCount;
-    noteNum.value = numRes.data.keywordCount2;
-    masterNum.value = numRes.data.masterNum;
+    let count1 = 0;
+    let count2 = 0;
+    let count3 = 0;
+    let interval1 = setInterval(function () {
+      // 更新数字
+      keywordCount.value = count1;
+
+      // 如果计数器达到100，清除定时器
+      if (count1 >= numRes.data.keywordCount) {
+        clearInterval(interval1);
+      } else {
+        // 增加计数器的值
+        count1++;
+      }
+    }, 50);
+    let interval2 = setInterval(function () {
+      // 更新数字
+      noteNum.value = count2;
+      if (count2 >= numRes.data.keywordCount2) {
+        clearInterval(interval2);
+      }
+
+      // 增加计数器的值
+      count2++;
+    }, 50);
+    let interval3 = setInterval(function () {
+      // 更新数字
+      masterNum.value = count3;
+
+      if (count3 >= numRes.data.masterNum) {
+        clearInterval(interval3);
+      }
+
+      // 增加计数器的值
+      count3++;
+    }, 50);
+    // keywordCount.value = numRes.data.keywordCount;
+    // noteNum.value = numRes.data.keywordCount2;
+    // masterNum.value = numRes.data.masterNum;
   }
 };
 const chooseLesson = (item) => {
@@ -152,7 +188,7 @@ watchEffect(() => {
         class="overview-button"
         round
         @click="$router.push('center')"
-        ><img src="/overview/overviewHeader.svg" alt="" />课程库</el-button
+        ><img src="/overview/overviewHeader.svg" alt="" />课件库</el-button
       >
     </div>
     <div class="overview-box" @mousemove.once="onceVisible = true">
@@ -222,6 +258,7 @@ watchEffect(() => {
                   </template>
                 </el-dropdown>
                 <div
+                  v-if="studyTime > 0"
                   class="data-top-subtitle icon-point"
                   @click="$router.push(`/home/calendar/0`)"
                 >
@@ -238,6 +275,7 @@ watchEffect(() => {
                   }}</span>
                   个单词
                 </div>
+                <div class="data-top-subtitle" v-else>欢迎访问</div>
               </div>
             </div>
             <div class="data-bottom">
@@ -257,7 +295,8 @@ watchEffect(() => {
                 @click="$router.push('/home/concern/uncare')"
               >
                 <div class="data-title" style="color: #ff5660">
-                  {{ noteNum }}<span>个</span>
+                  <div class="data-num">{{ noteNum }}</div>
+                  <span>个</span>
                 </div>
                 <div class="data-subtitle">
                   <img src="/overview/logo2.svg" alt="" />熟词
@@ -268,10 +307,11 @@ watchEffect(() => {
                 @click="$router.push('/home/concern/master')"
               >
                 <div class="data-title" style="color: #eb930c">
-                  {{ masterNum }}<span>个</span>
+                  <div class="data-num">{{ masterNum }}</div>
+                  <span>个</span>
                 </div>
                 <div class="data-subtitle">
-                  <img src="/overview/logo4.svg" alt="" />超熟词
+                  <img src="/overview/logo4.svg" alt="" />搞定
                 </div>
               </div>
               <!-- <div class="data-container" @click="$router.push(`/home/calendar/0`)">
@@ -550,7 +590,10 @@ watchEffect(() => {
                 margin-bottom: 4px;
                 padding-left: 11px;
                 box-sizing: border-box;
-
+                @include flex(flex-start, center, null);
+                .data-num {
+                  // animation: fadeIn 500ms ease-in-out infinite;
+                }
                 span {
                   font-size: 22px;
                   font-weight: normal;
@@ -641,6 +684,16 @@ watchEffect(() => {
     left: 0px !important;
     right: auto !important;
     bottom: auto !important;
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

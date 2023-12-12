@@ -25,6 +25,7 @@ const getTag = async (key) => {
   })) as ResultProps;
   if (dataRes.msg === "OK") {
     tagList.value.push(dataRes.data);
+    console.log(tagList.value);
   }
 };
 const getLesson = async (page: number, tagKey?: string, clear?: boolean) => {
@@ -40,6 +41,11 @@ const getLesson = async (page: number, tagKey?: string, clear?: boolean) => {
     }
     lessonList.value = [...lessonList.value, ...dataRes.data];
     total.value = dataRes.total as number;
+    // nextTick(() => {
+    //   lessonList.value.forEach((item) => {
+    //     item.animate = true;
+    //   });
+    // });
   }
 };
 const subscribeLesson = async (key, index) => {
@@ -93,7 +99,7 @@ watch(
 </script>
 <template>
   <div class="lesson-center">
-    <Header title="课程库" :backPath="'/home'" />
+    <Header title="课件库" :backPath="'/home'" />
     <div class="lesson-center-tag">
       <div
         v-for="(item, index) in tagList"
@@ -107,7 +113,12 @@ watch(
           @click="chooseItem(tagItem, index)"
           class="dp--center choose-list"
         >
+          <el-divider
+            direction="vertical"
+            v-if="tagIndex !== 0 && tagItem.resourceCount > 0"
+          />
           <div
+            v-if="tagItem.resourceCount > 0"
             :style="
               chooseKeyList.indexOf(tagItem._key) !== -1
                 ? {
@@ -119,9 +130,8 @@ watch(
             "
             class="choose-item icon-point"
           >
-            {{ tagItem.name }}
+            {{ tagItem.name }} ({{ tagItem.resourceCount }})
           </div>
-          <el-divider direction="vertical" v-if="tagIndex < item.length - 1" />
         </div>
       </div>
     </div>
@@ -133,8 +143,12 @@ watch(
       <template v-if="lessonList.length > 0">
         <div
           v-for="(item, index) in lessonList"
+          class="lesson-list-item"
           :key="`lesson${item._key}`"
           style="width: 100%"
+          :style="{
+            animationDelay: `${0.2 * index}s`,
+          }"
         >
           <LessonItem
             :item="item"
@@ -173,7 +187,7 @@ watch(
   // @include flex(center, center, wrap);
   .lesson-center-tag {
     width: 1200px;
-    min-height: 90px;
+    height: 190px;
     background: #ffffff;
     border-radius: 14px;
     margin: 14px 0px 30px 0px;
@@ -181,12 +195,13 @@ watch(
     box-shadow: 0px 0px 16px 0px rgba(0, 0, 0, 0.09);
     font-size: 18px;
     color: #666666;
-    @include p-number(31px, 46px);
+    align-content: flex-start;
+    @include p-number(20px, 46px);
     @include flex(flex-start, center, wrap);
     .choose-list {
       // width: 100%;
       height: 32px;
-      margin-bottom: 8px;
+      margin-bottom: 25px;
       .choose-item {
         height: 32px;
         padding: 0px 16px;
@@ -204,7 +219,23 @@ watch(
     @include flex(center, flex-start, wrap);
     @include p-number(9px, 47px);
     @include scroll();
+    .lesson-list-item {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: show 0.5s ease-in forwards;
+    }
   }
 }
 </style>
-<style></style>
+<style>
+@keyframes show {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+}
+</style>

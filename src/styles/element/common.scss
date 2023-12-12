@@ -11,6 +11,9 @@
     "base": 18px,
     "small": 17px,
     "extra-small": 16px,
+  ),
+  $rate: (
+    "icon-size": 26px,
   )
 );
 @import "../mixin/mixin.scss";

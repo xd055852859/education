@@ -276,7 +276,7 @@ watchEffect(() => {
               alt=""
               style="margin-right: 5px"
             />
-            {{ `超熟词(${masterNum})` }}
+            {{ `搞定(${masterNum})` }}
           </div>
         </div>
         <div
@@ -299,7 +299,9 @@ watchEffect(() => {
                 <div
                   class="concernItem-box-img"
                   v-if="keywordTab !== 'care'"
-                  @click.stop="archiveKeyword($event, item, index, keywordTab,'uncare')"
+                  @click.stop="
+                    archiveKeyword($event, item, index, keywordTab, 'uncare')
+                  "
                   style="
                     background: linear-gradient(
                       233deg,
@@ -321,7 +323,9 @@ watchEffect(() => {
                 <div
                   class="concernItem-box-img"
                   v-if="keywordTab !== 'uncare'"
-                  @click.stop="archiveKeyword($event, item, index, keywordTab,'care')"
+                  @click.stop="
+                    archiveKeyword($event, item, index, keywordTab, 'care')
+                  "
                   style="
                     margin-left: 10px;
                     background: linear-gradient(
@@ -354,14 +358,7 @@ watchEffect(() => {
                   v-if="keywordTab === 'uncare'"
                   @click.stop="deleteKeyword(item, index)"
                 >
-                  <FontIcon
-                    iconName="gaoding"
-                    :iconStyle="{
-                      marginRight: '5px',
-                      fontSize: '14px',
-                      color: '#fff',
-                    }"
-                  />
+                  <img src="/common/keyLogo.svg" alt="">
                   搞定
                 </div>
               </div>
@@ -524,6 +521,11 @@ watchEffect(() => {
               color: #ffffff;
               cursor: pointer;
               @include flex(center, center, null);
+              img {
+                width: 20px;
+                height: 20px;
+                margin-right: 5px;
+              }
             }
 
             .concernItem-box-icon {

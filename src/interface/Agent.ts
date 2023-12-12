@@ -18,6 +18,7 @@ export interface AgentInfo {
   contact: string;
   email: string;
   config: any;
+  mainAgent: number;
 }
 
 export interface AgentMember {

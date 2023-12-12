@@ -49,7 +49,6 @@ const login = async () => {
       v-model="mobile"
       placeholder="请输入手机号"
       class="login-input"
-      autocomplete="new-password"
       size="large"
     >
       <!-- <template #prepend>
@@ -64,7 +63,6 @@ const login = async () => {
       placeholder="请输入密码"
       show-password
       class="login-input"
-      autocomplete="new-password"
       size="large"
     />
     <div class="login-reset">

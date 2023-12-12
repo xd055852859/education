@@ -113,6 +113,7 @@ onMounted(() => {
 
   option && chart.setOption(option);
   chart.on("click", function (params) {
+    console.log(params);
     emits("chooseWord", params.name, 0, "cloud");
     // chart.resize();
   });
@@ -133,15 +134,16 @@ watch(
   },
   { deep: true }
 );
-watch(
-  () => props.keyword,
-  (newWord) => {
-    if (!newWord)
-      chart.resize({
-        width: document.documentElement.offsetWidth,
-      });
-  }
-);
+// watch(
+//   () => props.keyword,
+//   (newWord) => {
+//     if (!newWord) {
+//       chart.resize({
+//         width: document.documentElement.offsetWidth,
+//       });
+//     }
+//   }
+// );
 </script>
 <template>
   <div :id="wordId" class="line-chart"></div>

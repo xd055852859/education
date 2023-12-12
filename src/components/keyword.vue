@@ -15,7 +15,7 @@ const dayjs: any = inject("dayjs");
 const { lessonKey, lessonInfo } = storeToRefs(appStore.lessonStore);
 const props = defineProps<{
   keyword: string;
-  keywordKey: string;
+  keywordKey?: string;
   type?: string;
 }>();
 const emits = defineEmits<{
@@ -157,7 +157,9 @@ const saveNote = async (type?: string) => {
         item.keywords[keywordIndex].note = note.value;
       }
     });
-    emits("reloadData", props.keywordKey, note.value);
+    if (props.keywordKey) {
+      emits("reloadData", props.keywordKey, note.value);
+    }
   }
 };
 const openTuLink = () => {
@@ -176,11 +178,15 @@ const openTuLink = () => {
 const changeList = (list) => {
   keywordList.value = _.cloneDeep(list);
 };
-watch(chooseTab, (newTab) => {
-  if (props.type === "outer") {
-    keywordTab.value = newTab[0];
-  }
-});
+watch(
+  [chooseTab, () => props.type],
+  ([newTab, newType]) => {
+    if (newType === "outer") {
+      keywordTab.value = newTab[0];
+    }
+  },
+  { immediate: true }
+);
 watchEffect(() => {
   if (
     (!user.value?.config?.keywordTab ||
@@ -338,6 +344,7 @@ watch(
   width: 523px;
   height: 100%;
   padding: 25px 0px 10px 0px;
+  flex-shrink: 0;
   box-sizing: border-box;
   position: relative;
   z-index: 1;
