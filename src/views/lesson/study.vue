@@ -49,8 +49,6 @@ const textList = ref<any>([]);
 const studyMediaRef = ref<any>(null);
 const reloadState = ref<boolean>(true);
 const changeIndex = ref<number>(-1);
-const biaodian =
-  '[=,.?!@#$%^&*()_+:"<>/\[\]\\`~——，。、《》？；’：“【】、{}|·！￥…（）-]';
 const errorVisible = ref<boolean>(false);
 const errorKey = ref<string>("");
 
@@ -93,28 +91,17 @@ const getArticleList = async (key) => {
   })) as ResultProps;
   if (articleRes.msg === "OK") {
     articleList.value = articleRes.data.map((item) => {
-      if (lessonInfo.value.language === "en") {
-        let text = item.original.match(/\b\w+\b/g);
-        item.original = item.original.match(
-          /\b\w+\b|[\x21-\x2f\x3a-\x40\x5b-\x60\x7B-\x7F]/g
-        );
-        if (text && text.length > 0) {
-          text = text.filter((item) => item.length > 2);
-          list.push(...text);
+      item.originalArr.forEach((item) => {
+        if (textPoint(item) && isNaN(item)) {
+          list.push(item.toLowerCase());
         }
-      } else if (lessonInfo.value.language === "cn") {
-        openText(item.original.replace(/\n/g, ""), (data) => {
-          item.original = data;
-          list.push(...data.map((item) => !textPoint(item)));
-        });
-      }
-      console.log(list);
+      });
       return item;
     });
     list.forEach((item) => {
-      obj[item.toLowerCase()] = {
-        name: item.toLowerCase(),
-        value: obj[item.toLowerCase()] ? obj[item.toLowerCase()].value + 1 : 1,
+      obj[item] = {
+        name: item,
+        value: obj[item] ? obj[item].value + 1 : 1,
       };
     });
 
@@ -126,19 +113,7 @@ const getCaption = async (key) => {
     mediaKey: key,
   })) as ResultProps;
   if (captionaRes.msg === "OK") {
-    captionaRes.data.forEach((item, index) => {
-      if (lessonInfo.value.language === "en") {
-        item.original = item.original
-          .replace(/\n/g, "")
-          .match(/\b\w+\b|[\x21-\x2f\x3a-\x40\x5b-\x60\x7B-\x7F]/g);
-        captionsList.value[index] = item;
-      } else if (lessonInfo.value.language === "cn") {
-        openText(item.original.replace(/\n/g, ""), (data) => {
-          item.original = data;
-          captionsList.value[index] = item;
-        });
-      }
-    });
+    captionsList.value = captionaRes.data;
     if (studyMediaRef.value && lessonInfo.value.mediaType === "video") {
       sentenceKey.value = mediaList.value[mediaListIndex.value]?.captionKey
         ? mediaList.value[mediaListIndex.value].captionKey
@@ -150,19 +125,6 @@ const getCaption = async (key) => {
       clickMedia(currentTime.value);
     }
     console.log(captionsList.value);
-  }
-};
-const openText = async (text, callback) => {
-  let textRes = (await api.request.get(
-    "",
-    {
-      text: text,
-    },
-    false,
-    "https://dictdata.qingtime.cn/getWords"
-  )) as ResultProps;
-  if (textRes.msg === "OK") {
-    callback(textRes.data);
   }
 };
 const videoTimeupdate = (time) => {
@@ -331,6 +293,8 @@ watch([mediaListIndex, lessonInfo], ([newIndex, newInfo]) => {
       studyTab.value = "video";
     } else if (newInfo.mediaType === "audio") {
       studyTab.value = "audio";
+    } else {
+      studyTab.value = "original";
     }
     if (audioRef.value) {
       audioRef.value.pause();
@@ -563,13 +527,17 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
               >
                 <div style="width: 2em"></div>
                 <span
-                  v-for="(textItem, textIndex) in item.original"
+                  v-for="(textItem, textIndex) in item.originalArr"
                   :key="`originalText${textIndex}`"
-                  :class="{ 'text-point': !/\b\w+\b/g.test(textItem) }"
+                  :class="{
+                    'text-point': !textPoint(textItem) || !isNaN(textItem),
+                  }"
                   @click.stop="
-                    /\b\w+\b/g.test(textItem)
+                    textPoint(textItem) &&
+                    isNaN(textItem) &&
+                    sentenceKey === item._key
                       ? chooseWord(textItem, textIndex, 'section', item._key)
-                      : ''
+                      : null
                   "
                   :style="
                     changeIndex !== index
@@ -578,7 +546,9 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                             color: '#4D57FF',
                           }
                         : {}
-                      : { opacity: 0 }
+                      : lessonInfo.language === 'en'
+                      ? { opacity: 0 }
+                      : { padding: '0px', letterSpacing: '1px', opacity: 0 }
                   "
                   >{{ textItem }}</span
                 >
@@ -648,7 +618,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
               >
                 <div style="width: 2em"></div>
                 <span
-                  v-for="(textItem, textIndex) in item.original"
+                  v-for="(textItem, textIndex) in item.originalArr"
                   :key="`originalText${textIndex}`"
                   :class="{ 'text-point': !/\b\w+\b/g.test(textItem) }"
                   @click.stop="
@@ -712,20 +682,6 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                       "
                     >
                       <template v-if="captionObj">
-                        <!-- <div class="study-video-subtitle">
-                          <div
-                            class="study-subtitle-text"
-                            :style="{
-                              backgroundImage: `url(${
-                                studyMediaRef.reloadState
-                                  ? '/common/reloadTitle.png'
-                                  : '/common/unReloadTitle.png'
-                              })`,
-                            }"
-                          >
-                           
-                          </div>
-                        </div> -->
                         <div
                           class="study-original"
                           :style="studyTab === 'video' ? { color: '#fff' } : {}"
@@ -955,17 +911,15 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
             </div>
           </template>
           <template v-if="studyTab === 'audio'">
-            <div
-              class="study-caption study-audio-caption"
-              @mouseenter="
+            <!--   @mouseenter="
                 deviceType !== 'phone' ? studyMediaRef.reloadMedia(true) : false
               "
               @mouseleave="
                 deviceType !== 'phone'
                   ? studyMediaRef.reloadMedia(false)
                   : false
-              "
-            >
+              " -->
+            <div class="study-caption study-audio-caption">
               <div
                 v-for="(item, index) in captionsList"
                 :key="`caption${index}`"
@@ -996,7 +950,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                       " -->
                   <template v-if="lessonInfo.language === 'en'">
                     <span
-                      v-for="(textItem, textIndex) in item.original"
+                      v-for="(textItem, textIndex) in item.originalArr"
                       :key="`originalCaption${textIndex}`"
                       :class="{ 'text-point': !/\b\w+\b/g.test(textItem) }"
                       @click="
@@ -1023,42 +977,38 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                     >
                   </template>
                   <template v-else-if="lessonInfo.language === 'cn'">
-                    <div
-                      v-for="(captionItem, captionIndex) in item.original"
-                      :key="`caption${captionIndex}`"
-                      style="width: 100%"
+                    <span
+                      v-for="(textItem, textIndex) in item.originalArr"
+                      :key="`textCaption${textIndex}`"
+                      :class="{
+                        'text-point': !textPoint(textItem) || !isNaN(textItem),
+                      }"
+                      @click="
+                        textPoint(textItem) &&
+                        isNaN(textItem) &&
+                        sentenceKey === item._key
+                          ? chooseWord(
+                              textItem,
+                              textIndex,
+                              'caption',
+                              textItem._key
+                            )
+                          : ''
+                      "
+                      style="padding: 0px; letter-spacing: 1px"
+                      :style="
+                        keyword === textItem &&
+                        textIndex === keyIndex &&
+                        textPoint(textItem) &&
+                        isNaN(textItem)
+                          ? {
+                              color: '#4D57FF',
+                            }
+                          : {}
+                      "
                     >
-                      <span
-                        v-for="(textItem, textIndex) in captionItem"
-                        :key="`textCaption${textIndex}`"
-                        :class="{
-                          'text-point':
-                            !textPoint(textItem) || !isNaN(textItem),
-                        }"
-                        @click.stop="
-                          textPoint(textItem) && isNaN(textItem)
-                            ? chooseWord(
-                                textItem,
-                                textIndex,
-                                'caption',
-                                captionItem._key
-                              )
-                            : ''
-                        "
-                        :style="
-                          keyword === textItem &&
-                          textIndex === keyIndex &&
-                          textPoint(textItem) &&
-                          isNaN(textItem)
-                            ? {
-                                color: '#4D57FF',
-                              }
-                            : {}
-                        "
-                      >
-                        {{ textItem }}
-                      </span>
-                    </div>
+                      {{ textItem }}
+                    </span>
                   </template>
                 </div>
               </div>
@@ -1077,28 +1027,29 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                 audioType="custom"
               >
                 <template #custom>
-                  <div class="study-audio-content" v-if="studyMediaRef">
+                  <div
+                    class="study-audio-content"
+                    v-if="studyMediaRef"
+                    style="background-color: #000; color: #fff"
+                  >
                     <!-- <div class="study-video-caption"></div> -->
                     <div class="study-video-buttonGroup">
-                      <div class="buttonGroup-top">
-                        <div
-                          class="buttonGroup-top-text"
-                          @click="changeMediaIndex('last')"
-                        >
-                          <FontIcon
-                            iconName="shangyiju1"
-                            :iconStyle="{
-                              fontSize: '10px',
-                              marginRight: '3px',
-                            }"
-                          />上句
-                        </div>
+                      <div
+                        class="buttonGroup-top"
+                        @click="
+                          studyMediaRef.reloadMedia(reloadState);
+                          reloadState = !reloadState;
+                        "
+                        :style="
+                          studyMediaRef.reloadState
+                            ? {
+                                backgroundColor: '#4D57FF',
+                              }
+                            : {}
+                        "
+                      >
                         <div
                           class="buttonGroup-top-center"
-                          @click="
-                            studyMediaRef.reloadMedia(reloadState);
-                            reloadState = !reloadState;
-                          "
                           :style="{
                             animation: studyMediaRef.isPlay
                               ? `fadenum ${
@@ -1109,12 +1060,33 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                         >
                           <img src="/common/reload.svg" alt="" />
                         </div>
+                        {{
+                          studyMediaRef.reloadState
+                            ? "解除单句循环"
+                            : "进入单句循环"
+                        }}
+                      </div>
+                      <div class="buttonGroup-center">
+                        <div
+                          class="buttonGroup-top-text"
+                          @click="changeMediaIndex('last')"
+                        >
+                          <FontIcon
+                            iconName="shangyiju1"
+                            :iconStyle="{
+                              fontSize: '10px',
+                              marginRight: '3px',
+                            }"
+                          />
+                        </div>
+                        <div>
+                          第 {{ mediaIndex + 1 }} / {{ captionsList.length }} 句
+                        </div>
                         <div
                           class="buttonGroup-top-text"
                           style="justify-content: flex-end"
                           @click="changeMediaIndex('next')"
                         >
-                          下句
                           <FontIcon
                             iconName="xiayiju1"
                             :iconStyle="{
@@ -1124,102 +1096,96 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                           />
                         </div>
                       </div>
-                      <div
-                        class="buttonGroup-center"
-                        :style="{
-                          color: studyMediaRef.reloadState ? '#4d57ff' : '#666',
-                        }"
-                      >
-                        <template v-if="studyMediaRef.reloadState"
-                          ><span style="font-weight: 600; margin-right: 2px"
-                            >磨耳朵:
-                          </span>
-                          {{ `第 ${mediaIndex + 1} 句 ` }}</template
-                        >
-                        <template v-else>{{
-                          `欣赏至第 ${mediaIndex + 1} 句 (共 ${
-                            captionsList.length
-                          } 句)`
-                        }}</template>
+                    </div>
+                    <div class="study-audio-box">
+                      <div class="study-audio-left">
+                        <img :src="lessonInfo.cover" alt="" />
                       </div>
-                      <div class="buttonGroup-bottom">
-                        <FontIcon
-                          customClassName="buttonGroup-bottom-button"
-                          iconName="a-zanting2"
-                          @iconClick="studyMediaRef.playAudio"
-                          :iconStyle="{ fontSize: '10px' }"
-                          v-if="studyMediaRef.isPlay"
-                        />
-                        <FontIcon
-                          customClassName="buttonGroup-bottom-button"
-                          iconName="a-bofang2"
-                          @iconClick="studyMediaRef.playAudio"
-                          :iconStyle="{ fontSize: '10px' }"
-                          v-else
-                        />
-                        <OnClickOutside
-                          @trigger="studyMediaRef.audioHuds = false"
-                        >
-                          <div class="buttonGroup-bottom-volume">
-                            <div
-                              class="buttonGroup-bottom-volume-progress"
-                              v-show="studyMediaRef.audioHuds"
-                            >
-                              <el-slider
-                                vertical
-                                height="100px"
-                                class="buttonGroup-bottom-volume-bar"
-                                v-model="studyMediaRef.audioVolume"
-                                :show-tooltip="false"
-                                @change="studyMediaRef.handleAudioVolume"
-                              />
-                            </div>
-
-                            <FontIcon
-                              v-if="studyMediaRef.audioVolume <= 0"
-                              customClassName="buttonGroup-bottom-button"
-                              iconName="jingyin"
-                              :iconStyle="{
-                                fontSize: '10px',
-                                color: '#888',
-                              }"
-                              @click.stop="
-                                studyMediaRef.audioHuds =
-                                  !studyMediaRef.audioHuds
-                              "
-                            />
-                            <FontIcon
-                              v-if="studyMediaRef.audioVolume > 0"
-                              customClassName="buttonGroup-bottom-button"
-                              iconName="shengyin"
-                              :iconStyle="{
-                                fontSize: '10px',
-                                color: '#333',
-                              }"
-                              @click.stop="
-                                studyMediaRef.audioHuds =
-                                  !studyMediaRef.audioHuds
-                              "
+                      <FontIcon
+                        customClassName="buttonGroup-bottom-button"
+                        iconName="a-zanting2"
+                        @iconClick="studyMediaRef.playAudio"
+                        :iconStyle="{
+                          fontSize: '20px',
+                          margin: '0px 15px 0px 25px',
+                        }"
+                        v-if="studyMediaRef.isPlay"
+                      />
+                      <FontIcon
+                        customClassName="buttonGroup-bottom-button"
+                        iconName="a-bofang2"
+                        @iconClick="studyMediaRef.playAudio"
+                        :iconStyle="{
+                          fontSize: '20px',
+                          margin: '0px 15px 0px 25px',
+                        }"
+                        v-else
+                      />
+                      <OnClickOutside
+                        @trigger="studyMediaRef.audioHuds = false"
+                      >
+                        <div class="buttonGroup-bottom-volume">
+                          <div
+                            class="buttonGroup-bottom-volume-progress"
+                            v-show="studyMediaRef.audioHuds"
+                          >
+                            <el-slider
+                              vertical
+                              height="100px"
+                              class="buttonGroup-bottom-volume-bar"
+                              v-model="studyMediaRef.audioVolume"
+                              :show-tooltip="false"
+                              @change="studyMediaRef.handleAudioVolume"
                             />
                           </div>
-                        </OnClickOutside>
-                        <div class="buttonGroup-bottom-container">
-                          <el-slider
-                            class="buttonGroup-bottom-slider"
-                            v-model="studyMediaRef.currentProgress"
-                            :show-tooltip="false"
-                            @change="studyMediaRef.handleProgressChange"
+
+                          <FontIcon
+                            v-if="studyMediaRef.audioVolume <= 0"
+                            customClassName="buttonGroup-bottom-button"
+                            iconName="jingyin"
+                            :iconStyle="{
+                              fontSize: '20px',
+                              marginRight: '15px',
+                              color: '#888',
+                            }"
+                            @click.stop="
+                              studyMediaRef.audioHuds = !studyMediaRef.audioHuds
+                            "
                           />
-                          <div class="buttonGroup-bottom-time">
-                            <span style="margin-right: 2px">{{
+                          <FontIcon
+                            v-if="studyMediaRef.audioVolume > 0"
+                            customClassName="buttonGroup-bottom-button"
+                            iconName="shengyin"
+                            :iconStyle="{
+                              fontSize: '20px',
+                              marginRight: '15px',
+                              color: '#fff',
+                            }"
+                            @click.stop="
+                              studyMediaRef.audioHuds = !studyMediaRef.audioHuds
+                            "
+                          />
+                        </div>
+                      </OnClickOutside>
+                      <div class="study-audio-right">
+                        <div class="study-audio-title">
+                          <div>{{ mediaList[mediaListIndex]?.name }}</div>
+                          <div class="study-audio-time">
+                            <span style="margin-left: 10px">{{
                               studyMediaRef.audioStart
                             }}</span>
                             /
-                            <span style="margin-left: 2px">{{
+                            <span style="margin-left: 10px">{{
                               studyMediaRef.durationTime
                             }}</span>
                           </div>
                         </div>
+                        <el-slider
+                          class="study-audio-slider"
+                          v-model="studyMediaRef.currentProgress"
+                          :show-tooltip="false"
+                          @change="studyMediaRef.handleProgressChange"
+                        />
                       </div>
                     </div>
                   </div>
@@ -1330,6 +1296,9 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
           // word-wrap: break-word;
           // word-break: normal;
           @include flex(flex-start, center, wrap);
+          &:hover {
+            background-color: #f5f5f5;
+          }
           .text-item-error {
             width: 45px;
             height: 45px;
@@ -1461,14 +1430,15 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
             align-content: center;
             @include flex(flex-start, center, wrap);
             .buttonGroup-top {
-              width: 212px;
+              width: 100%;
               height: 42px;
               border: 1px solid #4d57ff;
               border-radius: 22px;
-              font-size: 14px;
+              font-size: 16px;
               font-weight: Regular;
               color: #ffffff;
               line-height: 20px;
+              cursor: pointer;
               @include p-number(0px, 10px);
               @include flex(center, center, null);
               .buttonGroup-top-center {
@@ -1488,9 +1458,9 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
             }
 
             .buttonGroup-center {
-              width: 212px;
+              width: 100%;
               height: 20px;
-              margin: 20px 0px 30px 0px;
+              margin: 30px 0px 30px 0px;
               font-size: 16px;
               text-align: center;
               line-height: 20px;
@@ -1526,36 +1496,90 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                   font-size: 12px;
                 }
               }
-
-              .buttonGroup-bottom-volume {
-                position: relative;
-                margin-right: 5px;
-
-                .buttonGroup-bottom-volume-progress {
-                  width: 32px;
-                  height: 140px;
-                  position: absolute;
-                  top: -145px;
-                  right: 10px;
-                }
-
-                .buttonGroup-bottom-volume-bar {
-                  background: #f1f1f1;
-                  border-radius: 4px;
-                }
-
-                .buttonGroup-bottom-volume-icon {
-                  width: 24px;
-                  height: 24px;
-                  cursor: pointer;
-                }
-              }
             }
           }
         }
+        .buttonGroup-bottom-volume {
+          position: relative;
+          z-index: 1;
+          margin-right: 5px;
 
+          .buttonGroup-bottom-volume-progress {
+            width: 32px;
+            height: 140px;
+            position: absolute;
+            top: -145px;
+            right: 10px;
+          }
+
+          .buttonGroup-bottom-volume-bar {
+            background: #f1f1f1;
+            border-radius: 4px;
+          }
+
+          .buttonGroup-bottom-volume-icon {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+          }
+        }
         .study-audio-content {
           padding-left: 22px;
+          .study-audio-box {
+            width: calc(100% - 360px);
+            height: 100%;
+            margin: 0px 45px 0px 30px;
+            @include flex(space-between, center, null);
+
+            .study-audio-left {
+              width: 80px;
+              height: 80px;
+              background: #d8d8d8;
+              border-radius: 8px;
+              overflow: hidden;
+
+              img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+              }
+            }
+            .buttonGroup-bottom-volume-progress {
+              width: 32px;
+              height: 140px;
+              position: absolute;
+              top: -145px;
+              right: 20px;
+            }
+            .study-audio-right {
+              width: calc(100% - 200px);
+              height: 100%;
+              align-content: center;
+              @include flex(flex-start, center, flex);
+
+              .study-audio-title {
+                width: 100%;
+                height: 30px;
+                font-family: PingFang SC, PingFang SC-Regular;
+                font-size: 24px;
+                font-weight: 600;
+                color: #333333;
+                margin-bottom: 20px;
+                color: #fff;
+                @include flex(space-between, center, null);
+
+                .study-audio-time {
+                  font-size: 18px;
+                }
+              }
+
+              .study-audio-slider {
+                width: 100%;
+                height: 2px;
+                background: #4d57ff;
+              }
+            }
+          }
         }
 
         .study-audio-caption {
@@ -1642,6 +1666,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
 }
 </style>
 <style lang="scss">
+.study-audio-slider,
 .buttonGroup-bottom-slider,
 .buttonGroup-bottom-volume-bar {
   .el-slider__button {
@@ -1655,16 +1680,23 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
   }
 }
 
-.buttonGroup-bottom-slider {
+.study-audio-slider {
   .el-slider__button-wrapper {
-    width: 2px;
-  }
+    /* prettier-ignore */
+    width: 25Px !important;
 
-  .el-slider__runway {
-    background-color: #bebebe;
+    @include flex(center, center, null);
+
+    .el-slider__button {
+      /* prettier-ignore */
+      width: 16Px;
+      /* prettier-ignore */
+      height: 16Px;
+      /* prettier-ignore */
+      margin-bottom: -3Px;
+    }
   }
 }
-
 .buttonGroup-bottom-volume-bar {
   .el-slider__runway {
     margin: 0 14px !important;
@@ -1677,14 +1709,6 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
   }
 }
 
-/* .d-control-progress{
-  height:40px !important;
-}*/
-@keyframes fadenum {
-  100% {
-    transform: rotate(360deg);
-  }
-}
 .header {
   .el-dropdown__popper {
     top: 40px !important;

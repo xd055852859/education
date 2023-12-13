@@ -25,6 +25,7 @@ const color = [
 onMounted(() => {
   let chartDom: any = document.getElementById(props.wordId);
   chart = echarts.init(chartDom);
+  console.log(props.chartData)
   option = {
     series: [
       {

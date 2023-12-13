@@ -207,8 +207,8 @@ watchEffect(() => {
                   :src="agentInfo?.icon"
                   :alt="agentInfo?.name"
                   :style="{
-                    width: '0.3rem',
-                    height: '0.3rem',
+                    width: '0.38rem',
+                    height: '0.38rem',
                     marginRight: '0.07rem',
                   }"
                 />
@@ -548,6 +548,7 @@ watchEffect(() => {
             color: #000000;
             line-height: 33px;
             margin-bottom: 50px;
+            padding-left:80px;
             @include flex(flex-start, center, null);
 
             .data-top-title {
