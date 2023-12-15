@@ -16,13 +16,16 @@ const props = defineProps<{
   errorKey: string;
   type: string;
 }>();
+const emits = defineEmits<{
+  (e: "close"): void;
+}>();
 const { agentKey } = storeToRefs(appStore.agentStore);
 const memo = ref<string>("");
 const original = ref<string>("");
 const translation = ref<string>("");
 const noteVisible = ref<boolean>(false);
 const getData = async () => {
-  if (props.type === "original"||props.type === "translation") {
+  if (props.type === "original" || props.type === "translation") {
     let dataRes = (await api.request.get("section/detail", {
       sectionKey: props.errorKey,
     })) as ResultProps;
@@ -69,7 +72,18 @@ watchEffect(() => {
     v-if="errorVisible"
     :style="deviceType === 'phone' ? { width: '40%' } : {}"
   >
-    <div class="data-right-title dp-space-center">正文</div>
+    <div class="data-right-title dp-space-center">
+      {{ type === "original" || type === "translation" ? "正文" : "字幕" }}
+      <div
+        class="icon-point dp--center"
+        style="margin-left: 10px"
+        @click="emits('close')"
+      >
+        <el-icon color="#999" size="18">
+          <Close />
+        </el-icon>
+      </div>
+    </div>
     <div class="data-right-content">
       <div>{{ original }}</div>
       <el-divider border-style="dashed" v-if="translation && original" />

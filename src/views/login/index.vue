@@ -5,10 +5,18 @@ import { storeToRefs } from "pinia";
 import Login from "./login.vue";
 import Reset from "./reset.vue";
 const { loginState, token } = storeToRefs(appStore.authStore);
+const { deviceType } = storeToRefs(appStore.commonStore);
 const showLogin = ref<boolean>(false);
 </script>
 <template>
-  <div class="login">
+  <div
+    class="login"
+    :style="{
+      backgroundImage: `url('/common/${
+        deviceType === 'pc' ? 'commonBg' : 'commonPhoneBg'
+      }.png')`,
+    }"
+  >
     <div class="login-box" v-if="showLogin">
       <div class="login-logo">
         <img src="/common/logoTitle.svg" alt="" />
@@ -23,8 +31,12 @@ const showLogin = ref<boolean>(false);
       <img class="title-login-logo" src="/login/titleLogo.svg" alt="" />
       <div class="title-header">
         <img class="title-header-logo" src="/common/homeLogo.svg" alt="" />
-        <el-button type="primary" @click="token ? $router.replace('/home') : (showLogin = true)"
-          class="title-login-button" round>立即体验
+        <el-button
+          type="primary"
+          @click="token ? $router.replace('/home') : (showLogin = true)"
+          class="title-login-button"
+          round
+          >立即体验
         </el-button>
       </div>
     </div>
@@ -34,7 +46,6 @@ const showLogin = ref<boolean>(false);
 .login {
   width: 100%;
   height: 100%;
-  background-image: url("/common/commonBg.png");
   background-size: 100% 100%;
   background-repeat: no-repeat;
   @include flex(center, center, null);
@@ -108,7 +119,7 @@ const showLogin = ref<boolean>(false);
           line-height: 20px;
           margin-top: 15px;
 
-          >span {
+          > span {
             color: $commonColor;
           }
         }
@@ -169,5 +180,6 @@ const showLogin = ref<boolean>(false);
       }
     }
   }
-}</style>
+}
+</style>
 <style></style>

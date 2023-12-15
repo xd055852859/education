@@ -106,7 +106,7 @@ const getChartData = async () => {
       item.count = dayjs
         .duration(item.count * 60000)
         .asHours()
-        .toFixed(1);
+        .toFixed(2);
       return item;
     });
     xData.value = _.sortBy(
@@ -214,12 +214,23 @@ watchEffect(() => {
       <div class="calendar-left">
         <Header :title="'学习日历'" :backPath="'/home'" />
         <div class="calendar-left-box">
-          <div class="calendar-chart" v-if="((chartData[0] && chartData[0].length > 0) ||
-            (chartData[1] && chartData[1].length > 0)) &&
-            targetDate == 0
-            ">
-            <line-chart line-id="board-chart" :chart-data="chartData" :changeSize="changeSize" @chooseDate="chooseDate"
-              :yData="yData" :xData="xData" :lineData="lineData" />
+          <div
+            class="calendar-chart"
+            v-if="
+              ((chartData[0] && chartData[0].length > 0) ||
+                (chartData[1] && chartData[1].length > 0)) &&
+              targetDate == 0
+            "
+          >
+            <line-chart
+              line-id="board-chart"
+              :chart-data="chartData"
+              :changeSize="changeSize"
+              @chooseDate="chooseDate"
+              :yData="yData"
+              :xData="xData"
+              :lineData="lineData"
+            />
           </div>
 
           <!-- v-if="index < item.length - 1" -->
@@ -229,21 +240,32 @@ watchEffect(() => {
                 "日一二三四五六".split("")[dayjs(chartDate).day()]
               }}
             </div>
-            <div class="calendar-title" v-if="chartIndex !== -1">
+            <div class="calendar-title" v-if="chartIndex !== -1 && !targetDate">
               学习了
-              <span v-if="chartData[1] && chartData[1][chartIndex]">{{
-                chartData[1][chartIndex].count
-              }}
-                小时</span>,<span v-if="chartData[0] && chartData[0][chartIndex]">新增了{{ chartData[0][chartIndex].count
-                }}张知识库片</span>
+              <span v-if="chartData[1] && chartData[1][chartIndex]"
+                >{{ chartData[1][chartIndex].count }} 小时</span
+              >,<span v-if="chartData[0] && chartData[0][chartIndex]"
+                >新增了{{ chartData[0][chartIndex].count }}张知识库片</span
+              >
             </div>
-            <KeywordItem @changeList="changeList" :list="keywordList" :keyword="keyword" @chooseWord="chooseWord"
-              :type="'outer'" @reloadData="reloadData" />
+            <KeywordItem
+              @changeList="changeList"
+              :list="keywordList"
+              :keyword="keyword"
+              @chooseWord="chooseWord"
+              :type="'outer'"
+              @reloadData="reloadData"
+            />
           </template>
         </div>
       </div>
 
-      <Keyword :keyword="keyword" :keywordKey="keywordKey" @setKeyword="keyword = ''" type="outer" />
+      <Keyword
+        :keyword="keyword"
+        :keywordKey="keywordKey"
+        @setKeyword="keyword = ''"
+        type="outer"
+      />
     </div>
   </div>
 </template>

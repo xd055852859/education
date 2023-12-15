@@ -8,7 +8,7 @@ const props = defineProps<{
   videoType: string;
 }>();
 const emits = defineEmits<{
-  (e: "videoTimeupdate", time: number): void;
+  (e: "videoTimeupdate", time: number, type?: string): void;
   (e: "changeVideoIndex", type: string);
   (e: "reloadVideo", time: number, index: number): void;
   (e: "loadNext"): void;
@@ -60,8 +60,8 @@ const transTime = (duration) => {
   return `${formattedMinutes}:${formattedSeconds}`;
 };
 // 播放暂停控制
-const playVideo = () => {
-  if (videoRef.value.paused) {
+const playVideo = (state) => {
+  if (state) {
     videoRef.value.play();
     isPlay.value = true;
   } else {
@@ -90,12 +90,17 @@ const handleProgressChange = (val) => {
     return;
   }
   // 更新音频的当前播放时间
-  handleTimeChange(duration.value * (val / 100), "", true);
-  emits("videoTimeupdate",duration.value * (val / 100));
+  handleTimeChange(duration.value * (val / 100), "", 0, true);
+  emits("videoTimeupdate", duration.value * (val / 100), "change");
 };
-const handleTimeChange = (time, type?: string, play?: boolean) => {
-  if (type) {
-    reloadState.value = false;
+const handleTimeChange = (
+  time,
+  type?: string,
+  index?: number,
+  play?: boolean
+) => {
+  if (type && index !== -1) {
+    reloadIndex.value = index as number;
   }
   videoRef.value.pause();
   videoRef.value.currentTime = time;
@@ -158,12 +163,11 @@ defineExpose({
       ref="videoRef"
       class="video-resource"
       :class="{ 'video-resource-preview': videoType === 'preview' }"
-      @click="playVideo"
+      @click="playVideo(!isPlay)"
       :loop="false"
       :volume="0.5"
       preload="metadata"
       x5-video-player-type="h5"
-
       playsinline
       webkit-playsinline="true"
       x5-playsinline="true"
@@ -171,7 +175,7 @@ defineExpose({
       <source :src="src" type="video/*" />
       您的浏览器不支持视频播放
     </video>
-    <div v-if="!isPlay" class="play-button" @click="playVideo">
+    <div v-if="!isPlay" class="play-button" @click="playVideo(!isPlay)">
       <img src="/common/playBig.png" alt="" />
     </div>
     <div
@@ -181,14 +185,14 @@ defineExpose({
       <FontIcon
         customClassName="video-button"
         iconName="a-zanting2"
-        @iconClick="playVideo"
+        @iconClick="playVideo(false)"
         :iconStyle="{ fontSize: '18px', color: '#fff' }"
         v-if="isPlay"
       />
       <FontIcon
         customClassName="video-button"
         iconName="a-bofang2"
-        @iconClick="playVideo"
+        @iconClick="playVideo(true)"
         :iconStyle="{ fontSize: '18px', color: '#fff' }"
         v-else
       />
@@ -202,6 +206,8 @@ defineExpose({
           v-model="currentProgress"
           :show-tooltip="false"
           @change="handleProgressChange"
+          @mousedown="playVideo(false)"
+          @mouseup="playVideo(true)"
         />
         <div class="video-time">
           <span style="margin-left: 10px">{{ videoStart }}</span>
@@ -212,7 +218,8 @@ defineExpose({
       <div class="volume">
         <div class="volume-progress" v-show="videoHuds">
           <el-slider
-            height="30px"
+            vertical
+            height="80px"
             class="volume-bar"
             v-model="videoVolume"
             :show-tooltip="false"
@@ -263,7 +270,7 @@ defineExpose({
         <el-tooltip content="下一句">
           <FontIcon
             customClassName="video-button"
-            @click="playVideo"
+            @click="playVideo(!isPlay)"
             iconName="xiayiju"
             @iconClick="emits('changeVideoIndex', 'next')"
             :iconStyle="{ fontSize: '18px', color: '#fff' }"
@@ -335,6 +342,7 @@ defineExpose({
       width: calc(100% - 300px);
       height: 100%;
       margin: 0px 10px 0px 30px;
+
       @include flex(space-between, center, null);
 
       .video-slider {
@@ -354,13 +362,18 @@ defineExpose({
     position: relative;
     margin-right: 15px;
     z-index: 10;
+    padding-right: 10px;
+    box-sizing: border-box;
     .volume-progress {
-      width: 140px;
-      height: 32px;
+      /* prettier-ignore */
+      height: 90Px;
+      width: 32px;
       position: absolute;
       z-index: 10;
-      top: -45px;
-      right: 0px;
+      /* prettier-ignore */
+      top: -75Px;
+      /* prettier-ignore */
+      right: -20Px;
     }
 
     .volume-bar {

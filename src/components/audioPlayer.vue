@@ -8,7 +8,7 @@ const props = defineProps<{
   audioType: string;
 }>();
 const emits = defineEmits<{
-  (e: "audioTimeupdate", time: number): void;
+  (e: "audioTimeupdate", time: number, type?: string): void;
   (e: "changeAudioIndex", type: string);
   (e: "reloadAudio", time: number, index: number): void;
   (e: "endMedia"): void;
@@ -25,30 +25,30 @@ const audioRef = ref<any>(null);
 const currentProgress = ref<number>(0);
 const reloadState = ref<boolean>(false);
 const reloadIndex = ref<number>(-1);
+onMounted(() => {
+  audioRef.value.addEventListener(
+    "ended",
+    function () {
+      currentProgress.value = 0;
+      emits("loadNext");
+    },
+    false
+  );
+});
 // 获取音频时长
 function calculateDuration() {
-  console.log(audioRef.value);
   if (audioRef.value) {
     audioRef.value.loop = false;
     audioRef.value.src = props.src;
     // 监听音频播放完毕
-    audioRef.value.addEventListener(
-      "ended",
-      function () {
-        isPlay.value = false;
-        currentProgress.value = 0;
-        emits("loadNext");
-      },
-      false
-    );
     if (audioRef.value != null) {
       console.log(audioRef.value.oncanplay);
       audioRef.value.oncanplay = function () {
-        console.log(audioRef.value.duration);
         duration.value = audioRef.value.duration; // 计算音频时长
         durationTime.value = transTime(audioRef.value.duration); //换算成时间格式
+        audioRef.value.play();
+        isPlay.value = true;
       };
-      audioRef.value.volume = 0.5; // 设置默认音量50%
     }
   }
 }
@@ -61,8 +61,8 @@ const transTime = (duration) => {
   return `${formattedMinutes}:${formattedSeconds}`;
 };
 // 播放暂停控制
-const playAudio = () => {
-  if (audioRef.value.paused) {
+const playAudio = (state) => {
+  if (state) {
     audioRef.value.play();
     isPlay.value = true;
   } else {
@@ -74,7 +74,7 @@ const playAudio = () => {
 // 根据当前播放时间，实时更新进度条
 const updateProgress = (e) => {
   var value = e.target.currentTime / e.target.duration;
-  if (audioRef.value.play) {
+  if (audioRef.value?.play) {
     currentProgress.value = value * 100;
     audioStart.value = transTime(audioRef.value.currentTime);
     if (reloadState.value) {
@@ -92,6 +92,7 @@ const handleProgressChange = (val) => {
   }
   // 更新音频的当前播放时间
   handleTimeChange(duration.value * (val / 100), "", 0, true);
+  emits("audioTimeupdate", duration.value * (val / 100), "change");
 };
 const handleTimeChange = (
   time,
@@ -118,10 +119,6 @@ const handleTimeChange = (
 //调整音量
 const handleAudioVolume = (val) => {
   audioRef.value.volume = val / 100;
-};
-const pauseMedia = () => {
-  audioRef.value.pause();
-  isPlay.value = true;
 };
 const playMedia = (playState) => {
   if (playState) {
@@ -167,6 +164,7 @@ defineExpose({
     controls
     ref="audioRef"
     style="display: none"
+    :volume="0.5"
   >
     <source :src="src" type="audio/*" />
     您的浏览器不支持音频播放
@@ -184,20 +182,19 @@ defineExpose({
       class="audio-img"
       src="/common/play.svg"
       alt=""
-      @click="playAudio"
+      @click="playAudio(false)"
       v-if="isPlay"
     />
     <img
       class="audio-img"
       src="/common/pause.svg"
       alt=""
-      @click="playAudio"
+      @click="playAudio(true)"
       v-else
     />
     <el-tooltip content="下一句">
       <FontIcon
         customClassName="audio-button"
-        @click="playAudio"
         iconName="xiayige"
         @iconClick="emits('changeAudioIndex', 'next')"
         :iconStyle="{ fontSize: '14px', color: '#4D57FF' }"
@@ -221,6 +218,8 @@ defineExpose({
           v-model="currentProgress"
           :show-tooltip="false"
           @change="handleProgressChange"
+          @mousedown="playAudio(false)"
+          @mouseup="playAudio(true)"
         />
       </div>
     </div>

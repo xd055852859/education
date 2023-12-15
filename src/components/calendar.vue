@@ -4,6 +4,7 @@ import { formatMonth } from "@/services/util";
 import { storeToRefs } from "pinia";
 import appStore from "@/store";
 const dayjs: any = inject("dayjs");
+const { deviceType } = storeToRefs(appStore.commonStore);
 const props = defineProps<{
   calendarTimeList: any;
 }>();
@@ -19,7 +20,10 @@ const calendarList = ref<any>([]);
 // const weekArr = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 const weekArr = ["一", "二", "三", "四", "五", "六", "日"];
 onMounted(() => {
-  calendarDate.value = dayjs().startOf("month").startOf("day");
+  calendarDate.value =
+    deviceType.value === "phone"
+      ? dayjs().startOf("week").startOf("day")
+      : dayjs().startOf("month").startOf("day");
 });
 const getCalendar = (targetDate: any) => {
   // 获得当前月的天数  和 第一天的星期数
@@ -27,7 +31,9 @@ const getCalendar = (targetDate: any) => {
   calendarYear.value = dayjs(targetDate).year();
   calendarMonth.value = dayjs(targetDate).month() + 1;
   let calendarDayNum = 0;
-  if (
+  if (deviceType.value === "phone") {
+    calendarDayNum = 7;
+  } else if (
     dayjs(targetDate).startOf("month").day() === 0 ||
     dayjs(targetDate).startOf("month").day() < 2
   ) {
@@ -64,81 +70,132 @@ const getTargetDate = (targetDate: any, calendarDayNum: number) => {
   let strDate: any = [];
   // 下个月的起始日期
   let nextFirstDate = 0;
-  for (let i = 0; i < calendarDayNum; i++) {
-    // 1. 当前月的上一个月
-    if (i < curWeek) {
-      // 返回的索引值刚好是上月在当月显示的天数
-      let momentDate = dayjs(
-        `${targetDate.clone().year()}-${
-          targetDate.clone().subtract(1, "months").month() + 1
-        }-${upDays}`
-      );
-
-      strDate.unshift({
-        month: "last",
-        day: upDays,
-        date: momentDate,
-        week: momentDate.day(),
-        startTime: momentDate.startOf("day").valueOf(),
-        endTime: momentDate.endOf("day").valueOf(),
-        targetMonth: momentDate.month(),
-      });
-      upDays--; // 倒叙显示   30 31
-    } else if (i >= curDays + curWeek) {
-      //去除掉当月天数+上月天数就是下月天数
-      // 2. 当前月的下一个月：除去当月最后一天+上月的几天剩余的是下月开始计算
-      // curWeek 返回值刚好是上月占用的天数
-      nextFirstDate++;
-      let momentDate = dayjs(
-        `${targetDate.clone().year()}-${
-          targetDate.clone().add(1, "months").month() + 1
-        }-${nextFirstDate}`
-      );
-      strDate.push({
-        month: "next",
-        day: nextFirstDate,
-        date: momentDate,
-        week: momentDate.day(),
-        startTime: momentDate.startOf("day").valueOf(),
-        endTime: momentDate.endOf("day").valueOf(),
-        targetMonth: momentDate.month(),
-      });
-    } else {
-      // 3. 当前月
-      // i-curWeek+1 为当前月的天数
-      // date()获取日期号
-      // m.date() == i - curWeek + 1说明这一天是当月当天，添加样式
-      let momentDate = dayjs(
-        new Date(
-          targetDate.year() +
-            "/" +
-            (targetDate.clone().month() + 1) +
-            "/" +
-            (i - curWeek + 1)
-        ).getTime()
-      );
-      let obj: any = {
-        month: "target",
-        day: i - curWeek + 1,
-        date: momentDate,
-        week: momentDate.day(),
-        startTime: momentDate.startOf("day").valueOf(),
-        endTime: momentDate.endOf("day").valueOf(),
-        targetMonth: momentDate.month(),
-      };
-      if (
-        momentDate.startOf("day").valueOf() === dayjs().startOf("day").valueOf()
-      ) {
-        obj.targetDay = true;
+  let newCalendarWeek: any = [];
+  switch (calendarDayNum) {
+    case 3:
+      for (let i = 0; i < calendarDayNum; i++) {
+        let momentDate = targetDate.clone().add(i, "days");
+        newCalendarWeek.push(weekArr[momentDate.day()]);
+        let obj: any = {
+          month: "target",
+          day: momentDate.date(),
+          date: momentDate,
+          week: momentDate.day(),
+          startTime: momentDate.startOf("day").valueOf(),
+          endTime: momentDate.endOf("day").valueOf(),
+          targetMonth: momentDate.month(),
+        };
+        if (
+          momentDate.startOf("day").valueOf() ===
+          dayjs().startOf("day").valueOf()
+        ) {
+          obj.targetDay = true;
+        }
+        strDate.push(obj);
       }
-      strDate.push(obj);
-    }
+      break;
+    case 7:
+      for (let i = 0; i < calendarDayNum; i++) {
+        let momentDate = targetDate.clone().add(i, "days");
+        newCalendarWeek.push(weekArr[momentDate.day()]);
+
+        let obj: any = {
+          month: "target",
+          day: momentDate.date(),
+          date: momentDate,
+          week: momentDate.day(),
+          startTime: momentDate.startOf("day").valueOf(),
+          endTime: momentDate.endOf("day").valueOf(),
+          targetMonth: momentDate.month(),
+        };
+        if (
+          momentDate.startOf("day").valueOf() ===
+          dayjs().startOf("day").valueOf()
+        ) {
+          obj.targetDay = true;
+        }
+        strDate.push(obj);
+      }
+      break;
+    default:
+      for (let i = 0; i < calendarDayNum; i++) {
+        // 1. 当前月的上一个月
+        if (i < curWeek) {
+          // 返回的索引值刚好是上月在当月显示的天数
+          let momentDate = dayjs(
+            `${targetDate.clone().year()}-${
+              targetDate.clone().subtract(1, "months").month() + 1
+            }-${upDays}`
+          );
+
+          strDate.unshift({
+            month: "last",
+            day: upDays,
+            date: momentDate,
+            week: momentDate.day(),
+            startTime: momentDate.startOf("day").valueOf(),
+            endTime: momentDate.endOf("day").valueOf(),
+            targetMonth: momentDate.month(),
+          });
+          upDays--; // 倒叙显示   30 31
+        } else if (i >= curDays + curWeek) {
+          //去除掉当月天数+上月天数就是下月天数
+          // 2. 当前月的下一个月：除去当月最后一天+上月的几天剩余的是下月开始计算
+          // curWeek 返回值刚好是上月占用的天数
+          nextFirstDate++;
+          let momentDate = dayjs(
+            `${targetDate.clone().year()}-${
+              targetDate.clone().add(1, "months").month() + 1
+            }-${nextFirstDate}`
+          );
+          strDate.push({
+            month: "next",
+            day: nextFirstDate,
+            date: momentDate,
+            week: momentDate.day(),
+            startTime: momentDate.startOf("day").valueOf(),
+            endTime: momentDate.endOf("day").valueOf(),
+            targetMonth: momentDate.month(),
+          });
+        } else {
+          // 3. 当前月
+          // i-curWeek+1 为当前月的天数
+          // date()获取日期号
+          // m.date() == i - curWeek + 1说明这一天是当月当天，添加样式
+          let momentDate = dayjs(
+            new Date(
+              targetDate.year() +
+                "/" +
+                (targetDate.clone().month() + 1) +
+                "/" +
+                (i - curWeek + 1)
+            ).getTime()
+          );
+          let obj: any = {
+            month: "target",
+            day: i - curWeek + 1,
+            date: momentDate,
+            week: momentDate.day(),
+            startTime: momentDate.startOf("day").valueOf(),
+            endTime: momentDate.endOf("day").valueOf(),
+            targetMonth: momentDate.month(),
+          };
+          if (
+            momentDate.startOf("day").valueOf() ===
+            dayjs().startOf("day").valueOf()
+          ) {
+            obj.targetDay = true;
+          }
+          strDate.push(obj);
+        }
+      }
   }
   emits(
     "getCalendarNum",
     strDate[0].startTime,
     strDate[strDate.length - 1].endTime
   );
+  console.log(strDate);
   calendarList.value = strDate;
 };
 watchEffect(() => {
@@ -148,16 +205,18 @@ watchEffect(() => {
 });
 </script>
 <template>
-  <div class="calendar">
+  <div class="calendar" :class="{ 'calendar-phone': deviceType === 'phone' }">
     <div class="calendar-header">
       <img
         @click="chooseMonth('left')"
+        v-if="deviceType === 'pc'"
         src="/overview/leftCalendar.svg"
         alt=""
       />
       <div>{{ calendarYear }}年 {{ calendarMonth }}月</div>
       <img
         @click="chooseMonth('right')"
+        v-if="deviceType === 'pc'"
         src="/overview/rightCalendar.svg"
         alt=""
       />
@@ -281,6 +340,45 @@ watchEffect(() => {
         border: 1.2px solid $commonColor;
         border-radius: 7px;
         color: $commonColor;
+      }
+    }
+  }
+}
+.calendar-phone {
+  .calendar-header {
+    font-size: 22px;
+  }
+  .calendar-week {
+    width: 100%;
+    margin-bottom: 10px;
+    @include flex(flex-start, center, null);
+    .calendar-week-list {
+      width: 14.2%;
+      .calendar-week-item {
+        width: 100%;
+        height: 20px;
+        font-size: 18px;
+        line-height: 20px;
+        text-align: center;
+        letter-spacing: 0.27px;
+      }
+    }
+  }
+  .calendar-day {
+    .calendar-day-list {
+      width: 14.2%;
+      height: 55px;
+      @include flex(center, center, null);
+      .calendar-day-item {
+        width: 40px;
+        height: 50px;
+        .calendar-day-title {
+          width: 100%;
+          font-size: 22px;
+          text-align: center;
+          color: #333333;
+          line-height: 30px;
+        }
       }
     }
   }

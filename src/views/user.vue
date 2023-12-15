@@ -20,10 +20,11 @@ import router from "@/router";
 import IframeView from "@/components/iframeView.vue";
 const { user } = storeToRefs(appStore.authStore);
 const { agentList, agentKey, agentInfo } = storeToRefs(appStore.agentStore);
-const { deviceWidth, deviceHeight, deviceType } = storeToRefs(
+const { deviceWidth, deviceHeight, deviceType, userVisible } = storeToRefs(
   appStore.commonStore
 );
 const { setToken } = appStore.authStore;
+const { setUserVisible, clearStore } = appStore.commonStore;
 const { setAgentList, getAgentList, setAgentKey, setAgentInfo } =
   appStore.agentStore;
 interface RuleForm {
@@ -33,7 +34,6 @@ interface RuleForm {
 }
 
 const { setUserInfo } = appStore.authStore;
-const userVisible = ref<boolean>(false);
 const agentVisible = ref<boolean>(false);
 const suggestionVisible = ref<boolean>(false);
 const shareVisible = ref<boolean>(false);
@@ -100,7 +100,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
             userAvatar: ruleForm.userAvatar,
           };
           ElMessage.success("编辑用户成功");
-          userVisible.value = false;
+          setUserVisible(false);
           if (agentInfo.value?.mainAgent) {
             setAgentInfo({
               ...agentInfo.value,
@@ -126,7 +126,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
           if (userRes.msg === "OK") {
             //@ts-ignore
             ElMessage.success("编辑角色成功");
-            userVisible.value = false;
+            setUserVisible(false);
             let index = _.findIndex(agentList.value, {
               _key: targetAgentKey.value,
             });
@@ -159,7 +159,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
             let list = _.cloneDeep(agentList.value);
             list.push(userRes.data);
             setAgentList(list);
-            userVisible.value = false;
+            setUserVisible(false);
             clearUser();
           }
         }
@@ -175,7 +175,7 @@ const clearUser = () => {
   targetAgentKey.value = "";
 };
 const setUser = () => {
-  userVisible.value = true;
+  setUserVisible(true);
   userType.value = "user";
   if (user.value) {
     if (user.value?.userAvatar) {
@@ -187,7 +187,7 @@ const setUser = () => {
   }
 };
 const setAgent = (agentItem) => {
-  userVisible.value = true;
+  setUserVisible(true);
   userType.value = "agent";
   if (agentItem) {
     targetAgentKey.value = agentItem._key;
@@ -247,6 +247,7 @@ const logout = () => {
   sessionStorage.clear();
   ElMessage.success("退出登录成功");
   setToken("");
+  clearStore();
 };
 const openTuLink = () => {
   //@ts-ignore
@@ -390,6 +391,23 @@ const shareHtml = () => {
                 "
                 class="upload-img"
               />
+              <el-popover placement="bottom" :width="200" trigger="hover">
+                <template #reference>
+                  <div class="logo-avatar">
+                    <el-button type="primary" :icon="Edit" circle />
+                  </div>
+                </template>
+                <div class="logo-avatar-box">
+                  <div
+                    v-for="(item, index) in 6"
+                    :key="`avatarLogo${index}`"
+                    class="logo-avatar-item"
+                    @click="ruleForm.userAvatar = `/avatar/avatar${index}.svg`"
+                  >
+                    <img :src="`/avatar/avatar${index}.svg`" alt="" />
+                  </div>
+                </div>
+              </el-popover>
             </div>
           </el-form-item>
           <el-form-item
@@ -416,7 +434,7 @@ const shareHtml = () => {
 
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="userVisible = false">取消</el-button>
+          <el-button @click="setUserVisible(false)">取消</el-button>
           <el-button type="primary" @click="submitForm(ruleFormRef)"
             >确认</el-button
           >
@@ -598,14 +616,30 @@ const shareHtml = () => {
     height: 200px;
     border-radius: 12px;
     overflow: hidden;
-
     .logo-item {
       font-size: 50px;
       color: #ebebeb;
     }
+    .logo-avatar {
+      position: absolute;
+      z-index: 50;
+      right: 5px;
+      bottom: 5px;
+    }
   }
 }
-
+.logo-avatar-box {
+  width: 100%;
+  @include flex(flex-start, center, wrap);
+  .logo-avatar-item {
+    width: 33.33%;
+    margin-bottom: 20px;
+    @include flex(center, center, null);
+    img {
+      width: 80%;
+    }
+  }
+}
 .agent-header {
   .dialog-close-button {
     position: absolute;

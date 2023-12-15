@@ -56,14 +56,11 @@ const addNum = (num, type?: string) => {
 };
 
 const getData = async () => {
-  console.log(agentKey.value);
-  console.log(page.value);
-  console.log(keywordTab.value);
   let dataRes = (await api.request.get("study/keyword", {
     agentKey: agentKey.value,
     page: page.value,
     limit: 30,
-    isArchived: keywordTab.value === "uncare",
+    isArchived: keywordTab.value === "care",
     status: keywordTab.value === "master" ? 0 : 1,
   })) as ResultProps;
   if (dataRes.msg === "OK") {
@@ -97,7 +94,7 @@ const archiveKeyword = async (e, item, index, type, toType) => {
   if (type !== "master") {
     let dataRes = (await api.request.patch("study/keyword/archive", {
       keywordKey: item._key,
-      isArchived: type === "care",
+      isArchived: type === "uncare",
     })) as ResultProps;
     if (dataRes.msg === "OK") {
       // ElMessage.success("归档成功");
@@ -632,6 +629,7 @@ watchEffect(() => {
             bottom: 15px;
             font-size: 16px;
             color: #999999;
+            cursor: pointer;
           }
           &:hover {
             box-shadow: 0px 2px 10px 0px rgba(78, 78, 78, 0.5);

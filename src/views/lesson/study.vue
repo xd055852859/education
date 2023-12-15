@@ -21,6 +21,8 @@ const { deviceType } = storeToRefs(appStore.commonStore);
 const { lessonKey, lessonInfo } = storeToRefs(appStore.lessonStore);
 const { setLessonKey } = appStore.lessonStore;
 const { setMusicSrc } = appStore.commonStore;
+const { setAgentInfo } = appStore.agentStore;
+
 const props = defineProps<{
   lessonKey: string;
 }>();
@@ -52,10 +54,6 @@ const changeIndex = ref<number>(-1);
 const errorVisible = ref<boolean>(false);
 const errorKey = ref<string>("");
 
-onMounted(() => {
-  setLessonKey(props.lessonKey);
-  getMedia();
-});
 onBeforeUnmount(() => {
   if (studyMediaRef.value && lessonInfo.value.mediaType === "video") {
     api.request.post("caption/playLog", {
@@ -67,6 +65,9 @@ onBeforeUnmount(() => {
   if (studyInterval.value) {
     clearInterval(studyInterval.value);
   }
+});
+onMounted(() => {
+  setLessonKey(props.lessonKey);
 });
 const getMedia = async () => {
   let mediaRes = (await api.request.get("media", {
@@ -91,13 +92,16 @@ const getArticleList = async (key) => {
   })) as ResultProps;
   if (articleRes.msg === "OK") {
     articleList.value = articleRes.data.map((item) => {
-      item.originalArr.forEach((item) => {
-        if (textPoint(item) && isNaN(item)) {
-          list.push(item.toLowerCase());
-        }
-      });
-      return item;
+      if (item.originalArr) {
+        item.originalArr.forEach((item) => {
+          if (textPoint(item) && isNaN(item)) {
+            list.push(item.toLowerCase());
+          }
+        });
+        return item;
+      }
     });
+
     list.forEach((item) => {
       obj[item] = {
         name: item,
@@ -124,32 +128,28 @@ const getCaption = async (key) => {
       console.log(currentTime.value);
       clickMedia(currentTime.value);
     }
-    console.log(captionsList.value);
   }
 };
-const videoTimeupdate = (time) => {
+const videoTimeupdate = (time, type?: string) => {
   currentTime.value = time * 1000;
-  if (lastTime.value !== parseInt(time)) {
+  if (lastTime.value <= parseInt(time) || type) {
     let currentTime = time * 1000;
     captionsState.value = false;
     captionsList.value.forEach((item, index) => {
-      if (item.startTime < currentTime && item.endTime > currentTime) {
+      if (item.startTime <= currentTime && item.endTime > currentTime) {
         captionsState.value = true;
         captionObj.value = item;
         mediaIndex.value = index;
         sentenceKey.value = item._key;
+        console.log(captionObj.value);
       }
     });
-    // console.log(captionObj.value);
-    // if (!captionsState.value) {
-    // captionObj.value = null;
-    // keyIndex.value = -1;
-    // }
     lastTime.value = parseInt(time);
   }
 };
-const audioTimeupdate = (time) => {
-  if (lastTime.value !== parseInt(time)) {
+const audioTimeupdate = (time, type?: string) => {
+  currentTime.value = time * 1000;
+  if (lastTime.value <= parseInt(time) || type) {
     let currentTime = time * 1000;
     captionsState.value = false;
     captionsList.value.forEach((item, index) => {
@@ -185,8 +185,6 @@ const changeMediaIndex = (type) => {
   if (type === "last") {
     mediaIndex.value = mediaIndex.value === 0 ? 0 : mediaIndex.value - 1;
   } else {
-    console.log(captionsList.value.length);
-    console.log(mediaIndex.value);
     mediaIndex.value =
       captionsList.value.length - 1 === mediaIndex.value
         ? mediaIndex.value
@@ -194,19 +192,23 @@ const changeMediaIndex = (type) => {
   }
   sentenceKey.value = captionsList.value[mediaIndex.value]._key;
   currentTime.value = captionsList.value[mediaIndex.value].startTime;
-  clickMedia(captionsList.value[mediaIndex.value].startTime);
+  clickMedia(
+    captionsList.value[mediaIndex.value].startTime,
+    "outer",
+    sentenceKey.value,
+    mediaIndex.value
+  );
+  if (studyTab.value === "video") {
+    videoTimeupdate(currentTime.value / 1000, "change");
+  } else {
+    audioTimeupdate(currentTime.value / 1000, "change");
+  }
 };
 
 const clickMedia = (time, type?: string, key?: string, index?: number) => {
   let currentTime = time / 1000;
-  if (key) {
-    errorKey.value = key;
-    errorVisible.value = true;
-    keyword.value = "";
-    keywordKey.value = "";
-    if (type) {
-      sentenceKey.value = key;
-    }
+  if (key && type) {
+    sentenceKey.value = key;
   }
   studyMediaRef.value.handleTimeChange(currentTime, type, index);
 };
@@ -217,6 +219,7 @@ const reloadMedia = (time, index) => {
   ) {
     mediaIndex.value = index;
     sentenceKey.value = captionsList.value[index]._key;
+    currentTime.value = captionsList.value[index].startTime;
     clickMedia(captionsList.value[index].startTime);
   }
 };
@@ -284,6 +287,43 @@ const loadNext = () => {
     });
   }
 };
+const changeShowTranslation = async () => {
+  if (agentInfo.value) {
+    let config = {
+      ...agentInfo.value.config,
+      showTranslation: !agentInfo.value.config.showTranslation,
+    };
+    let userRes = (await api.request.patch("agent", {
+      agentKey: agentKey.value,
+      config: config.value,
+    })) as ResultProps;
+    if (userRes.msg === "OK") {
+      setAgentInfo({
+        ...agentInfo.value,
+        config: config,
+      });
+    }
+  }
+};
+
+const toggleError = (key?: string) => {
+  if (key) {
+    errorVisible.value = true;
+    errorKey.value = key;
+    keyword.value = "";
+    keywordKey.value = "";
+  } else {
+    errorVisible.value = false;
+    errorKey.value = "";
+  }
+  keyword.value = "";
+  keywordKey.value = "";
+};
+watchEffect(() => {
+  if (agentKey.value) {
+    getMedia();
+  }
+});
 watch([mediaListIndex, lessonInfo], ([newIndex, newInfo]) => {
   // audioRef.value.pause();
   // videoRef.value.pause();
@@ -343,11 +383,11 @@ watch([mediaListIndex, lessonInfo], ([newIndex, newInfo]) => {
 watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
   keyIndex.value = -1;
   keyword.value = "";
+  keywordKey.value = "";
   changeIndex.value = -1;
   errorKey.value = "";
   errorVisible.value = false;
   if (newRef && lessonInfo.value.mediaType === "video" && newTab === "video") {
-    console.log(currentTime.value);
     clickMedia(currentTime.value);
   }
   if (newTab !== "video" && oldTab === "video") {
@@ -399,7 +439,6 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
             <el-dropdown
               max-height="300px"
               :trigger="is_mobile() ? 'click' : 'hover'"
-              :teleported="!is_mobile()"
             >
               <div class="icon-point dp--center">
                 <FontIcon
@@ -477,13 +516,13 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                 :class="{ 'study-tab-choose': studyTab === 'cloud' }"
                 :style="studyTab === 'video' ? { color: '#fff' } : {}"
                 @click="studyTab = 'cloud'"
+                v-if="textList.length > 0"
               >
                 词频
               </div>
             </div></template
           >
         </Header>
-
         <div
           class="study-cloud"
           v-if="studyTab === 'cloud' && textList.length > 0"
@@ -511,13 +550,9 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
             >
               <div
                 class="text-item"
-                @click.stop="
-                  errorKey = item._key;
-                  keyword = '';
-                  keywordKey = '';
-                "
+                @click.stop="sentenceKey = item._key"
                 :style="
-                  errorKey === item._key
+                  sentenceKey === item._key
                     ? {
                         backgroundColor: '#F5F5F5',
                         borderLeft: '3px solid #4d57ff',
@@ -533,9 +568,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                     'text-point': !textPoint(textItem) || !isNaN(textItem),
                   }"
                   @click.stop="
-                    textPoint(textItem) &&
-                    isNaN(textItem) &&
-                    sentenceKey === item._key
+                    textPoint(textItem) && isNaN(textItem)
                       ? chooseWord(textItem, textIndex, 'section', item._key)
                       : null
                   "
@@ -556,9 +589,9 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
               <div
                 class="text-item"
                 style="text-indent: 2em"
-                v-if="errorKey === item._key"
+                v-if="sentenceKey === item._key"
                 :style="
-                  errorKey === item._key
+                  sentenceKey === item._key
                     ? {
                         backgroundColor: '#F5F5F5',
                         borderLeft: '3px solid #f7b500',
@@ -568,7 +601,10 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                 "
               >
                 {{ item.translation }}
-                <div class="text-item-error" @click.stop="errorVisible = true">
+                <div
+                  class="text-item-error"
+                  @click.stop="toggleError(item._key)"
+                >
                   纠
                 </div>
               </div>
@@ -582,13 +618,9 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
               <div
                 class="text-item"
                 style="text-indent: 2em"
-                @click.stop="
-                  errorKey = item._key;
-                  keyword = '';
-                  keywordKey = '';
-                "
+                @click.stop="sentenceKey = item._key"
                 :style="
-                  errorKey === item._key
+                  sentenceKey === item._key
                     ? {
                         backgroundColor: '#F5F5F5',
                         borderLeft: '3px solid #f7b500',
@@ -600,14 +632,9 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
               </div>
               <div
                 class="text-item"
-                v-if="errorKey === item._key"
-                @click.stop="
-                  errorKey = item._key;
-                  keyword = '';
-                  keywordKey = '';
-                "
+                v-if="sentenceKey === item._key"
                 :style="
-                  errorKey === item._key
+                  sentenceKey === item._key
                     ? {
                         backgroundColor: '#F5F5F5',
                         borderLeft: '3px solid #4d57ff',
@@ -637,7 +664,10 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                   "
                   >{{ textItem }}</span
                 >
-                <div class="text-item-error" @click.stop="errorVisible = true">
+                <div
+                  class="text-item-error"
+                  @click.stop="toggleError(item._key)"
+                >
                   纠
                 </div>
               </div>
@@ -672,92 +702,79 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                         studyMediaRef.reloadMedia(false);
                         setMusicSrc('/music/inout.mp3');
                       "
-                      @click="
-                        captionObj
-                          ? ((errorKey = captionObj._key),
-                            (errorVisible = true),
-                            (keyword = ''),
-                            (keywordKey = ''))
-                          : null
-                      "
                     >
                       <template v-if="captionObj">
                         <div
                           class="study-original"
                           :style="studyTab === 'video' ? { color: '#fff' } : {}"
                         >
-                          <template v-if="lessonInfo.language === 'en'">
-                            <span
-                              v-for="(item, index) in captionObj.original"
-                              :key="`originalCaption${index}`"
-                              :class="{ 'text-point': !/\b\w+\b/g.test(item) }"
-                              @click.stop="
-                                /\b\w+\b/g.test(item)
-                                  ? chooseWord(
-                                      item,
-                                      index,
-                                      'caption',
-                                      captionObj._key
-                                    )
-                                  : ''
-                              "
-                              :style="
+                          <span
+                            v-for="(item, index) in captionObj.originalArr"
+                            :key="`originalCaption${index}`"
+                            :class="{
+                              'text-point': !textPoint(item) || !isNaN(item),
+                            }"
+                            @click.stop="
+                              textPoint(item) && isNaN(item)
+                                ? chooseWord(
+                                    item,
+                                    index,
+                                    'caption',
+                                    captionObj._key
+                                  )
+                                : ''
+                            "
+                            :style="{
+                              padding:
+                                lessonInfo.language === 'cn'
+                                  ? '0px'
+                                  : '0px 5px',
+                              letterSpacing: '1px',
+                              color:
                                 keyword === item &&
                                 index === keyIndex &&
-                                /\b\w+\b/g.test(item)
-                                  ? {
-                                      color: '#4D57FF',
-                                    }
-                                  : {}
-                              "
-                            >
-                              {{ item }}
-                            </span>
-                          </template>
-                          <template v-else-if="lessonInfo.language === 'cn'">
-                            <div
-                              v-for="(item, index) in captionObj.original"
-                              :key="`caption${index}`"
-                            >
-                              <span
-                                v-for="(textItem, textIndex) in item"
-                                :key="`originalCaption${textIndex}`"
-                                :class="{
-                                  'text-point':
-                                    !textPoint(textItem) || !isNaN(textItem),
-                                }"
-                                @click.stop="
-                                  textPoint(textItem) && isNaN(textItem)
-                                    ? chooseWord(
-                                        textItem,
-                                        textIndex,
-                                        'caption',
-                                        captionObj._key
-                                      )
-                                    : ''
-                                "
-                                :style="
-                                  keyword === textItem &&
-                                  textIndex === keyIndex &&
-                                  textPoint(textItem) &&
-                                  isNaN(textItem)
-                                    ? {
-                                        color: '#4D57FF',
-                                      }
-                                    : {}
-                                "
-                              >
-                                {{ textItem }}
-                              </span>
-                            </div>
-                          </template>
+                                textPoint(item) &&
+                                isNaN(item)
+                                  ? '#4D57FF'
+                                  : '#fff',
+                            }"
+                          >
+                            {{ item }}
+                          </span>
                         </div>
                         <div
-                          v-if="agentInfo?.config?.showTranslation"
+                          v-if="
+                            agentInfo?.config?.showTranslation &&
+                            captionObj.translation
+                          "
                           class="study-translation"
                           :style="studyTab === 'video' ? { color: '#fff' } : {}"
                         >
                           {{ captionObj.translation }}
+                        </div>
+
+                        <div
+                          class="study-video-error"
+                          @click="
+                            captionObj
+                              ? (toggleError(captionObj._key),
+                                studyMediaRef.playMedia(false))
+                              : null
+                          "
+                        >
+                          纠
+                        </div>
+                        <div
+                          class="study-video-translation"
+                          @click="changeShowTranslation()"
+                          v-if="captionObj.translation"
+                          :style="
+                            agentInfo?.config?.showTranslation
+                              ? { background: '#4d57ff' }
+                              : {}
+                          "
+                        >
+                          译
                         </div>
                       </template>
                     </div>
@@ -829,14 +846,14 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                         <FontIcon
                           customClassName="buttonGroup-bottom-button"
                           iconName="a-zanting2"
-                          @iconClick="studyMediaRef.playVideo"
+                          @iconClick="studyMediaRef.playMedia(false)"
                           :iconStyle="{ fontSize: '10px' }"
                           v-if="studyMediaRef.isPlay"
                         />
                         <FontIcon
                           customClassName="buttonGroup-bottom-button"
                           iconName="a-bofang2"
-                          @iconClick="studyMediaRef.playVideo"
+                          @iconClick="studyMediaRef.playMedia(true)"
                           :iconStyle="{ fontSize: '10px' }"
                           v-else
                         />
@@ -850,7 +867,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                             >
                               <el-slider
                                 vertical
-                                height="100px"
+                                height="80px"
                                 class="buttonGroup-bottom-volume-bar"
                                 v-model="studyMediaRef.videoVolume"
                                 :show-tooltip="false"
@@ -877,7 +894,6 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                               iconName="shengyin"
                               :iconStyle="{
                                 fontSize: '10px',
-
                                 color: studyTab === 'video' ? '#fff' : '#333',
                               }"
                               @click.stop="
@@ -893,6 +909,8 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                             v-model="studyMediaRef.currentProgress"
                             :show-tooltip="false"
                             @change="studyMediaRef.handleProgressChange"
+                            @mousedown="studyMediaRef.playMedia(false)"
+                            @mouseup="studyMediaRef.playMedia(true)"
                           />
                           <div class="buttonGroup-bottom-time">
                             <span style="margin-right: 2px">{{
@@ -945,71 +963,37 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                       : null
                   "
                 >
-                  <!--           @click="
-                       ;
-                      " -->
-                  <template v-if="lessonInfo.language === 'en'">
-                    <span
-                      v-for="(textItem, textIndex) in item.originalArr"
-                      :key="`originalCaption${textIndex}`"
-                      :class="{ 'text-point': !/\b\w+\b/g.test(textItem) }"
-                      @click="
-                        /\b\w+\b/g.test(textItem) && sentenceKey === item._key
-                          ? chooseWord(
-                              textItem,
-                              textIndex,
-                              'caption',
-                              item._key
-                            )
-                          : ''
-                      "
-                      :style="
-                        keyword === textItem &&
-                        textIndex === keyIndex &&
-                        /\b\w+\b/g.test(item)
-                          ? {
-                              color: '#4D57FF',
-                              fontWeight: 900,
-                            }
-                          : {}
-                      "
-                      >{{ textItem }}</span
-                    >
-                  </template>
-                  <template v-else-if="lessonInfo.language === 'cn'">
-                    <span
-                      v-for="(textItem, textIndex) in item.originalArr"
-                      :key="`textCaption${textIndex}`"
-                      :class="{
-                        'text-point': !textPoint(textItem) || !isNaN(textItem),
-                      }"
-                      @click="
-                        textPoint(textItem) &&
-                        isNaN(textItem) &&
-                        sentenceKey === item._key
-                          ? chooseWord(
-                              textItem,
-                              textIndex,
-                              'caption',
-                              textItem._key
-                            )
-                          : ''
-                      "
-                      style="padding: 0px; letter-spacing: 1px"
-                      :style="
+                  <span
+                    v-for="(textItem, textIndex) in item.originalArr"
+                    :key="`originalCaption${textIndex}`"
+                    :class="{
+                      'text-point': !textPoint(textItem) || !isNaN(textItem),
+                    }"
+                    @click.stop="
+                      textPoint(textItem) && isNaN(textItem)
+                        ? chooseWord(textItem, textIndex, 'caption', item._key)
+                        : ''
+                    "
+                    :style="{
+                      padding: lessonInfo.language === 'cn' ? '0px' : '0px 5px',
+                      letterSpacing: '1px',
+                      fontWeight:
                         keyword === textItem &&
                         textIndex === keyIndex &&
                         textPoint(textItem) &&
                         isNaN(textItem)
-                          ? {
-                              color: '#4D57FF',
-                            }
-                          : {}
-                      "
-                    >
-                      {{ textItem }}
-                    </span>
-                  </template>
+                          ? 900
+                          : 'normal',
+                      color:
+                        keyword === textItem &&
+                        textIndex === keyIndex &&
+                        textPoint(textItem) &&
+                        isNaN(textItem)
+                          ? '#4D57FF'
+                          : '',
+                    }"
+                    >{{ textItem }}</span
+                  >
                 </div>
               </div>
             </div>
@@ -1104,7 +1088,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                       <FontIcon
                         customClassName="buttonGroup-bottom-button"
                         iconName="a-zanting2"
-                        @iconClick="studyMediaRef.playAudio"
+                        @iconClick="studyMediaRef.playMedia(false)"
                         :iconStyle="{
                           fontSize: '20px',
                           margin: '0px 15px 0px 25px',
@@ -1114,7 +1098,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                       <FontIcon
                         customClassName="buttonGroup-bottom-button"
                         iconName="a-bofang2"
-                        @iconClick="studyMediaRef.playAudio"
+                        @iconClick="studyMediaRef.playMedia(true)"
                         :iconStyle="{
                           fontSize: '20px',
                           margin: '0px 15px 0px 25px',
@@ -1131,7 +1115,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                           >
                             <el-slider
                               vertical
-                              height="100px"
+                              height="80px"
                               class="buttonGroup-bottom-volume-bar"
                               v-model="studyMediaRef.audioVolume"
                               :show-tooltip="false"
@@ -1185,7 +1169,32 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                           v-model="studyMediaRef.currentProgress"
                           :show-tooltip="false"
                           @change="studyMediaRef.handleProgressChange"
+                          @mousedown="studyMediaRef.playMedia(false)"
+                          @mouseup="studyMediaRef.playMedia(true)"
                         />
+                      </div>
+                      <div
+                        class="study-audio-error"
+                        @click="
+                          captionsList[mediaIndex]
+                            ? (toggleError(captionsList[mediaIndex]._key),
+                              studyMediaRef.playAudio(false))
+                            : null
+                        "
+                      >
+                        纠
+                      </div>
+                      <div
+                        class="study-audio-translation"
+                        @click="changeShowTranslation()"
+                        v-if="captionsList[mediaIndex]?.translation"
+                        :style="
+                          agentInfo?.config?.showTranslation
+                            ? { background: '#4d57ff' }
+                            : {}
+                        "
+                      >
+                        译
                       </div>
                     </div>
                   </div>
@@ -1206,6 +1215,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
         :errorVisible="errorVisible"
         :errorKey="errorKey"
         :type="studyTab"
+        @close="toggleError()"
       />
       <!-- <div class=""></div> -->
     </div>
@@ -1367,6 +1377,8 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
           .study-video-caption {
             width: calc(100% - 280px);
             height: 100%;
+            position: relative;
+            z-index: 1;
             @include scroll();
             @include flex(flex-start, center, wrap);
             position: relative;
@@ -1420,6 +1432,26 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
               padding: 10px;
               box-sizing: border-box;
               word-break: break-all;
+            }
+            .study-video-error,
+            .study-video-translation {
+              width: 50px;
+              height: 50px;
+              border: 1px dashed #979797;
+              color: #fff;
+              border-radius: 50%;
+              text-align: center;
+              line-height: 50px;
+              // font-size: 16px;
+              text-indent: 0px;
+              cursor: pointer;
+              position: absolute;
+              z-index: 2;
+              right: 10px;
+              bottom: 10px;
+            }
+            .study-video-translation {
+              right: 70px;
             }
           }
 
@@ -1506,10 +1538,13 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
 
           .buttonGroup-bottom-volume-progress {
             width: 32px;
-            height: 140px;
+            /* prettier-ignore */
+            height: 90px;
             position: absolute;
-            top: -145px;
-            right: 10px;
+            /* prettier-ignore */
+            top: -75Px;
+            /* prettier-ignore */
+            right: -20Px;
           }
 
           .buttonGroup-bottom-volume-bar {
@@ -1552,7 +1587,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
               right: 20px;
             }
             .study-audio-right {
-              width: calc(100% - 200px);
+              width: calc(100% - 350px);
               height: 100%;
               align-content: center;
               @include flex(flex-start, center, flex);
@@ -1578,6 +1613,26 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                 height: 2px;
                 background: #4d57ff;
               }
+
+              // .study-video-translation {
+              //   right: 70px;
+              // }
+            }
+            .study-audio-error,
+            .study-audio-translation {
+              width: 50px;
+              height: 50px;
+              border: 1px dashed #979797;
+              color: #fff;
+              border-radius: 50%;
+              text-align: center;
+              line-height: 50px;
+              // font-size: 16px;
+              cursor: pointer;
+              // position: absolute;
+              // z-index: 2;
+              // right: 10px;
+              // bottom: 10px;
             }
           }
         }
@@ -1594,11 +1649,11 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
 
           .study-audio-icon {
             width: 55px;
-            height: 55px;
+            height: 100%;
             position: absolute;
             z-index: 2;
-            left: -1px;
-            top: -2px;
+            left: 0px;
+            top: 0px;
 
             // @include flex(center, center, null);
           }

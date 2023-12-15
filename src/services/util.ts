@@ -13,9 +13,11 @@ export const getSearchParamValue = (search: string, paramName: string) => {
     return null;
   }
 };
-export const textPoint=(text)=>{
-  return /^[^\~\!\@\#\$\%\^\&\*\<\>\?\'\"\！\￥\……\（\）\-\+\=\——\{\}\[\]\【\】\|\:\;\：\；\‘\“\%\\\、\，\。\,\.\/\？\`\·\(\)\_\《\》]*$/.test(text)
-}
+export const textPoint = (text) => {
+  return /^[^\~\!\@\#\$\%\^\&\*\<\>\?\'\"\！\￥\……\（\）\-\+\=\——\{\}\[\]\【\】\|\:\;\：\；\‘\“\%\\\、\，\。\,\.\/\？\`\·\(\)\_\《\》]*$/.test(
+    text
+  );
+};
 // 生成标识符
 export const guid = (len, radix) => {
   var chars =
@@ -117,7 +119,7 @@ export const is_mobile = () => {
     return true;
   }
   let result = regex_match.exec(u);
-
+  // console.log(result);
   if (null == result) {
     return false;
   } else {

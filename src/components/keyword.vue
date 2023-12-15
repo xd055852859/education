@@ -221,7 +221,6 @@ watch(
           trigger="click"
           :hide-on-click="false"
           ref="dropdownRef"
-          :teleported="!is_mobile()"
         >
           <div class="icon-point dp--center">
             <el-icon>

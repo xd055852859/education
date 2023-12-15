@@ -3,9 +3,9 @@ import App from "./App.vue";
 import { createPinia } from "pinia";
 import { registerStore } from "@/store";
 import router from "@/router";
-import 'dayjs/locale/zh-cn'
+import "dayjs/locale/zh-cn";
 import relativeTime from "dayjs/plugin/relativeTime";
-import duration from 'dayjs/plugin/duration'
+import duration from "dayjs/plugin/duration";
 import weekday from "dayjs/plugin/weekday";
 import dayjs from "dayjs";
 import ElementPlus from "element-plus";
@@ -18,12 +18,17 @@ import "amfe-flexible/index.js";
 const app = createApp(App);
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedstate);
-dayjs.extend(weekday)
+dayjs.extend(weekday);
 dayjs.extend(relativeTime);
-dayjs.extend(duration)
+dayjs.extend(duration);
 dayjs.locale("zh-cn");
 app.provide("dayjs", dayjs);
-
+pinia.use(({ store }) => {
+  const initialState = JSON.parse(JSON.stringify(store.$state));
+  store.$reset = () => {
+    store.$state = JSON.parse(JSON.stringify(initialState));
+  };
+});
 app
   .use(router)
   .use(ElementPlus, {

@@ -14,12 +14,14 @@ import { ElMessage } from "element-plus";
 import { is_mobile } from "@/services/util";
 const dayjs: any = inject("dayjs");
 const { deviceType } = storeToRefs(appStore.commonStore);
+const { user } = storeToRefs(appStore.authStore);
 const { agentList, agentInfo, agentKey } = storeToRefs(appStore.agentStore);
 const { setLessonKey } = appStore.lessonStore;
 const { getAgentList, setAgentKey } = appStore.agentStore;
+const { setUserVisible } = appStore.commonStore;
 const calendarNumList = ref<any>([]);
 const calendarTimeList = ref<any>([]);
-const userVisible = ref<boolean>(false);
+const userState = ref<boolean>(false);
 const onceVisible = ref<boolean>(false);
 const foldVisible = ref<boolean>(false);
 const subscribeList = ref<any>([]);
@@ -28,6 +30,9 @@ const studyTime = ref<number>(0);
 const keywordCount = ref<number>(0);
 const masterNum = ref<number>(0);
 const noteNum = ref<number>(0);
+const interval1 = ref<any>(null);
+const interval2 = ref<any>(null);
+const interval3 = ref<any>(null);
 const getCalendarNum = async (startTime, endTime) => {
   let numRes = (await api.request.get("study/calendar", {
     agentKey: agentKey.value,
@@ -69,34 +74,45 @@ const getNum = async () => {
     let count1 = 0;
     let count2 = 0;
     let count3 = 0;
-    let interval1 = setInterval(function () {
+    if (interval1.value) {
+      clearInterval(interval1.value);
+      interval1.value = null;
+    }
+    if (interval2.value) {
+      clearInterval(interval2.value);
+      interval2.value = null;
+    }
+    if (interval3.value) {
+      clearInterval(interval3.value);
+      interval3.value = null;
+    }
+    interval1.value = setInterval(function () {
       // 更新数字
       keywordCount.value = count1;
 
       // 如果计数器达到100，清除定时器
       if (count1 >= numRes.data.keywordCount) {
-        clearInterval(interval1);
+        clearInterval(interval1.value);
       } else {
         // 增加计数器的值
         count1++;
       }
     }, 50);
-    let interval2 = setInterval(function () {
+    interval2.value = setInterval(function () {
       // 更新数字
       noteNum.value = count2;
       if (count2 >= numRes.data.keywordCount2) {
-        clearInterval(interval2);
+        clearInterval(interval2.value);
       }
-
       // 增加计数器的值
       count2++;
     }, 50);
-    let interval3 = setInterval(function () {
+    interval3.value = setInterval(function () {
       // 更新数字
       masterNum.value = count3;
 
       if (count3 >= numRes.data.masterNum) {
-        clearInterval(interval3);
+        clearInterval(interval3.value);
       }
 
       // 增加计数器的值
@@ -164,21 +180,44 @@ watchEffect(() => {
     getAgentList();
   }
 });
+watch(
+  user,
+  (info) => {
+    if (info && !info.userName) {
+      userState.value = true;
+      ElMessage.info("请设置个人信息");
+      setTimeout(() => {
+        setUserVisible(true);
+      }, 800);
+      //
+    }
+  },
+  { immediate: true }
+);
 </script>
 <template>
-  <div class="overview">
+  <div
+    class="overview"
+    :style="{
+      backgroundImage: `url('/common/${
+        deviceType === 'pc' ? 'commonBg' : 'commonPhoneBg'
+      }.png')`,
+    }"
+    :class="{ 'overviwe-phone': deviceType === 'phone' }"
+  >
     <div class="overview-header">
-      <div class="dp--center overview-user">
+      <div class="dp--center overview-user" @click="userState = true">
         <div
-          @mouseenter="
-            onceVisible && deviceType === 'pc' ? (userVisible = true) : null
-          "
+          @mouseenter="onceVisible ? (userState = true) : null"
           @mouseleave="onceVisible = true"
-          @click="deviceType === 'phone' ? (userVisible = true) : null"
+          style="height: 100%"
+          v-if="deviceType === 'pc'"
         >
           <FontIcon
             iconName="a-shensuocaidan1x"
             :iconStyle="{ fontSize: '22px', marginRight: '10px' }"
+            :boxStyle="{ height: '100%' }"
+            :customClassName="'dp--center'"
           />
         </div>
         <img src="/overview/logo.svg" alt="" />
@@ -192,7 +231,10 @@ watchEffect(() => {
       >
     </div>
     <div class="overview-box" @mousemove.once="onceVisible = true">
-      <div class="overview-container">
+      <div
+        class="overview-container"
+        :style="deviceType === 'phone' ? { width: '90vw' } : {}"
+      >
         <div class="overview-top">
           <div class="calendar-box">
             <Calendar
@@ -202,7 +244,7 @@ watchEffect(() => {
           </div>
           <div class="data-box">
             <div class="data-top">
-              <div @click="userVisible = true" class="data-top-avatar">
+              <div @click="userState = true" class="data-top-avatar">
                 <Avatar
                   :src="agentInfo?.icon"
                   :alt="agentInfo?.name"
@@ -214,10 +256,7 @@ watchEffect(() => {
                 />
               </div>
               <div>
-                <el-dropdown
-                  :trigger="is_mobile() ? 'click' : 'hover'"
-                  :teleported="!is_mobile()"
-                >
+                <el-dropdown :trigger="is_mobile() ? 'click' : 'hover'">
                   <div class="data-top-title icon-point dp-space-center">
                     你好, {{ agentInfo?.name }}
                     <FontIcon
@@ -365,7 +404,6 @@ watchEffect(() => {
                     >
                       <el-dropdown
                         :trigger="is_mobile() ? 'click' : 'hover'"
-                        :teleported="is_mobile()"
                         :hide-on-click="false"
                       >
                         <div class="icon-point dp--center">
@@ -431,7 +469,6 @@ watchEffect(() => {
                     >
                       <el-dropdown
                         :trigger="is_mobile() ? 'click' : 'hover'"
-                        :teleported="is_mobile()"
                         :hide-on-click="false"
                       >
                         <div class="icon-point dp--center">
@@ -459,10 +496,10 @@ watchEffect(() => {
     </div>
   </div>
   <el-drawer
-    v-model="userVisible"
+    v-model="userState"
     title="用户"
     direction="ltr"
-    size="20%"
+    :size="deviceType === 'pc' ? '20%' : '50%'"
     :with-header="false"
     :append-to-body="true"
   >
@@ -473,7 +510,6 @@ watchEffect(() => {
 .overview {
   width: 100%;
   height: 100%;
-  background-image: url("/common/commonBg.png");
   background-size: 100% 100%;
   background-repeat: no-repeat;
   padding-top: 40px;
@@ -522,6 +558,7 @@ watchEffect(() => {
 
     .overview-container {
       width: 1200px;
+      max-width: 90vw;
       height: 100%;
 
       .overview-top {
@@ -548,7 +585,7 @@ watchEffect(() => {
             color: #000000;
             line-height: 33px;
             margin-bottom: 50px;
-            padding-left:80px;
+            padding-left: 80px;
             @include flex(flex-start, center, null);
 
             .data-top-title {
@@ -693,6 +730,61 @@ watchEffect(() => {
               border-bottom: 1px dashed #cfcfcf;
             }
           }
+        }
+      }
+    }
+  }
+}
+.overviwe-phone {
+  padding-top: 0px;
+  .overview-header {
+    height: 70px;
+    margin-bottom: 0px;
+    padding: 0px 28px;
+    box-sizing: border-box;
+    @include flex(space-between, center, null);
+    .overview-button {
+      width: 128px;
+      height: 42px;
+      font-size: 18px;
+      font-weight: 500;
+      color: #ffffff;
+      line-height: 42px;
+      img {
+        width: 18px;
+        height: 18px;
+        margin-right: 10px;
+      }
+    }
+  }
+  .overview-box {
+    .overview-container {
+      .overview-top {
+        height: 430px;
+        flex-direction: column-reverse;
+        @include flex(center, center, wrap);
+        .calendar-box {
+          width: 100%;
+          padding: 17px 16px 8px 16px;
+          box-sizing: border-box;
+        }
+        .data-box {
+          width: 100%;
+          margin-bottom: 20px;
+          .data-top {
+            margin-bottom: 15px;
+            padding-left: 0px;
+          }
+        }
+      }
+      .overview-center {
+        margin: 15px 0px 17px 0px;
+      }
+      .overview-bottom {
+        height: calc(100% - 500px);
+        padding: 20px 15px 24px 25px;
+        .overview-bottom-box {
+          padding: 0px 20px 0px 0px;
         }
       }
     }

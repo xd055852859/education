@@ -8,12 +8,14 @@ import { ElMessage } from "element-plus";
 import { storeToRefs } from "pinia";
 const { tagKey } = storeToRefs(appStore.lessonStore);
 const { agentKey } = storeToRefs(appStore.agentStore);
+const { deviceType } = storeToRefs(appStore.commonStore);
 const { setTagKey } = appStore.lessonStore;
 const tagList = ref<any>([]);
 const lessonList = ref<any>([]);
 const page = ref<number>(1);
 const total = ref<number>(0);
 const chooseKey = ref<string>("");
+const chooseAllKey = ref<string>("");
 const chooseKeyList = ref<string[]>([]);
 onMounted(() => {
   getTag("1498319365");
@@ -79,6 +81,7 @@ const chooseItem = (item, index) => {
   //   chooseKeyList.value.push(item._key);
   //   getTag(item._key);
   // } else {
+  chooseAllKey.value = "";
   chooseKey.value = item._key;
   chooseKeyList.value[index] = item._key;
   chooseKeyList.value = chooseKeyList.value.slice(0, index + 1);
@@ -86,6 +89,13 @@ const chooseItem = (item, index) => {
 
   // }
   setTagKey(item._key);
+};
+const chooseAllItem = (key, index) => {
+  chooseAllKey.value = key;
+  chooseKeyList.value = chooseKeyList.value.slice(0, index);
+  tagList.value = tagList.value.slice(0, index + 1);
+  console.log(tagList.value);
+  getLesson(1, key, true);
 };
 watch(
   [tagKey, page],
@@ -98,7 +108,14 @@ watch(
 );
 </script>
 <template>
-  <div class="lesson-center">
+  <div
+    class="lesson-center"
+    :style="{
+      backgroundImage: `url('/common/${
+        deviceType === 'pc' ? 'commonBg' : 'commonPhoneBg'
+      }.png')`,
+    }"
+  >
     <Header title="课件库" :backPath="'/home'" />
     <div class="lesson-center-tag">
       <div
@@ -110,7 +127,11 @@ watch(
         <div
           v-for="(tagItem, tagIndex) in item"
           :key="`tagItem${tagItem._key}`"
-          @click="chooseItem(tagItem, index)"
+          @click="
+            tagItem._key
+              ? chooseItem(tagItem, index)
+              : chooseAllItem(tagItem.fatherKey, index)
+          "
           class="dp--center choose-list"
         >
           <el-divider
@@ -120,7 +141,8 @@ watch(
           <div
             v-if="tagItem.resourceCount > 0"
             :style="
-              chooseKeyList.indexOf(tagItem._key) !== -1
+              chooseKeyList.indexOf(tagItem._key) !== -1 ||
+              tagItem.fatherKey === chooseAllKey
                 ? {
                     color: '#fff',
                     background: '#4d57ff',
@@ -178,7 +200,8 @@ watch(
 .lesson-center {
   width: 100%;
   height: 100%;
-  background: #f9f9f9;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
   display: flex;
   align-items: center;
   flex-direction: column;
@@ -198,6 +221,7 @@ watch(
     align-content: flex-start;
     @include p-number(20px, 46px);
     @include flex(flex-start, center, wrap);
+    @include scroll();
     .choose-list {
       // width: 100%;
       height: 32px;

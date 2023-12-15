@@ -155,41 +155,86 @@ watchEffect(() => {
 </script>
 <template>
   <div class="preview" v-if="lessonInfo">
-    <Header :title="lessonInfo.name" :backPath="'/home/center'" :color="'#fff'" v-if="previewType !== 'back'" />
+    <Header
+      :title="lessonInfo.name"
+      :backPath="'/home/center'"
+      :color="'#fff'"
+      v-if="previewType !== 'back'"
+    />
     <div class="preview-header">
       <div class="dp--center">
-        <Avatar :src="lessonInfo.developerInfo?.logo" :alt="lessonInfo.developerInfo?.name"
-          :imgStyle="{ marginRight: '10px' }" />
+        <Avatar
+          :src="lessonInfo.developerInfo?.logo"
+          :alt="lessonInfo.developerInfo?.name"
+          :imgStyle="{ marginRight: '10px' }"
+        />
         二次创作者：{{ lessonInfo.developerInfo?.name }}
       </div>
       <div class="dp--center" v-if="previewType !== 'back'">
-        <el-button type="primary" round class="preview-header-button" @click="toUrl"
-          style="background-color: #fff05e; color: #333333" v-if="lessonInfo.hasAdd">开始学习</el-button>
-        <el-button type="primary" round class="preview-header-button" @click="subscribeLesson(lessonInfo._key)"
-          v-else>订阅</el-button>
+        <el-button
+          type="primary"
+          round
+          class="preview-header-button"
+          @click="toUrl"
+          style="background-color: #fff05e; color: #333333"
+          v-if="lessonInfo.hasAdd"
+          >开始学习</el-button
+        >
+        <el-button
+          type="primary"
+          round
+          class="preview-header-button"
+          @click="subscribeLesson(lessonInfo._key)"
+          v-else
+          >订阅</el-button
+        >
       </div>
     </div>
     <div class="preview-container">
       <div class="preview-left">
-        <template v-if="lessonInfo.mediaType === 'video' || lessonInfo.mediaType === 'audio'
-          ">
-          <VideoPlayer :src="videoSrc" :title="lessonInfo.name" :cover="lessonInfo.cover" :videoIndex="mediaIndex"
-            @videoTimeupdate="videoTimeupdate" @changeVideoIndex="changeMediaIndex" @reloadVideo="reloadMedia"
-            ref="studyMediaRef" videoType="preview" />
-          <div class="preview-left-audio" v-if="lessonInfo.mediaType === 'audio'">
+        <template
+          v-if="
+            lessonInfo.mediaType === 'video' || lessonInfo.mediaType === 'audio'
+          "
+        >
+          <VideoPlayer
+            :src="videoSrc"
+            :title="lessonInfo.name"
+            :cover="lessonInfo.cover"
+            :videoIndex="mediaIndex"
+            @videoTimeupdate="videoTimeupdate"
+            @changeVideoIndex="changeMediaIndex"
+            @reloadVideo="reloadMedia"
+            ref="studyMediaRef"
+            videoType="preview"
+          />
+          <div
+            class="preview-left-audio"
+            v-if="lessonInfo.mediaType === 'audio'"
+          >
             <img :src="lessonInfo.cover" alt="" />
           </div>
           <div class="preview-left-caption">
-            <div class="preview-left-original" :style="!original ? { background: 'transparent' } : {}">
+            <div
+              class="preview-left-original"
+              :style="!original ? { background: 'transparent' } : {}"
+            >
               {{ original }}
             </div>
-            <div class="preview-left-translation" :style="!translation ? { background: 'transparent' } : {}">
+            <div
+              class="preview-left-translation"
+              :style="!translation ? { background: 'transparent' } : {}"
+            >
               {{ translation }}
             </div>
           </div>
         </template>
         <template v-if="lessonInfo.mediaType === 'pdf'">
-          <div v-for="(item, index) in articleList" :key="`original${index}`" class="preview-left-article">
+          <div
+            v-for="(item, index) in articleList"
+            :key="`original${index}`"
+            class="preview-left-article"
+          >
             {{ item.original }}
           </div>
         </template>
@@ -197,10 +242,18 @@ watchEffect(() => {
       <div class="preview-right">
         <div class="preview-right-title">资源选集</div>
         <div class="preview-media">
-          <el-tooltip v-for="(item, index) in mediaList" :key="`media${item._key}`" :content="item.name"
-            placement="right">
-            <div class="preview-media-item single-to-long" @click="mediaIndex = index"
-              :style="mediaIndex === index ? { background: '#38383c' } : {}">
+          <el-tooltip
+            v-for="(item, index) in mediaList"
+            :key="`media${item._key}`"
+            :content="item.name"
+            placement="right"
+            :hide-after="0"
+          >
+            <div
+              class="preview-media-item single-to-long"
+              @click="mediaIndex = index"
+              :style="mediaIndex === index ? { background: '#38383c' } : {}"
+            >
               P{{ index + 1 }}. {{ item.name }}
             </div>
           </el-tooltip>

@@ -1,27 +1,19 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
-
+import { agentStore } from "./agent";
+import { authStore } from "./auth";
+import { lessonStore } from "./lesson";
 // 使用setup模式定义
 export const commonStore = defineStore("commonStore", () => {
-  const deviceType = ref<string>("computer");
+  const deviceType = ref<string>("pc");
   const deviceWidth = ref<number>(0);
   const deviceHeight = ref<number>(0);
   const deviceSize = ref<string>("md");
-  const site = ref<string>("sg");
-  const chooseKey = ref<string>("");
-  const chooseType = ref<string>("");
-  const overKey = ref<string>("");
-  const overType = ref<string>("");
-  const closeNum = ref<number>(-1);
-  const fullState = ref<boolean>(false);
   const musicSrc = ref<string>("");
   const musicNum = ref<number>(0);
+  const userVisible = ref<boolean>(false);
   const setDeviceType = (newDeviceType: string) => {
     deviceType.value = newDeviceType;
-  };
-  const setSite = (newSite: string) => {
-    site.value = newSite;
-    localStorage.setItem("site", newSite);
   };
   const setDeviceWidth = (width: number, height: number) => {
     deviceWidth.value = width;
@@ -38,23 +30,17 @@ export const commonStore = defineStore("commonStore", () => {
       deviceSize.value = "xl";
     }
   };
-  const setChoose = (newKey, newType) => {
-    chooseKey.value = newKey;
-    chooseType.value = newType;
-  };
-  const setOver = (newKey, newType) => {
-    overKey.value = newKey;
-    overType.value = newType;
-  };
-  const setClose = (newNum) => {
-    closeNum.value = newNum;
-  };
-  const setFullState = (newFullState) => {
-    fullState.value = newFullState;
-  };
   const setMusicSrc = (newSrc) => {
     musicNum.value = musicNum.value + 1;
     musicSrc.value = newSrc;
+  };
+  const setUserVisible = (visible) => {
+    userVisible.value = visible;
+  };
+  const clearStore = () => {
+    agentStore().$reset();
+    authStore().$reset();
+    lessonStore().$reset();
   };
   return {
     deviceType,
@@ -63,20 +49,11 @@ export const commonStore = defineStore("commonStore", () => {
     deviceHeight,
     setDeviceWidth,
     deviceSize,
-    site,
-    setSite,
-    chooseKey,
-    chooseType,
-    setChoose,
-    overKey,
-    overType,
-    setOver,
-    closeNum,
-    setClose,
-    fullState,
-    setFullState,
     musicSrc,
     musicNum,
     setMusicSrc,
+    userVisible,
+    setUserVisible,
+    clearStore
   };
 });
