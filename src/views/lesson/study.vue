@@ -53,7 +53,9 @@ const reloadState = ref<boolean>(true);
 const changeIndex = ref<number>(-1);
 const errorVisible = ref<boolean>(false);
 const errorKey = ref<string>("");
-
+const keywordVisible = computed(
+  () => keyword.value !== "" && deviceType.value === "phone"
+);
 onBeforeUnmount(() => {
   if (studyMediaRef.value && lessonInfo.value.mediaType === "video") {
     api.request.post("caption/playLog", {
@@ -141,7 +143,7 @@ const videoTimeupdate = (time, type?: string) => {
         captionObj.value = item;
         mediaIndex.value = index;
         sentenceKey.value = item._key;
-        console.log(captionObj.value);
+        // console.log(captionObj.value);
       }
     });
     lastTime.value = parseInt(time);
@@ -408,6 +410,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
     v-if="lessonInfo"
     @click="changeIndex = -1"
     :style="studyTab === 'video' ? { background: '#000' } : {}"
+    :class="{ 'study-phone': deviceType === 'phone' }"
   >
     <!-- class="study-audio" -->
     <!-- <video autoPlay controls ref="audioRef">
@@ -434,6 +437,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
           :title="''"
           :backPath="'/home'"
           :color="studyTab === 'video' ? '#fff' : '#333'"
+          :type="deviceType"
         >
           <template #icon>
             <el-dropdown
@@ -819,7 +823,8 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                           <FontIcon
                             iconName="shangyiju1"
                             :iconStyle="{
-                              fontSize: '10px',
+                              fontSize:
+                                deviceType === 'phone' ? '20px' : '10px',
                               marginRight: '3px',
                             }"
                           />
@@ -836,7 +841,8 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                           <FontIcon
                             iconName="xiayiju1"
                             :iconStyle="{
-                              fontSize: '10px',
+                              fontSize:
+                                deviceType === 'phone' ? '20px' : '10px',
                               marginLeft: '3px',
                             }"
                           />
@@ -847,14 +853,18 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                           customClassName="buttonGroup-bottom-button"
                           iconName="a-zanting2"
                           @iconClick="studyMediaRef.playMedia(false)"
-                          :iconStyle="{ fontSize: '10px' }"
+                          :iconStyle="{
+                            fontSize: deviceType === 'phone' ? '20px' : '10px',
+                          }"
                           v-if="studyMediaRef.isPlay"
                         />
                         <FontIcon
                           customClassName="buttonGroup-bottom-button"
                           iconName="a-bofang2"
                           @iconClick="studyMediaRef.playMedia(true)"
-                          :iconStyle="{ fontSize: '10px' }"
+                          :iconStyle="{
+                            fontSize: deviceType === 'phone' ? '20px' : '10px',
+                          }"
                           v-else
                         />
                         <OnClickOutside
@@ -880,7 +890,8 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                               customClassName="buttonGroup-bottom-button"
                               iconName="jingyin"
                               :iconStyle="{
-                                fontSize: '10px',
+                                fontSize:
+                                  deviceType === 'phone' ? '20px' : '10px',
                                 color: '#888',
                               }"
                               @click.stop="
@@ -893,7 +904,8 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                               customClassName="buttonGroup-bottom-button"
                               iconName="shengyin"
                               :iconStyle="{
-                                fontSize: '10px',
+                                fontSize:
+                                  deviceType === 'phone' ? '20px' : '10px',
                                 color: studyTab === 'video' ? '#fff' : '#333',
                               }"
                               @click.stop="
@@ -908,9 +920,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                             class="buttonGroup-bottom-slider"
                             v-model="studyMediaRef.currentProgress"
                             :show-tooltip="false"
-                            @change="studyMediaRef.handleProgressChange"
-                            @mousedown="studyMediaRef.playMedia(false)"
-                            @mouseup="studyMediaRef.playMedia(true)"
+                            @input="studyMediaRef.handleProgressChange"
                           />
                           <div class="buttonGroup-bottom-time">
                             <span style="margin-right: 2px">{{
@@ -1082,7 +1092,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                       </div>
                     </div>
                     <div class="study-audio-box">
-                      <div class="study-audio-left">
+                      <div class="study-audio-left" v-if="deviceType === 'pc'">
                         <img :src="lessonInfo.cover" alt="" />
                       </div>
                       <FontIcon
@@ -1153,7 +1163,9 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                       </OnClickOutside>
                       <div class="study-audio-right">
                         <div class="study-audio-title">
-                          <div>{{ mediaList[mediaListIndex]?.name }}</div>
+                          <div v-if="deviceType === 'pc'">
+                            {{ mediaList[mediaListIndex]?.name }}
+                          </div>
                           <div class="study-audio-time">
                             <span style="margin-left: 10px">{{
                               studyMediaRef.audioStart
@@ -1168,9 +1180,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                           class="study-audio-slider"
                           v-model="studyMediaRef.currentProgress"
                           :show-tooltip="false"
-                          @change="studyMediaRef.handleProgressChange"
-                          @mousedown="studyMediaRef.playMedia(false)"
-                          @mouseup="studyMediaRef.playMedia(true)"
+                          @input="studyMediaRef.handleProgressChange"
                         />
                       </div>
                       <div
@@ -1210,18 +1220,49 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
         @setKeyword="keyword = ''"
         :mediaName="mediaList[mediaIndex]?.name"
         :type="studyTab === 'cloud' ? 'outer' : 'inner'"
+        v-if="deviceType === 'pc'"
       />
       <ErrorWord
         :errorVisible="errorVisible"
         :errorKey="errorKey"
         :type="studyTab"
         @close="toggleError()"
+        v-if="deviceType === 'pc'"
       />
       <!-- <div class=""></div> -->
     </div>
     <div class="study-note-tree" v-if="noteVisible">
       <IframeView :url="noteUrl" />
     </div>
+    <el-drawer
+      v-model="keywordVisible"
+      direction="rtl"
+      size="80%"
+      :with-header="false"
+      :append-to-body="true"
+    >
+      <Keyword
+        :keyword="keyword"
+        :keywordKey="keywordKey"
+        @setKeyword="keyword = ''"
+        :mediaName="mediaList[mediaIndex]?.name"
+        :type="studyTab === 'cloud' ? 'outer' : 'inner'"
+      />
+    </el-drawer>
+    <el-drawer
+      v-model="errorVisible"
+      direction="rtl"
+      size="80%"
+      :with-header="false"
+      :append-to-body="true"
+    >
+      <ErrorWord
+        :errorVisible="errorVisible"
+        :errorKey="errorKey"
+        :type="studyTab"
+        @close="toggleError()"
+      />
+    </el-drawer>
 
     <!-- <div
       class="study-note-button"
@@ -1696,7 +1737,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
   }
 
   .study-read {
-    opacity: 1;
+    opacity: 0.1;
     position: fixed;
     z-index: -1;
     top: -100px;
@@ -1717,6 +1758,225 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
     position: fixed;
     z-index: 4;
     cursor: pointer;
+  }
+}
+.study-phone {
+  .study-container {
+    .study-left {
+      .study-tab {
+        width: 100%;
+        height: 56px;
+        @include flex(flex-start, center, null);
+      }
+
+      .study-box {
+        .study-video-content,
+        .study-audio-content {
+          height: calc(100% - 600px);
+          align-content: flex-start;
+          @include flex(center, center, wrap);
+
+          .study-video-caption {
+            width: 100%;
+            height: calc(100% - 600px);
+          }
+
+          .study-video-buttonGroup {
+            width: 80vw;
+            height: 500px;
+            .buttonGroup-top {
+              width: 100%;
+              height: 80px;
+              border-radius: 40px;
+              font-size: 32px;
+              line-height: 80px;
+              cursor: pointer;
+              @include p-number(0px, 10px);
+              @include flex(center, center, null);
+              .buttonGroup-top-center {
+                width: 50px;
+                height: 50px;
+                overflow: hidden;
+                img {
+                  width: 50px;
+                  height: 50px;
+                }
+              }
+            }
+
+            .buttonGroup-center {
+              width: 100%;
+              height: 120px;
+              margin: 30px 0px 30px 0px;
+              font-size: 32px;
+              line-height: 120px;
+              @include flex(space-between, center, null);
+            }
+
+            .buttonGroup-bottom {
+              width: 100%;
+              height: 30px;
+
+              .buttonGroup-bottom-button {
+                width: 30px;
+                height: 100%;
+                margin: 0px 12px;
+                @include flex(center, center, null);
+              }
+
+              .buttonGroup-bottom-container {
+                width: calc(100% - 150px);
+                height: 100%;
+                @include flex(space-between, center, null);
+
+                .buttonGroup-bottom-slider {
+                  width: calc(100% - 200px);
+                  height: 2px;
+                  background: #4d57ff;
+                }
+
+                .buttonGroup-bottom-time {
+                  font-size: 26px;
+                }
+              }
+            }
+          }
+        }
+        .buttonGroup-bottom-volume {
+          position: relative;
+          z-index: 1;
+          margin-right: 5px;
+
+          .buttonGroup-bottom-volume-progress {
+            width: 32px;
+            /* prettier-ignore */
+            height: 90px;
+            position: absolute;
+            /* prettier-ignore */
+            top: -75Px;
+            /* prettier-ignore */
+            right: -20Px;
+          }
+
+          .buttonGroup-bottom-volume-bar {
+            background: #f1f1f1;
+            border-radius: 4px;
+          }
+
+          .buttonGroup-bottom-volume-icon {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+          }
+        }
+        .study-audio-content {
+          height: 500px;
+          padding-left: 22px;
+          align-content: center;
+          .study-video-buttonGroup {
+            height: 300px;
+            .buttonGroup-center {
+              height: 100px;
+              margin: 10px 0px;
+            }
+          }
+          .study-audio-box {
+            width: 100%;
+            height: 150px;
+            @include flex(space-between, center, wrap);
+
+            .study-audio-left {
+              width: 80px;
+              height: 80px;
+              background: #d8d8d8;
+              border-radius: 8px;
+              overflow: hidden;
+
+              img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+              }
+            }
+            .buttonGroup-bottom-volume-progress {
+              width: 32px;
+              height: 140px;
+              position: absolute;
+              top: -145px;
+              right: 20px;
+            }
+            .study-audio-right {
+              width: calc(100% - 350px);
+              height: 100%;
+              align-content: center;
+              @include flex(flex-start, center, flex);
+
+              .study-audio-title {
+                .study-audio-time {
+                  font-size: 28px;
+                }
+              }
+
+              .study-audio-slider {
+                width: 100%;
+                height: 2px;
+                background: #4d57ff;
+              }
+
+              // .study-video-translation {
+              //   right: 70px;
+              // }
+            }
+          }
+        }
+
+        .study-audio-caption {
+          width: 100%;
+          height: calc(100% - 600px);
+          background: #fff;
+          color: #333;
+          text-indent: 0em;
+          margin-bottom: 15px;
+          @include scroll();
+          @include flex(center, center, wrap);
+
+          .study-audio-icon {
+            width: 55px;
+            height: 100%;
+            position: absolute;
+            z-index: 2;
+            left: 0px;
+            top: 0px;
+
+            // @include flex(center, center, null);
+          }
+
+          .study-original {
+            font-size: 32px;
+            line-height: 40px;
+            padding: 10px;
+            box-sizing: border-box;
+            word-break: break-all;
+
+            span {
+              // @include p-number(0px, 5px);
+              &:not(.text-point):hover {
+                cursor: pointer;
+                font-weight: 900;
+                color: $commonColor;
+              }
+            }
+          }
+          .study-translation {
+            font-size: 22px;
+            line-height: 40px;
+            padding: 10px;
+            box-sizing: border-box;
+            word-break: break-all;
+          }
+        }
+      }
+    }
   }
 }
 </style>

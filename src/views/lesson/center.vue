@@ -19,6 +19,7 @@ const chooseAllKey = ref<string>("");
 const chooseKeyList = ref<string[]>([]);
 onMounted(() => {
   getTag("1498319365");
+  chooseAllKey.value = "1498319365";
   getLesson(1);
 });
 const getTag = async (key) => {
@@ -91,6 +92,7 @@ const chooseItem = (item, index) => {
   setTagKey(item._key);
 };
 const chooseAllItem = (key, index) => {
+  setTagKey("");
   chooseAllKey.value = key;
   chooseKeyList.value = chooseKeyList.value.slice(0, index);
   tagList.value = tagList.value.slice(0, index + 1);
@@ -198,18 +200,19 @@ watch(
 </template>
 <style scoped lang="scss">
 .lesson-center {
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   background-size: 100% 100%;
   background-repeat: no-repeat;
   display: flex;
   align-items: center;
   flex-direction: column;
-  padding: 34px 0px;
+  padding: 0px 0px 34px 0px;
   box-sizing: border-box;
   // @include flex(center, center, wrap);
   .lesson-center-tag {
     width: 1200px;
+    max-width: 90vw;
     height: 190px;
     background: #ffffff;
     border-radius: 14px;
@@ -235,6 +238,7 @@ watch(
   }
   .lesson-center-container {
     width: 1200px;
+    max-width: 90vw;
     flex: 1;
     background: #ffffff;
     border-radius: 14px;

@@ -1,23 +1,39 @@
 <script setup lang="ts">
+import appStore from "@/store";
 import { ArrowLeft } from "@element-plus/icons-vue";
-
+import { storeToRefs } from "pinia";
+const { deviceType } = storeToRefs(appStore.commonStore);
 const props = withDefaults(
   defineProps<{
     title?: string;
     backPath?: string;
     color?: string;
+    type?: string;
+    noTitle?: boolean;
   }>(),
   { title: "", backPath: "", color: "#333" }
 );
 </script>
 <template>
-  <div className="header">
-    <div className="header-title" :style="{ color: color }">
+  <div
+    class="header"
+    :class="{
+      'header-study': type === 'phone',
+      'header-phone': deviceType === 'phone',
+    }"
+  >
+    <div class="header-title" :style="{ color: color }">
       <div v-if="backPath" @click="$router.push(backPath)" class="header-back">
-        <el-icon :style="{ color: color,fontSize:'25px' }"><ArrowLeft /></el-icon>
+        <el-icon
+          :style="{
+            color: color,
+            fontSize: deviceType === 'phone' ? '18px' : '25px',
+          }"
+          ><ArrowLeft
+        /></el-icon>
       </div>
       <slot name="icon"></slot>
-      {{ title }}
+      <template v-if="!noTitle">{{ title }}</template>
     </div>
     <slot name="button"></slot>
   </div>
@@ -25,7 +41,7 @@ const props = withDefaults(
 <style scoped lang="scss">
 .header {
   width: 100%;
-  height: 28px;
+  height: 70px;
   font-size: 24px;
   font-weight: 500;
   background-color: transparent;
@@ -52,6 +68,18 @@ const props = withDefaults(
       @include flex(center, center, null);
     }
   }
+}
+.header-study {
+  height: 112px;
+  @include p-number(0px, 15px);
+  @include flex(space-between, center, wrap);
+  .header-title {
+    width: 100%;
+    height: 56px;
+  }
+}
+.header-phone {
+  @include p-number(0px, 15px);
 }
 .user-set {
   .logo-box {

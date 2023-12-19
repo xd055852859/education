@@ -283,6 +283,7 @@ watch(
                               :src="item.icon"
                               :alt="item.name"
                               :style="{ width: '0.28rem', height: '0.28rem' }"
+                              v-if="item.icon"
                             />
                           </div>
                           <div class="select-item-name single-to-long">
@@ -306,7 +307,7 @@ watch(
                     dayjs
                       .duration(studyTime * 60000)
                       .asHours()
-                      .toFixed(1)
+                      .toFixed(2)
                   }}</span>
                   小时,
                   <span style="color: #ff5660">{{
@@ -665,6 +666,7 @@ watch(
             }
             .second-data {
               width: 40%;
+              height: 100%;
               position: absolute;
               z-index: 2;
               top: 0px;
@@ -774,6 +776,9 @@ watch(
           .data-top {
             margin-bottom: 15px;
             padding-left: 0px;
+          }
+          .data-bottom {
+            height: 120px;
           }
         }
       }

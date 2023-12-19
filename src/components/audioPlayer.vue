@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import FontIcon from "@/components/fontIcon.vue";
+import _ from "lodash";
 const props = defineProps<{
   cover: string;
   title: string;
@@ -46,8 +47,8 @@ function calculateDuration() {
       audioRef.value.oncanplay = function () {
         duration.value = audioRef.value.duration; // 计算音频时长
         durationTime.value = transTime(audioRef.value.duration); //换算成时间格式
-        audioRef.value.play();
-        isPlay.value = true;
+        // audioRef.value.play();
+        // isPlay.value = true;
       };
     }
   }
@@ -86,14 +87,14 @@ const updateProgress = (e) => {
 };
 
 //调整播放进度
-const handleProgressChange = (val) => {
+const handleProgressChange = _.debounce((val) => {
   if (!val) {
     return;
   }
   // 更新音频的当前播放时间
   handleTimeChange(duration.value * (val / 100), "", 0, true);
   emits("audioTimeupdate", duration.value * (val / 100), "change");
-};
+}, 100);
 const handleTimeChange = (
   time,
   type?: string,
@@ -217,9 +218,7 @@ defineExpose({
           class="audio-slider"
           v-model="currentProgress"
           :show-tooltip="false"
-          @change="handleProgressChange"
-          @mousedown="playAudio(false)"
-          @mouseup="playAudio(true)"
+          @input="handleProgressChange"
         />
       </div>
     </div>

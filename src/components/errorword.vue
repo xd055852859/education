@@ -70,7 +70,7 @@ watchEffect(() => {
   <div
     class="data-right"
     v-if="errorVisible"
-    :style="deviceType === 'phone' ? { width: '40%' } : {}"
+    :style="deviceType === 'phone' ? { width: '100%' } : {}"
   >
     <div class="data-right-title dp-space-center">
       {{ type === "original" || type === "translation" ? "正文" : "字幕" }}
@@ -186,12 +186,12 @@ watchEffect(() => {
     }
 
     .left-button {
-      width: 246px;
+      width: 30%;
       height: 38px;
     }
 
     .right-button {
-      width: 150px;
+      width: 30%;
       height: 38px;
     }
   }

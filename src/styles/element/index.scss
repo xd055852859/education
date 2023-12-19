@@ -27,7 +27,7 @@
 .el-dialog__header {
   height: 80px;
   padding: 0px 15px !important;
-  margin-bottom: 10px !important;
+  // margin-bottom: 10px !important;
   line-height: 80px;
   @include flex(space-between, center, null);
 }

@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import appStore from "@/store";
 import * as echarts from "echarts";
-
+import { storeToRefs } from "pinia";
+const { deviceType } = storeToRefs(appStore.commonStore);
 const props = defineProps<{
   lineId: string;
   chartData: any;
@@ -18,8 +20,11 @@ let option: echarts.EChartsOption | null = null;
 const xAxisData = ref<any>(null);
 const seriesData = ref<any>(null);
 const nameData = ref<any>(null);
-
+const lineWidth = ref<number>(0);
+const lineLeft = ref<string>("15%");
 onMounted(() => {
+  lineWidth.value = deviceType.value === "pc" ? 1.05 : 0.97;
+  lineLeft.value = deviceType.value === "pc" ? "4%" : "10%";
   xAxisData.value = [
     ...props.chartData[0].map((item) => {
       return dayjs(item.ctime).format("MM-DD");
@@ -66,7 +71,7 @@ onMounted(() => {
   });
   let chartDom: any = document.getElementById(props.lineId);
   chart = echarts.init(chartDom, null, {
-    width: chartDom.parentElement.offsetWidth * 1.05,
+    width: document.documentElement.offsetWidth * lineWidth.value * 0.9,
     height: chartDom.parentElement.offsetHeight * 1.1,
   });
   option = {
@@ -74,7 +79,7 @@ onMounted(() => {
       data: nameData.value,
     },
     grid: {
-      left: "5%",
+      left: lineLeft.value,
       // right: '4%',
       top: "17%",
       // containLabel: true
@@ -83,7 +88,7 @@ onMounted(() => {
       name: "",
       type: "category",
       data: props.xData,
-      triggerEvent: true
+      triggerEvent: true,
     },
     yAxis: props.yData,
     tooltip: {
@@ -94,13 +99,12 @@ onMounted(() => {
 
   option && chart.setOption(option);
   chart.on("click", function (params) {
-    console.log(params)
+    console.log(params);
     if (params.componentType === "xAxis") {
       emits("chooseDate", params.value, params.dataIndex);
     } else if (params.componentType === "series") {
       emits("chooseDate", params.name, params.dataIndex);
     }
-
   });
 });
 watch(
@@ -151,9 +155,12 @@ watch(
   () => props.changeSize,
   (newVal) => {
     let chartDom: any = document.getElementById(props.lineId);
+    let width = newVal ? 0.75 : lineWidth.value;
+    console.log(width);
+    console.log(chartDom.parentElement.offsetWidth);
     //@ts-ignore
     chart.resize({
-      width: chartDom.parentElement.offsetWidth * 0.65,
+      width: document.documentElement.offsetWidth * 0.9 * width,
       height: chartDom.parentElement.offsetHeight * 1.1,
     });
   }

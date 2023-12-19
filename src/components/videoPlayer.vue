@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import FontIcon from "@/components/fontIcon.vue";
+import appStore from "@/store";
+import _ from "lodash";
+import { storeToRefs } from "pinia";
+const { deviceType } = storeToRefs(appStore.commonStore);
 const props = defineProps<{
   cover: string;
   title: string;
@@ -28,8 +32,13 @@ onMounted(() => {
   videoRef.value.addEventListener(
     "ended",
     function () {
-      currentProgress.value = 0;
-      emits("loadNext");
+      if (props.videoType === "preview") {
+        videoRef.value.pause();
+        isPlay.value = false;
+      } else {
+        currentProgress.value = 0;
+        emits("loadNext");
+      }
     },
     false
   );
@@ -45,8 +54,8 @@ function calculateDuration() {
       duration.value = videoRef.value.duration; // 计算音频时长
       durationTime.value = transTime(videoRef.value.duration); //换算成时间格式
       // nextTick(() => {
-      videoRef.value.play();
-      isPlay.value = true;
+      // videoRef.value.play();
+      // isPlay.value = true;
       // });
     };
   }
@@ -85,14 +94,15 @@ const updateProgress = (e) => {
 };
 
 //调整播放进度
-const handleProgressChange = (val) => {
+const handleProgressChange = _.debounce((val) => {
   if (!val) {
     return;
   }
+  console.log(val);
   // 更新音频的当前播放时间
   handleTimeChange(duration.value * (val / 100), "", 0, true);
   emits("videoTimeupdate", duration.value * (val / 100), "change");
-};
+}, 100);
 const handleTimeChange = (
   time,
   type?: string,
@@ -154,7 +164,13 @@ defineExpose({
 });
 </script>
 <template>
-  <div class="video-content">
+  <div
+    class="video-content"
+    :class="{
+      'video-content-phone': deviceType === 'phone',
+      'video-content-preview': videoType === 'preview',
+    }"
+  >
     <!--       x5-video-player-fullscreen="true"
       x5-video-orientation="portraint" -->
     <video
@@ -205,14 +221,11 @@ defineExpose({
           class="video-slider"
           v-model="currentProgress"
           :show-tooltip="false"
-          @change="handleProgressChange"
-          @mousedown="playVideo(false)"
-          @mouseup="playVideo(true)"
+          @input="handleProgressChange"
         />
         <div class="video-time">
-          <span style="margin-left: 10px">{{ videoStart }}</span>
-          /
-          <span style="margin-left: 10px">{{ durationTime }}</span>
+          <span style="margin-right: 5px">{{ videoStart }}</span
+          >/<span style="margin-left: 5px">{{ durationTime }}</span>
         </div>
       </div>
       <div class="volume">
@@ -305,19 +318,19 @@ defineExpose({
   // background-color: rgb(23, 23, 33);
   .video-resource {
     width: 100%;
-    height: calc(100% - 195px);
+    height: calc(100% - 200px);
     background-color: rgb(23, 23, 33);
   }
 
   .video-resource-preview {
-    height: calc(100% - 140px);
+    height: calc(100% - 145px);
   }
 
   .video-box {
     width: 100%;
     height: 50px;
     background-color: rgb(0, 0, 0, 0.1);
-    padding: 0px 10px 0px 38px;
+    padding: 0px 10px;
     box-sizing: border-box;
     position: absolute;
     z-index: 5;
@@ -388,6 +401,50 @@ defineExpose({
     }
   }
 }
+.video-content-phone {
+  .video-resource {
+    height: 600px;
+  }
+  .video-box {
+    height: 50px;
+    padding: 0px;
+    .video-button {
+      width: 35px;
+      height: 100%;
+      margin: 0px 2px;
+      @include flex(center, center, null);
+    }
+
+    .video-img {
+      width: 35px;
+      height: 35px;
+      margin: 0px 12px;
+    }
+
+    .video-container {
+      width: calc(100% - 300px);
+      height: 100%;
+      margin: 0px 10px 0px 30px;
+
+      @include flex(space-between, center, null);
+
+      .video-slider {
+        width: calc(100% - 160px);
+        height: 2px;
+        background: #4d57ff;
+      }
+
+      .video-time {
+        font-size: 18px;
+        color: #fff;
+        margin-right: 5px;
+      }
+    }
+  }
+}
+.video-content-preview {
+  height: calc(100% - 30px);
+}
 </style>
 <style lang="scss">
 .video-slider,
@@ -397,15 +454,20 @@ defineExpose({
     width: 16Px;
     /* prettier-ignore */
     height: 16Px;
-    /* prettier-ignore */
-    margin-bottom: 10Px;
+    margin-bottom: 18px;
   }
 
   .el-slider__bar {
     background: #4d57ff;
   }
 }
-
+.video-content-phone {
+  .video-slider {
+    .el-slider__button {
+      margin-bottom: 36px;
+    }
+  }
+}
 .buttonGroup-bottom-slider {
   .el-slider__button-wrapper {
     /* prettier-ignore */

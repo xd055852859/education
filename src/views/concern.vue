@@ -12,6 +12,7 @@ import { is_mobile } from "@/services/util";
 const props = defineProps<{
   tab: string;
 }>();
+const { deviceType } = storeToRefs(appStore.commonStore);
 const { agentKey } = storeToRefs(appStore.agentStore);
 const keywordTab = ref<string>("");
 const keyword = ref<string>("");
@@ -24,6 +25,9 @@ const expandState = ref<boolean>(false);
 const page = ref<number>(1);
 const total = ref<number>(0);
 const keywordList = ref<any>([]);
+const keywordVisible = computed(
+  () => keyword.value !== "" && deviceType.value === "phone"
+);
 onMounted(() => {
   keywordTab.value = props.tab;
   //@ts-ignore
@@ -214,15 +218,14 @@ watchEffect(() => {
 });
 </script>
 <template>
-  <div class="keyword">
-    <Header :title="'词库'" :backPath="'/home'" />
-
+  <div class="keyword" :class="{ 'keyword-phone': deviceType === 'phone' }">
     <!-- class="study-audio" -->
     <!-- <video autoPlay controls ref="audioRef">
       <source :src="audioSrc" type="audio/mpeg" />
     </video> -->
     <div class="keyword-container">
       <div class="keyword-left">
+        <Header :title="'词库'" :backPath="'/home'" />
         <div class="keyword-tab">
           <div
             class="keyword-tab-item"
@@ -252,11 +255,11 @@ watchEffect(() => {
             :style="
               keywordTab === 'care'
                 ? {
-                    backgroundImage: `url('/common/careBg.svg')`,
+                    backgroundImage: `url('/common/careBg.png')`,
                     color: '#ff5660',
                   }
                 : {
-                    backgroundImage: `url('/common/uncareBg.svg')`,
+                    backgroundImage: `url('/common/uncareBg.png')`,
                     backgroundColor: 'transparent',
                   }
             "
@@ -445,46 +448,59 @@ watchEffect(() => {
         @setKeyword="keyword = ''"
         type="outer"
         @reloadData="reloadData"
+        v-if="deviceType === 'pc'"
       />
+      <el-drawer
+        v-model="keywordVisible"
+        direction="rtl"
+        size="80%"
+        :with-header="false"
+        :append-to-body="true"
+      >
+        <Keyword
+          :keyword="keyword"
+          :keywordKey="keywordKey"
+          @setKeyword="keyword = ''"
+          type="outer"
+          @reloadData="reloadData"
+        />
+      </el-drawer>
     </div>
   </div>
 </template>
 <style scoped lang="scss">
 .keyword {
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   align-content: flex-start;
-  @include p-number(34px, 0px);
+  padding: 0px 0px 34px 0px;
+  box-sizing: border-box;
   @include flex(center, center, wrap);
   background-color: #f9f9f9;
 
   .keyword-container {
-    width: 100%;
-    height: calc(100% - 50px);
-    margin-top: 25px;
-    padding: 0px 119px 0px 78px;
-    box-sizing: border-box;
-    @include flex(space-between, center, null);
+    width: 100vw;
+    height: 100vh;
+    @include flex(center, center, null);
 
     .keyword-left {
       flex: 1;
       height: 100%;
       position: relative;
       z-index: 1;
-
+      @include flex(center, center, wrap);
       .keyword-tab {
-        width: 100%;
+        width: 90%;
         height: 46px;
         position: relative;
         z-index: 1;
-        padding-left: 25px;
-        padding-right: 150px;
+        padding:0px 25px;
         box-sizing: border-box;
         margin-bottom: 20px;
         @include flex(space-between, center, null);
 
         .keyword-tab-item {
-          width: 48%;
+          width: 50%;
           height: 46px;
           font-size: 16px;
           color: #919191;
@@ -513,13 +529,13 @@ watchEffect(() => {
           background-color: #ebeefc;
         }
         .keyword-tab-second {
-          width: 33%;
+          width: 40%;
           position: absolute;
           z-index: 2;
           top: 0px;
           left: 31%;
           background-position: center center;
-          background-size: cover;
+          background-size: 100% 100%;
           background-repeat: no-repeat;
         }
         .keyword-tab-third {
@@ -546,7 +562,7 @@ watchEffect(() => {
       }
 
       .keyword-box {
-        width: 100%;
+        width: 90%;
         height: calc(100% - 50px);
         padding: 10px 15px 10px 27px;
         box-sizing: border-box;
@@ -634,6 +650,21 @@ watchEffect(() => {
           &:hover {
             box-shadow: 0px 2px 10px 0px rgba(78, 78, 78, 0.5);
           }
+        }
+      }
+    }
+  }
+}
+.keyword-phone {
+  .keyword-container {
+    .keyword-left {
+      .keyword-tab {
+        height: 46px;
+        .keyword-tab-second {
+          width: 33%;
+          height: 100%;
+          left: 33%;
+          background-size: 100% 100%;
         }
       }
     }

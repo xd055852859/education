@@ -217,6 +217,7 @@ const deleteAgent = async (key, index) => {
       let list = _.cloneDeep(agentList.value);
       list.splice(index, 1);
       setAgentList(list);
+      setAgentKey(user.value?.mainAgentKey);
     }
   });
 };

@@ -11,6 +11,7 @@ import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
 import router from "@/router";
 import { getSearchParamValue } from "@/services/util";
+const { deviceType } = storeToRefs(appStore.commonStore);
 const { agentKey } = storeToRefs(appStore.agentStore);
 const props = defineProps<{
   lessonKey: string;
@@ -67,12 +68,7 @@ const getMedia = async () => {
     resourceKey: props.lessonKey,
   })) as ResultProps;
   if (mediaRes.msg === "OK") {
-    mediaList.value = mediaRes.data.map((item) => {
-      if (lessonInfo.value.mediaType === "pdf") {
-        item.content = item.content.replace(/\n/g, "<br/>");
-      }
-      return item;
-    });
+    mediaList.value = mediaRes.data;
     mediaIndex.value = 0;
   }
 };
@@ -92,6 +88,7 @@ const getArticleList = async (key) => {
   })) as ResultProps;
   if (articleRes.msg === "OK") {
     articleList.value = articleRes.data;
+    console.log(articleList.value);
   }
 };
 const setCaption = (index) => {
@@ -154,13 +151,49 @@ watchEffect(() => {
 });
 </script>
 <template>
-  <div class="preview" v-if="lessonInfo">
+  <div
+    class="preview"
+    v-if="lessonInfo"
+    :class="{ 'preview-phone': deviceType === 'phone' }"
+  >
     <Header
       :title="lessonInfo.name"
       :backPath="'/home/center'"
       :color="'#fff'"
+      :noTitle="deviceType === 'phone'"
       v-if="previewType !== 'back'"
-    />
+    >
+      <template #icon>
+        <el-dropdown
+          max-height="300px"
+          trigger="click"
+          v-if="deviceType === 'phone'"
+        >
+          <div
+            class="icon-point dp--center single-to-long"
+            style="color: #fff;"
+          >
+            <FontIcon iconName="liebiao" style="margin-right: 8px" />
+            {{ mediaList[mediaIndex]?.name }}
+          </div>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item
+                @click="mediaIndex = index"
+                v-for="(item, index) in mediaList"
+                :key="`media${item._key}`"
+                :style="
+                  mediaIndex === index
+                    ? { backgroundColor: '#edeeff', color: '#4d57ff' }
+                    : {}
+                "
+                >{{ item.name }}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </template>
+    </Header>
     <div class="preview-header">
       <div class="dp--center">
         <Avatar
@@ -239,7 +272,7 @@ watchEffect(() => {
           </div>
         </template>
       </div>
-      <div class="preview-right">
+      <div class="preview-right" v-if="deviceType === 'pc'">
         <div class="preview-right-title">资源选集</div>
         <div class="preview-media">
           <el-tooltip
@@ -267,7 +300,7 @@ watchEffect(() => {
   width: 100%;
   height: 100%;
   background: #161620;
-  padding: 34px 0px;
+  padding: 0px 0px 34px 0px;
   box-sizing: border-box;
   align-content: flex-start;
   @include flex(center, center, wrap);
@@ -290,14 +323,16 @@ watchEffect(() => {
 
   .preview-container {
     width: 90%;
-    height: calc(100% - 158px);
+    height: calc(100% - 200px);
     @include flex(space-between, center, null);
 
     .preview-left {
-      width: calc(100% - 400px);
+      flex: 1;
       height: 100%;
       position: relative;
       z-index: 1;
+      padding: 0px 10px;
+      box-sizing: border-box;
       @include scroll();
 
       .preview-left-audio {
@@ -395,6 +430,29 @@ watchEffect(() => {
             border-radius: 12px;
           }
         }
+      }
+    }
+  }
+}
+.preview-phone {
+  .preview-container {
+    width: 90%;
+    height: calc(100% - 200px);
+    @include flex(space-between, center, null);
+
+    .preview-left {
+      .preview-left-audio {
+        height: calc(100% - 400px);
+      }
+      .preview-left-caption {
+        bottom: 250px;
+      }
+
+      .preview-left-article {
+        font-size: 25px;
+        color: #fff;
+        line-height: 38px;
+        font-family: "Kaiti SC", "STKaiti", "Arial", sans-serif;
       }
     }
   }

@@ -211,7 +211,7 @@ watch(
   <div
     class="data-right"
     v-if="keyword"
-    :style="deviceType === 'phone' ? { width: '40%' } : {}"
+    :style="deviceType === 'phone' ? { width: '100%' } : {}"
   >
     <div class="data-right-title dp-space-center">
       {{ keyword }}
@@ -358,7 +358,7 @@ watch(
     font-weight: 900;
     color: $commonColor;
     line-height: 40px;
-    padding: 0px 20px 0px 10px;
+    padding: 0px 20px 0px 15px;
     box-sizing: border-box;
   }
 
@@ -366,7 +366,7 @@ watch(
     width: 100%;
     height: calc(100% - 120px);
     margin: 10px 0px;
-    padding: 0px 15px;
+    padding: 0px 15px 0px 20px;
     box-sizing: border-box;
 
     .data-right-iframe {
@@ -394,12 +394,12 @@ watch(
     }
 
     .left-button {
-      width: 246px;
+      width: 45%;
       height: 38px;
     }
 
     .right-button {
-      width: 150px;
+      width: 45%;
       height: 38px;
     }
   }

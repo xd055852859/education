@@ -15,6 +15,7 @@ import { SplitVendorChunkCache } from "vite";
 const props = defineProps<{
   targetDate: number | string;
 }>();
+const { deviceType } = storeToRefs(appStore.commonStore);
 const { agentKey } = storeToRefs(appStore.agentStore);
 const dayjs: any = inject("dayjs");
 // const expandState = ref<boolean>(false);
@@ -29,6 +30,9 @@ const chartDate = ref<number>(0);
 const xData = ref<any>([]);
 const yData = ref<any>([]);
 const lineData = ref<any>([]);
+const keywordVisible = computed(
+  () => keyword.value !== "" && deviceType.value === "phone"
+);
 onMounted(() => {
   //@ts-ignore
   chartDate.value = parseInt(props.targetDate);
@@ -181,7 +185,9 @@ const getChartData = async () => {
 const chooseWord = (word, wordKey) => {
   keyword.value = word;
   keywordKey.value = wordKey;
-  changeSize.value = 1;
+  if (deviceType.value === "pc") {
+    changeSize.value = 1;
+  }
 };
 const changeList = (list) => {
   keywordList.value = _.cloneDeep(list);
@@ -205,6 +211,12 @@ watchEffect(() => {
 watchEffect(() => {
   if (agentKey.value) {
     getData();
+  }
+});
+watch(keyword, (newKey) => {
+  if (!newKey) {
+    keywordKey.value = "";
+    changeSize.value = 0;
   }
 });
 </script>
@@ -265,7 +277,22 @@ watchEffect(() => {
         :keywordKey="keywordKey"
         @setKeyword="keyword = ''"
         type="outer"
+        v-if="deviceType === 'pc'"
       />
+      <el-drawer
+        v-model="keywordVisible"
+        direction="rtl"
+        size="80%"
+        :with-header="false"
+        :append-to-body="true"
+      >
+        <Keyword
+          :keyword="keyword"
+          :keywordKey="keywordKey"
+          @setKeyword="keyword = ''"
+          type="outer"
+        />
+      </el-drawer>
     </div>
   </div>
 </template>
@@ -274,25 +301,27 @@ watchEffect(() => {
   width: 100%;
   height: 100%;
 
-  // align-content: flex-start;
+  align-content: flex-start;
   // @include p-number(34px, 0px);
-  // @include flex(center, center, wrap);
+  padding: 0px 0px 34px 0px;
+  box-sizing: border-box;
+  @include flex(center, center, wrap);
   .calendar-container {
-    width: 100%;
-    height: 100%;
-    @include flex(space-between, center, null);
+    width: 100vw;
+    height: 100vh;
+    @include flex(center, center, null);
 
     .calendar-left {
       flex: 1;
       height: 100%;
-
-      @include flex(space-between, center, wrap);
+      position: relative;
+      z-index: 1;
+      @include flex(center, center, wrap);
 
       .calendar-left-box {
-        min-width: 1120px;
-        flex: 1;
-        height: calc(100% - 120px);
-        padding: 10px 120px;
+        width: 90%;
+        height: 100%;
+        padding: 10px 5px;
         margin-top: 25px;
         box-sizing: border-box;
         @include scroll();
