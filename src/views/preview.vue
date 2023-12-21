@@ -145,7 +145,7 @@ watchEffect(() => {
     getCaption(mediaList.value[mediaIndex.value]._key);
     getArticleList(mediaList.value[mediaIndex.value]._key);
     if (studyMediaRef.value) {
-      studyMediaRef.value.handleTimeChange(0, "out");
+      studyMediaRef.value.handleTimeChange(0, "out", -1, true);
     }
   }
 });
@@ -169,10 +169,7 @@ watchEffect(() => {
           trigger="click"
           v-if="deviceType === 'phone'"
         >
-          <div
-            class="icon-point dp--center single-to-long"
-            style="color: #fff;"
-          >
+          <div class="icon-point dp--center single-to-long" style="color: #fff">
             <FontIcon iconName="liebiao" style="margin-right: 8px" />
             {{ mediaList[mediaIndex]?.name }}
           </div>
@@ -346,7 +343,7 @@ watchEffect(() => {
 
         img {
           width: 100%;
-          height: 100%;
+          height: 90%;
           object-fit: cover;
         }
       }
@@ -357,8 +354,7 @@ watchEffect(() => {
         position: absolute;
         z-index: 1;
         left: 0px;
-        bottom: 50px;
-        font-family: "Kaiti SC", "STKaiti", "Arial", sans-serif;
+        bottom: 100px;
 
         .preview-left-original {
           // width: 100%;
@@ -388,7 +384,6 @@ watchEffect(() => {
         font-size: 25px;
         color: #fff;
         line-height: 38px;
-        font-family: "Kaiti SC", "STKaiti", "Arial", sans-serif;
       }
     }
 
@@ -452,7 +447,6 @@ watchEffect(() => {
         font-size: 25px;
         color: #fff;
         line-height: 38px;
-        font-family: "Kaiti SC", "STKaiti", "Arial", sans-serif;
       }
     }
   }

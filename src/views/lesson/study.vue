@@ -56,6 +56,9 @@ const errorKey = ref<string>("");
 const keywordVisible = computed(
   () => keyword.value !== "" && deviceType.value === "phone"
 );
+const errorWordVisible = computed(
+  () => errorVisible.value && deviceType.value === "phone"
+);
 onBeforeUnmount(() => {
   if (studyMediaRef.value && lessonInfo.value.mediaType === "video") {
     api.request.post("caption/playLog", {
@@ -110,7 +113,7 @@ const getArticleList = async (key) => {
         value: obj[item] ? obj[item].value + 1 : 1,
       };
     });
-
+    console.log(articleList.value);
     textList.value = [...new Set(Object.values(obj))];
   }
 };
@@ -185,7 +188,7 @@ const audioTimeupdate = (time, type?: string) => {
 
 const changeMediaIndex = (type) => {
   if (type === "last") {
-    mediaIndex.value = mediaIndex.value === 0 ? 0 : mediaIndex.value - 1;
+    mediaIndex.value = mediaIndex.value <= 0 ? 1 : mediaIndex.value - 1;
   } else {
     mediaIndex.value =
       captionsList.value.length - 1 === mediaIndex.value
@@ -280,9 +283,8 @@ const clickNode = () => {
   }
 };
 const loadNext = () => {
-  mediaListIndex.value = mediaListIndex.value + 1;
-  console.log(mediaListIndex.value);
-  if (mediaListIndex.value < mediaList.value.length) {
+  if (mediaListIndex.value < mediaList.value.length - 1) {
+    mediaListIndex.value = mediaListIndex.value + 1;
     api.request.patch("subscribe/playRecord", {
       agentKey: agentKey.value,
       mediaKey: mediaList.value[mediaListIndex.value]._key,
@@ -389,6 +391,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
   changeIndex.value = -1;
   errorKey.value = "";
   errorVisible.value = false;
+  sentenceKey.value = "";
   if (newRef && lessonInfo.value.mediaType === "video" && newTab === "video") {
     clickMedia(currentTime.value);
   }
@@ -426,12 +429,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
     <div class="study-container">
       <div
         class="study-left"
-        :class="{ 'study-left-keyword': keyword || errorVisible }"
-        :style="
-          deviceType === 'phone' && (keyword || errorVisible)
-            ? { width: '60%' }
-            : {}
-        "
+        :class="{ 'study-left-keyword': keyword && deviceType === 'pc' }"
       >
         <Header
           :title="''"
@@ -442,9 +440,9 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
           <template #icon>
             <el-dropdown
               max-height="300px"
-              :trigger="is_mobile() ? 'click' : 'hover'"
+              :trigger="deviceType === 'phone' ? 'click' : 'hover'"
             >
-              <div class="icon-point dp--center">
+              <div class="icon-point dp--center study-list-title">
                 <FontIcon
                   iconName="liebiao"
                   style="margin-right: 8px"
@@ -556,7 +554,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                 class="text-item"
                 @click.stop="sentenceKey = item._key"
                 :style="
-                  sentenceKey === item._key
+                  sentenceKey === item?._key
                     ? {
                         backgroundColor: '#F5F5F5',
                         borderLeft: '3px solid #4d57ff',
@@ -595,7 +593,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                 style="text-indent: 2em"
                 v-if="sentenceKey === item._key"
                 :style="
-                  sentenceKey === item._key
+                  sentenceKey === item?._key
                     ? {
                         backgroundColor: '#F5F5F5',
                         borderLeft: '3px solid #f7b500',
@@ -624,7 +622,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                 style="text-indent: 2em"
                 @click.stop="sentenceKey = item._key"
                 :style="
-                  sentenceKey === item._key
+                  sentenceKey === item?._key
                     ? {
                         backgroundColor: '#F5F5F5',
                         borderLeft: '3px solid #f7b500',
@@ -636,9 +634,9 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
               </div>
               <div
                 class="text-item"
-                v-if="sentenceKey === item._key"
+                v-if="sentenceKey === item?._key"
                 :style="
-                  sentenceKey === item._key
+                  sentenceKey === item?._key
                     ? {
                         backgroundColor: '#F5F5F5',
                         borderLeft: '3px solid #4d57ff',
@@ -699,12 +697,16 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                     <div
                       class="study-video-caption"
                       @mouseenter="
-                        studyMediaRef.reloadMedia(true);
-                        setMusicSrc('/music/inout.mp3');
+                        deviceType === 'pc'
+                          ? (studyMediaRef.reloadMedia(true),
+                            setMusicSrc('/music/inout.mp3'))
+                          : null
                       "
                       @mouseleave="
-                        studyMediaRef.reloadMedia(false);
-                        setMusicSrc('/music/inout.mp3');
+                        deviceType === 'pc'
+                          ? (studyMediaRef.reloadMedia(false),
+                            setMusicSrc('/music/inout.mp3'))
+                          : null
                       "
                     >
                       <template v-if="captionObj">
@@ -877,7 +879,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                             >
                               <el-slider
                                 vertical
-                                height="80px"
+                                height="70px"
                                 class="buttonGroup-bottom-volume-bar"
                                 v-model="studyMediaRef.videoVolume"
                                 :show-tooltip="false"
@@ -966,7 +968,9 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                 <div
                   class="study-original"
                   style="width: 100%"
-                  :style="sentenceKey === item._key ? { color: '#4D57FF' } : {}"
+                  :style="
+                    sentenceKey === item?._key ? { color: '#4D57FF' } : {}
+                  "
                   @click="
                     sentenceKey !== item._key
                       ? clickMedia(item.startTime, 'outer', item._key, index)
@@ -986,7 +990,8 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                     "
                     :style="{
                       padding: lessonInfo.language === 'cn' ? '0px' : '0px 5px',
-                      letterSpacing: '1px',
+                      letterSpacing:
+                        lessonInfo.language === 'cn' ? '2px' : '0px',
                       fontWeight:
                         keyword === textItem &&
                         textIndex === keyIndex &&
@@ -1101,7 +1106,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                         @iconClick="studyMediaRef.playMedia(false)"
                         :iconStyle="{
                           fontSize: '20px',
-                          margin: '0px 15px 0px 25px',
+                          marginRight: '15px',
                         }"
                         v-if="studyMediaRef.isPlay"
                       />
@@ -1111,7 +1116,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                         @iconClick="studyMediaRef.playMedia(true)"
                         :iconStyle="{
                           fontSize: '20px',
-                          margin: '0px 15px 0px 25px',
+                          marginRight: '15px',
                         }"
                         v-else
                       />
@@ -1125,7 +1130,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                           >
                             <el-slider
                               vertical
-                              height="80px"
+                              height="70px"
                               class="buttonGroup-bottom-volume-bar"
                               v-model="studyMediaRef.audioVolume"
                               :show-tooltip="false"
@@ -1240,6 +1245,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
       size="80%"
       :with-header="false"
       :append-to-body="true"
+      @close="(keyword = ''), (keywordKey = '')"
     >
       <Keyword
         :keyword="keyword"
@@ -1250,11 +1256,12 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
       />
     </el-drawer>
     <el-drawer
-      v-model="errorVisible"
+      v-model="errorWordVisible"
       direction="rtl"
       size="80%"
       :with-header="false"
       :append-to-body="true"
+      @close="(errorKey = ''), (errorVisible = false)"
     >
       <ErrorWord
         :errorVisible="errorVisible"
@@ -1294,6 +1301,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
 
     .study-left {
       width: 100%;
+      // flex: 1;
       height: 100%;
       position: relative;
       z-index: 1;
@@ -1328,7 +1336,6 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
         height: calc(100% - 30px);
         padding: 10px 15px 0px 15px;
         // text-indent: 2em;
-        font-family: "Kaiti SC", "STKaiti", "Arial", sans-serif;
         box-sizing: border-box;
         @include scroll();
 
@@ -1344,6 +1351,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
           text-size-adjust: none;
           padding: 2px 0px;
           box-sizing: border-box;
+          font-family: PingFang SC, PingFang SC-Semibold;
           // word-wrap: break-word;
           // word-break: normal;
           @include flex(flex-start, center, wrap);
@@ -1360,9 +1368,9 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
             z-index: 2;
             right: 10px;
             bottom: 10px;
+            font-size: 12px;
             text-align: center;
             line-height: 45px;
-            // font-size: 16px;
             text-indent: 0px;
             cursor: pointer;
           }
@@ -1437,7 +1445,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
               .study-subtitle-text {
                 height: 50px;
                 font-size: 20px;
-                font-family: PingFang SC, PingFang SC-Regular;
+                // font-family: PingFang SC, PingFang SC-Regular;
                 color: #ffffff;
                 line-height: 40px;
                 background-size: 100% 100%;
@@ -1483,7 +1491,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
               border-radius: 50%;
               text-align: center;
               line-height: 50px;
-              // font-size: 16px;
+              font-size: 24px;
               text-indent: 0px;
               cursor: pointer;
               position: absolute;
@@ -1499,7 +1507,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
           .study-video-buttonGroup {
             width: 260px;
             height: 100%;
-            font-family: PingFang SC, PingFang SC-Regular;
+            // font-family: PingFang SC, PingFang SC-Regular;
             align-content: center;
             @include flex(flex-start, center, wrap);
             .buttonGroup-top {
@@ -1580,10 +1588,10 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
           .buttonGroup-bottom-volume-progress {
             width: 32px;
             /* prettier-ignore */
-            height: 90px;
+            height: 80Px;
             position: absolute;
             /* prettier-ignore */
-            top: -75Px;
+            top: -55Px;
             /* prettier-ignore */
             right: -20Px;
           }
@@ -1601,11 +1609,12 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
         }
         .study-audio-content {
           padding-left: 22px;
+
           .study-audio-box {
             width: calc(100% - 360px);
             height: 100%;
             margin: 0px 45px 0px 30px;
-            @include flex(space-between, center, null);
+            @include flex(flex-start, center, null);
 
             .study-audio-left {
               width: 80px;
@@ -1613,7 +1622,7 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
               background: #d8d8d8;
               border-radius: 8px;
               overflow: hidden;
-
+              margin-right: 20px;
               img {
                 width: 100%;
                 height: 100%;
@@ -1622,15 +1631,19 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
             }
             .buttonGroup-bottom-volume-progress {
               width: 32px;
-              height: 140px;
+              /* prettier-ignore */
+              height: 80Px;
               position: absolute;
-              top: -145px;
-              right: 20px;
+              /* prettier-ignore */
+              top: -55Px;
+              /* prettier-ignore */
+              right: -20Px;
             }
             .study-audio-right {
               width: calc(100% - 350px);
               height: 100%;
               align-content: center;
+              margin-right: 20px;
               @include flex(flex-start, center, flex);
 
               .study-audio-title {
@@ -1668,7 +1681,6 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
               border-radius: 50%;
               text-align: center;
               line-height: 50px;
-              // font-size: 16px;
               cursor: pointer;
               // position: absolute;
               // z-index: 2;
@@ -1726,9 +1738,8 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
       }
 
       .study-cloud {
-        width: 100%;
+        width: 100vw;
         height: calc(100% - 35px);
-        box-sizing: border-box;
       }
     }
     .study-left-keyword {
@@ -1761,29 +1772,44 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
   }
 }
 .study-phone {
+  .study-list-title {
+    font-size: 28px;
+  }
   .study-container {
     .study-left {
       .study-tab {
         width: 100%;
         height: 56px;
         @include flex(flex-start, center, null);
+        .study-tab-item {
+          font-size: 24px;
+        }
       }
 
       .study-box {
+        .text-item {
+          .text-item-error {
+            font-size: 26px;
+          }
+        }
         .study-video-content,
         .study-audio-content {
-          height: calc(100% - 600px);
+          height: calc(60vh - 300px);
           align-content: flex-start;
           @include flex(center, center, wrap);
 
           .study-video-caption {
             width: 100%;
-            height: calc(100% - 600px);
+            height: calc(100% - 300px);
+            .study-video-error,
+            .study-video-translation {
+              font-size: 28px;
+            }
           }
 
           .study-video-buttonGroup {
             width: 80vw;
-            height: 500px;
+            height: 300px;
             .buttonGroup-top {
               width: 100%;
               height: 80px;
@@ -1806,10 +1832,10 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
 
             .buttonGroup-center {
               width: 100%;
-              height: 120px;
+              height: 80px;
               margin: 30px 0px 30px 0px;
               font-size: 32px;
-              line-height: 120px;
+              line-height: 80px;
               @include flex(space-between, center, null);
             }
 
@@ -1847,17 +1873,6 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
           z-index: 1;
           margin-right: 5px;
 
-          .buttonGroup-bottom-volume-progress {
-            width: 32px;
-            /* prettier-ignore */
-            height: 90px;
-            position: absolute;
-            /* prettier-ignore */
-            top: -75Px;
-            /* prettier-ignore */
-            right: -20Px;
-          }
-
           .buttonGroup-bottom-volume-bar {
             background: #f1f1f1;
             border-radius: 4px;
@@ -1871,10 +1886,11 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
         }
         .study-audio-content {
           height: 500px;
-          padding-left: 22px;
+          padding: 10px;
           align-content: center;
           .study-video-buttonGroup {
-            height: 300px;
+            width: 90%;
+            height: 200px;
             .buttonGroup-center {
               height: 100px;
               margin: 10px 0px;
@@ -1883,7 +1899,10 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
           .study-audio-box {
             width: 100%;
             height: 150px;
-            @include flex(space-between, center, wrap);
+            margin: 0px;
+            padding: 0px 10px;
+            box-sizing: border-box;
+            @include flex(flex-start, center, wrap);
 
             .study-audio-left {
               width: 80px;
@@ -1898,22 +1917,17 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
                 object-fit: cover;
               }
             }
-            .buttonGroup-bottom-volume-progress {
-              width: 32px;
-              height: 140px;
-              position: absolute;
-              top: -145px;
-              right: 20px;
-            }
             .study-audio-right {
-              width: calc(100% - 350px);
+              flex: 1;
+              min-width: 220px;
               height: 100%;
               align-content: center;
+              margin-right: 10px;
               @include flex(flex-start, center, flex);
 
               .study-audio-title {
                 .study-audio-time {
-                  font-size: 28px;
+                  font-size: 24px;
                 }
               }
 
@@ -1926,6 +1940,10 @@ watch([studyTab, studyMediaRef], ([newTab, newRef], [oldTab, oldRef]) => {
               // .study-video-translation {
               //   right: 70px;
               // }
+            }
+            .study-audio-error,
+            .study-audio-translation {
+              font-size: 28px;
             }
           }
         }

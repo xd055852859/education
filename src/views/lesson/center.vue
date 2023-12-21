@@ -32,14 +32,15 @@ const getTag = async (key) => {
   }
 };
 const getLesson = async (page: number, tagKey?: string, clear?: boolean) => {
+  let newPage = page ? page : 1;
   const dataRes = (await api.request.get("resource/center", {
     agentKey: agentKey.value,
     tagKey: tagKey,
-    page: page ? page : 1,
+    page: newPage,
     limit: 30,
   })) as ResultProps;
   if (dataRes.msg === "OK") {
-    if (clear) {
+    if (clear || newPage === 1) {
       lessonList.value = [];
     }
     lessonList.value = [...lessonList.value, ...dataRes.data];
@@ -117,6 +118,7 @@ watch(
         deviceType === 'pc' ? 'commonBg' : 'commonPhoneBg'
       }.png')`,
     }"
+    :class="{ 'lesson-center-phone': deviceType === 'phone' }"
   >
     <Header title="课件库" :backPath="'/home'" />
     <div class="lesson-center-tag">
@@ -201,7 +203,7 @@ watch(
 <style scoped lang="scss">
 .lesson-center {
   width: 100vw;
-  height: 100vh;
+  height: 100%;
   background-size: 100% 100%;
   background-repeat: no-repeat;
   display: flex;
@@ -232,7 +234,7 @@ watch(
       .choose-item {
         height: 32px;
         padding: 0px 16px;
-        line-height: 32px;
+        @include flex(center, center, wrap);
       }
     }
   }
@@ -252,6 +254,14 @@ watch(
       transform: translateY(20px);
       animation: show 0.5s ease-in forwards;
     }
+  }
+}
+.lesson-center-phone {
+  .lesson-center-tag {
+    @include p-number(20px, 20px);
+  }
+  .lesson-center-container {
+    @include p-number(9px, 20px);
   }
 }
 </style>

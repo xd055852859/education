@@ -256,7 +256,9 @@ watch(
                 />
               </div>
               <div>
-                <el-dropdown :trigger="is_mobile() ? 'click' : 'hover'">
+                <el-dropdown
+                  :trigger="deviceType === 'phone' ? 'click' : 'hover'"
+                >
                   <div class="data-top-title icon-point dp-space-center">
                     你好, {{ agentInfo?.name }}
                     <FontIcon
@@ -283,7 +285,6 @@ watch(
                               :src="item.icon"
                               :alt="item.name"
                               :style="{ width: '0.28rem', height: '0.28rem' }"
-                              v-if="item.icon"
                             />
                           </div>
                           <div class="select-item-name single-to-long">
@@ -404,8 +405,9 @@ watch(
                       @click="$event.stopPropagation()"
                     >
                       <el-dropdown
-                        :trigger="is_mobile() ? 'click' : 'hover'"
+                        :trigger="deviceType === 'phone' ? 'click' : 'hover'"
                         :hide-on-click="false"
+                        :teleported="false"
                       >
                         <div class="icon-point dp--center">
                           <el-icon>
@@ -469,8 +471,9 @@ watch(
                       @click="$event.stopPropagation()"
                     >
                       <el-dropdown
-                        :trigger="is_mobile() ? 'click' : 'hover'"
+                        :trigger="deviceType === 'phone' ? 'click' : 'hover'"
                         :hide-on-click="false"
+                        :teleported="false"
                       >
                         <div class="icon-point dp--center">
                           <el-icon>
@@ -689,7 +692,7 @@ watch(
         width: 100%;
         height: 33px;
         font-size: 24px;
-        font-family: PingFang SC, PingFang SC-Regular;
+        // font-family: PingFang SC, PingFang SC-Regular;
         color: #000000;
         line-height: 33px;
         margin: 25px 0px 17px 0px;
@@ -751,7 +754,7 @@ watch(
       font-size: 18px;
       font-weight: 500;
       color: #ffffff;
-      line-height: 42px;
+      @include flex(center, center, null);
       img {
         width: 18px;
         height: 18px;

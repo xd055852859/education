@@ -25,7 +25,7 @@ const color = [
 onMounted(() => {
   let chartDom: any = document.getElementById(props.wordId);
   chart = echarts.init(chartDom);
-  console.log(props.chartData)
+  console.log(props.chartData);
   option = {
     series: [
       {
@@ -135,16 +135,6 @@ watch(
   },
   { deep: true }
 );
-// watch(
-//   () => props.keyword,
-//   (newWord) => {
-//     if (!newWord) {
-//       chart.resize({
-//         width: document.documentElement.offsetWidth,
-//       });
-//     }
-//   }
-// );
 </script>
 <template>
   <div :id="wordId" class="line-chart"></div>

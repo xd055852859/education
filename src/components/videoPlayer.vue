@@ -33,6 +33,7 @@ onMounted(() => {
     "ended",
     function () {
       if (props.videoType === "preview") {
+        console.log("???");
         videoRef.value.pause();
         isPlay.value = false;
       } else {
@@ -51,6 +52,7 @@ function calculateDuration() {
     isPlay.value = false;
     // 监听音频播放完毕
     videoRef.value.oncanplay = function () {
+      console.log("!!!",isPlay.value);
       duration.value = videoRef.value.duration; // 计算音频时长
       durationTime.value = transTime(videoRef.value.duration); //换算成时间格式
       // nextTick(() => {
@@ -232,7 +234,7 @@ defineExpose({
         <div class="volume-progress" v-show="videoHuds">
           <el-slider
             vertical
-            height="80px"
+            height="70px"
             class="volume-bar"
             v-model="videoVolume"
             :show-tooltip="false"
@@ -318,7 +320,7 @@ defineExpose({
   // background-color: rgb(23, 23, 33);
   .video-resource {
     width: 100%;
-    height: calc(100% - 200px);
+    height: calc(100% - 250px);
     background-color: rgb(23, 23, 33);
   }
 
@@ -379,14 +381,14 @@ defineExpose({
     box-sizing: border-box;
     .volume-progress {
       /* prettier-ignore */
-      height: 90Px;
+      height: 80Px;
       width: 32px;
       position: absolute;
       z-index: 10;
       /* prettier-ignore */
-      top: -75Px;
+      top: -55Px;
       /* prettier-ignore */
-      right: -20Px;
+      left: -25Px;
     }
 
     .volume-bar {
@@ -403,7 +405,7 @@ defineExpose({
 }
 .video-content-phone {
   .video-resource {
-    height: 600px;
+    height: 35%;
   }
   .video-box {
     height: 50px;
@@ -454,7 +456,8 @@ defineExpose({
     width: 16Px;
     /* prettier-ignore */
     height: 16Px;
-    margin-bottom: 18px;
+    /* prettier-ignore */
+    margin-bottom: 10Px;
   }
 
   .el-slider__bar {
@@ -464,7 +467,8 @@ defineExpose({
 .video-content-phone {
   .video-slider {
     .el-slider__button {
-      margin-bottom: 36px;
+      /* prettier-ignore */
+      margin-bottom: 36Px;
     }
   }
 }

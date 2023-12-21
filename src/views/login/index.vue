@@ -16,6 +16,7 @@ const showLogin = ref<boolean>(false);
         deviceType === 'pc' ? 'commonBg' : 'commonPhoneBg'
       }.png')`,
     }"
+    :class="{ 'login-phone': deviceType === 'phone' }"
   >
     <div class="login-box" v-if="showLogin">
       <div class="login-logo">
@@ -25,7 +26,14 @@ const showLogin = ref<boolean>(false);
         <Login v-if="loginState === 'login'" />
         <Reset v-else />
       </div>
-      <div class="login-bottom">登录或注册代表你同意 <a href="https://notecute.com/#/post?key=1499044542&view=digest&hideHead=1&publicShare=1&isWebview=1" target="_blank">用户条款</a></div>
+      <div class="login-bottom">
+        登录或注册代表你同意
+        <a
+          href="https://notecute.com/#/post?key=1499044542&view=digest&hideHead=1&publicShare=1&isWebview=1"
+          target="_blank"
+          >用户条款</a
+        >
+      </div>
     </div>
     <div class="title-box" v-else>
       <img class="title-login-logo" src="/login/titleLogo.svg" alt="" />
@@ -119,7 +127,7 @@ const showLogin = ref<boolean>(false);
           line-height: 20px;
           margin-top: 15px;
 
-          > span {
+          span {
             color: $commonColor;
           }
         }
@@ -178,6 +186,17 @@ const showLogin = ref<boolean>(false);
         font-weight: 500;
         color: #ffffff;
       }
+    }
+  }
+}
+.login-phone {
+  .title-box {
+    .title-login-logo {
+      width: 60%;
+    }
+    .title-header {
+      top: 30px;
+      padding: 0px 27px;
     }
   }
 }

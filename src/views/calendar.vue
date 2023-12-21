@@ -285,6 +285,7 @@ watch(keyword, (newKey) => {
         size="80%"
         :with-header="false"
         :append-to-body="true"
+        @close="(keyword = ''), (keywordKey = '')"
       >
         <Keyword
           :keyword="keyword"
@@ -308,7 +309,7 @@ watch(keyword, (newKey) => {
   @include flex(center, center, wrap);
   .calendar-container {
     width: 100vw;
-    height: 100vh;
+    height: 100%;
     @include flex(center, center, null);
 
     .calendar-left {
@@ -320,7 +321,7 @@ watch(keyword, (newKey) => {
 
       .calendar-left-box {
         width: 90%;
-        height: 100%;
+        height: calc(100% - 100px);
         padding: 10px 5px;
         margin-top: 25px;
         box-sizing: border-box;

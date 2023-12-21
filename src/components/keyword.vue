@@ -191,7 +191,8 @@ watchEffect(() => {
   if (
     (!user.value?.config?.keywordTab ||
       user.value?.config?.keywordTab.length === 0) &&
-    dropdownRef.value
+    dropdownRef.value &&
+    props.keyword
   ) {
     dropdownRef.value.handleOpen();
   }
@@ -210,18 +211,14 @@ watch(
 <template>
   <div
     class="data-right"
-    v-if="keyword"
+    v-show="keyword"
     :style="deviceType === 'phone' ? { width: '100%' } : {}"
   >
     <div class="data-right-title dp-space-center">
       {{ keyword }}
       <div class="dp-center-center">
         <!-- .study-audio-content  -->
-        <el-dropdown
-          trigger="click"
-          :hide-on-click="false"
-          ref="dropdownRef"
-        >
+        <el-dropdown trigger="click" :hide-on-click="false" :teleported="false">
           <div class="icon-point dp--center">
             <el-icon>
               <MoreFilled />

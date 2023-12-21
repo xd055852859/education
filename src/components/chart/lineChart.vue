@@ -156,8 +156,6 @@ watch(
   (newVal) => {
     let chartDom: any = document.getElementById(props.lineId);
     let width = newVal ? 0.75 : lineWidth.value;
-    console.log(width);
-    console.log(chartDom.parentElement.offsetWidth);
     //@ts-ignore
     chart.resize({
       width: document.documentElement.offsetWidth * 0.9 * width,

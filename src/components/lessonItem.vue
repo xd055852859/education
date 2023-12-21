@@ -28,8 +28,8 @@ const emits = defineEmits<{
       />
     </div>
     <div class="lessonItem-content">
-      <div class="lessonItem-content-title">{{ item.name }}</div>
-      <div class="lessonItem-content-info">
+      <div class="lessonItem-content-title single-to-long">{{ item.name }}</div>
+      <div class="lessonItem-content-info single-to-long">
         <div
           class="dp--center"
           v-for="(tagItem, index) in item.tagInfoArr"
@@ -68,9 +68,10 @@ const emits = defineEmits<{
   .lessonItem-img {
     width: 229px;
     height: 142px;
-    margin-right: 31px;
     position: relative;
     z-index: 1;
+    flex-shrink: 0;
+    margin-right: 25px;
     img {
       width: 100%;
       height: 100%;
@@ -87,6 +88,7 @@ const emits = defineEmits<{
   }
   .lessonItem-content {
     flex: 1;
+    min-width: calc(100% - 360px);
     height: 120px;
     .lessonItem-content-title {
       width: 100%;
@@ -111,9 +113,8 @@ const emits = defineEmits<{
       font-size: 18px;
       color: #444444;
       line-height: 26px;
-      text-indent: 2em;
       @include more-toLong(2);
-      font-family: "Kaiti SC", "STKaiti", "Arial", sans-serif;
+      // font-family: "Kaiti SC", "STKaiti", "Arial", sans-serif;
     }
   }
   .lessonItem-button {
@@ -121,7 +122,7 @@ const emits = defineEmits<{
     position: absolute;
     z-index: 2;
     top: 20px;
-    right: 0px;
+    right: 10px;
   }
   &:hover {
     .lessonItem-button {
@@ -130,62 +131,14 @@ const emits = defineEmits<{
   }
 }
 .lessonItem-phone {
-  width: 100%;
   height: 180px;
-  border-bottom: 1px solid #e3e3e3;
-  position: relative;
-  z-index: 1;
-  @include flex(space-between, center, null);
   .lessonItem-img {
     width: 142px;
     height: 142px;
     margin-right: 31px;
-    position: relative;
-    z-index: 1;
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-    .lessonItem-top {
-      width: 55px;
-      height: 28px;
-      position: absolute;
-      z-index: 2;
-      right: 0px;
-      top: 0px;
-    }
   }
   .lessonItem-content {
-    flex: 1;
     height: 130px;
-    .lessonItem-content-title {
-      width: 100%;
-      height: 35px;
-      font-size: 24px;
-      font-weight: 500;
-      color: #000000;
-      line-height: 35px;
-    }
-    .lessonItem-content-info {
-      width: 100%;
-      min-height: 17px;
-      margin: 10px 0px;
-      font-size: 16px;
-      color: #666666;
-      line-height: 17px;
-      @include flex(flex-start, center, wrap);
-    }
-    .lessonItem-content-description {
-      width: 100%;
-      // height: 34px;
-      font-size: 18px;
-      color: #444444;
-      line-height: 26px;
-      text-indent: 2em;
-      @include more-toLong(2);
-      font-family: "Kaiti SC", "STKaiti", "Arial", sans-serif;
-    }
   }
   .lessonItem-button {
     @include flex(center, center, null);

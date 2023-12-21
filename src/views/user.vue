@@ -324,8 +324,7 @@ const shareHtml = () => {
     <el-dialog
       v-model="cropperVisible"
       title="裁剪图片"
-      :width="deviceType === 'phone' ? '300px' : '600px'"
-      :top="deviceType === 'phone' ? '5%' : '15vh'"
+      :width="deviceType === 'phone' ? '80vw' : '600px'"
     >
       <div
         :style="{
@@ -351,7 +350,6 @@ const shareHtml = () => {
       v-model="userVisible"
       :title="userType === 'user' ? '用户设置' : '角色设置'"
       :width="deviceType === 'phone' ? '300px' : '450px'"
-      :top="deviceType === 'phone' ? '5%' : '15vh'"
     >
       <div
         class="user-set dp-center-center"
@@ -445,7 +443,6 @@ const shareHtml = () => {
     <el-dialog
       v-model="agentVisible"
       :width="deviceType === 'phone' ? '300px' : '450px'"
-      :top="deviceType === 'phone' ? '5%' : '15vh'"
     >
       <template #header="{ close, titleId, titleClass }">
         <div class="agent-header dp-space-center">
@@ -516,7 +513,6 @@ const shareHtml = () => {
         score = 0;
         content = '';
       "
-      :top="deviceType === 'phone' ? '5%' : '15vh'"
     >
       <div class="suggestion-box">
         <el-rate v-model="score" :colors="colors" :max="10" size="large" />
@@ -538,13 +534,12 @@ const shareHtml = () => {
     <el-dialog
       v-model="urlVisible"
       title="用户协议"
-      :width="deviceType === 'phone' ? '450px' : '650px'"
+      :width="deviceType === 'phone' ? '80vw' : '650px'"
       class="url-box"
-      :top="deviceType === 'phone' ? '5%' : '15vh'"
     >
       <div
         style="width: 100%"
-        :style="{ height: deviceType === 'phone' ? '250px' : '500px' }"
+        :style="{ height: deviceType === 'phone' ? '70vh' : '500px' }"
       >
         <IframeView
           url="https://notecute.com/#/post?key=1499044542&view=digest&hideHead=1&publicShare=1&isWebview=1"

@@ -141,16 +141,18 @@ const changeState = async () => {
         }}
       </el-button>
 
-      <div
-        class="login-prompt"
-        @click="setLoginState('login')"
-        v-if="loginState === 'register' || loginState === 'codeLogin'"
-      >
-        已有账号？<span>直接登录</span>
+      <div class="login-prompt dp-space-center">
+        <div @click="setLoginState('login')">有账号? 去<span>登录</span></div>
+        <div
+          @click="setLoginState('register')"
+          v-if="loginState !== 'register'"
+        >
+          <span>立即注册</span>
+        </div>
       </div>
-      <div class="login-prompt" @click="setLoginState('register')" v-else>
+      <!-- <div class="login-prompt" v-else>
         没有场景英语账户？<span>立即注册</span>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>

@@ -456,6 +456,7 @@ watchEffect(() => {
         size="80%"
         :with-header="false"
         :append-to-body="true"
+        @close="(keyword = ''), (keywordKey = '')"
       >
         <Keyword
           :keyword="keyword"
@@ -471,7 +472,7 @@ watchEffect(() => {
 <style scoped lang="scss">
 .keyword {
   width: 100vw;
-  height: 100vh;
+  height: 100%;
   align-content: flex-start;
   padding: 0px 0px 34px 0px;
   box-sizing: border-box;
@@ -480,7 +481,7 @@ watchEffect(() => {
 
   .keyword-container {
     width: 100vw;
-    height: 100vh;
+    height: 100%;
     @include flex(center, center, null);
 
     .keyword-left {
@@ -488,13 +489,14 @@ watchEffect(() => {
       height: 100%;
       position: relative;
       z-index: 1;
+      align-content: flex-start;
       @include flex(center, center, wrap);
       .keyword-tab {
         width: 90%;
         height: 46px;
         position: relative;
         z-index: 1;
-        padding:0px 25px;
+        padding: 0px 25px;
         box-sizing: border-box;
         margin-bottom: 20px;
         @include flex(space-between, center, null);
@@ -563,7 +565,7 @@ watchEffect(() => {
 
       .keyword-box {
         width: 90%;
-        height: calc(100% - 50px);
+        height: calc(100% - 150px);
         padding: 10px 15px 10px 27px;
         box-sizing: border-box;
         @include scroll();
@@ -583,7 +585,6 @@ watchEffect(() => {
             width: 100%;
             height: 32px;
             font-size: 30px;
-            font-family: DIN Black, DIN Black-Black;
             font-weight: 900;
             line-height: 32px;
             margin-bottom: 6px;

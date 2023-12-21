@@ -316,7 +316,6 @@ defineExpose({
       .audio-title {
         width: 100%;
         height: 30px;
-        font-family: PingFang SC, PingFang SC-Regular;
         font-size: 20px;
         font-weight: 600;
         color: #333333;

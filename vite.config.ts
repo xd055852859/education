@@ -4,6 +4,7 @@ import { resolve } from "path";
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import AutoImport from "unplugin-auto-import/vite";
+import legacy from '@vitejs/plugin-legacy'
 // https://vitejs.dev/config/
 import fs from "fs";
 
@@ -38,6 +39,9 @@ export default defineConfig(({ mode, command }) => {
           }),
         ],
       }),
+      legacy({
+        targets: ['defaults', 'not IE 11'],
+      })
     ],
     optimizeDeps: {
       include: optimizeDepsElementPlusIncludes,

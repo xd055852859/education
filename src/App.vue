@@ -19,7 +19,16 @@ onMounted(() => {
   // 检测设备方向
   window.addEventListener("orientationchange", _.debounce(changeDevice, 100));
   // // 检测设备方向
-  window.addEventListener("resize", _.debounce(changeDevice, 100));
+  window.addEventListener(
+    "resize",
+    // function () {
+    //   document.documentElement.style.setProperty(
+    //     "--vh",
+    //     `${window.innerHeight * 0.01}px`
+    //   );
+    _.debounce(changeDevice, 100)
+    // }
+  );
 
   const search = window.location.search
     ? window.location.search.split("?")[1]

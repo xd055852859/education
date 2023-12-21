@@ -162,7 +162,7 @@ watchEffect(() => {
     padding: 10px 15px;
     box-sizing: border-box;
     font-size: 22px;
-    font-family: PingFang SC, PingFang SC-Regular;
+    // font-family: PingFang SC, PingFang SC-Regular;
     text-align: left;
     color: #333333;
     line-height: 45px;

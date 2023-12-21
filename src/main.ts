@@ -15,6 +15,7 @@ import "./styles/common/index.scss";
 import "./styles/element/index.scss";
 import "element-plus/dist/index.css";
 import "amfe-flexible/index.js";
+
 const app = createApp(App);
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedstate);
